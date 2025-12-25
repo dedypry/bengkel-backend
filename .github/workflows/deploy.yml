@@ -1,0 +1,32 @@
+name: Build on Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-on-server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run pnpm build on remote server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.REMOTE_PORT }}
+          script: |
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+            cd /www/wwwroot/bengkel-backend
+            git reset --hard origin/main
+            git pull
+            pnpm install
+            pnpm knex migrate:latest
+            pnpm build
+            pm2 reload bengkel-backend
