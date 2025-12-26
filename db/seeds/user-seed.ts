@@ -7,33 +7,8 @@ export async function seed(knex: Knex): Promise<void> {
   await knex('role_user').del();
   await knex('personal_access_token').del();
   await knex('address').del();
-  await knex('roles').del();
   await knex('users').del();
   await knex('companies').del();
-
-  // 2. Insert Roles (Sesuai kebutuhan bengkel)
-  await knex('roles')
-    .insert([
-      {
-        id: 1,
-        name: 'Admin',
-        slug: 'admin',
-        description: 'Akses penuh ke semua sistem',
-      },
-      {
-        id: 2,
-        name: 'Service Advisor',
-        slug: 'sa',
-        description: 'Manajemen Work Order & Customer',
-      },
-      {
-        id: 3,
-        name: 'Mechanic',
-        slug: 'mechanic',
-        description: 'Update progres servis & sparepart',
-      },
-    ])
-    .returning('id');
 
   // 3. Insert Company (Bengkel)
   await knex('companies')
@@ -85,8 +60,8 @@ export async function seed(knex: Knex): Promise<void> {
   // 6. Hubungkan User ke Role (role_user)
   await knex('role_user').insert([
     { user_id: 1, role_id: 1 }, // Admin -> Admin
-    { user_id: 2, role_id: 2 }, // Budi -> SA
-    { user_id: 3, role_id: 3 }, // Joko -> Mechanic
+    { user_id: 2, role_id: 4 }, // Budi -> SA
+    { user_id: 3, role_id: 6 }, // Joko -> Mechanic
   ]);
 
   // 7. Hubungkan User ke Company (company_user)

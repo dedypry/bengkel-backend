@@ -4,18 +4,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
-import { UserModel } from 'models/user.model';
 import { comparePassword } from 'utils/helpers/bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
 import dayjs from 'dayjs';
+import { UsersModel } from 'models/users.model';
 
 @Injectable()
 export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   async login(body: AuthDto) {
-    const user = await UserModel.query().findOne('email', body.email);
+    const user = await UsersModel.query().findOne('email', body.email);
 
     if (!user) throw new NotFoundException();
 
@@ -27,6 +27,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
+      company_id: user.company_id,
     };
 
     const token = await this.jwtService.signAsync(payload);
@@ -45,8 +46,8 @@ export class AuthService {
   }
 
   async profile(id: number) {
-    return await UserModel.query()
-      .withGraphFetched('[companies.address,profile]')
+    return await UsersModel.query()
+      .withGraphFetched('[companies.address,profile,roles]')
       .findById(id);
   }
 }

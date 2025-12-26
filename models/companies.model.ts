@@ -3,14 +3,16 @@ import { BaseModel } from './base.model';
 import { AddressModel } from './address.model';
 
 @Table('companies', { hide: ['created_at', 'updated_at'] })
-export class CompanyModel extends BaseModel {
+export class CompaniesModel extends BaseModel {
+  // === FIELD START ===
   name: string;
   slug: string;
-  logo_url?: string | null;
-  email?: string | null;
-  phone_number?: string | null;
-  fax?: string | null;
-  npwp?: string | null;
+  logo_url?: string;
+  email?: string;
+  phone_number?: string;
+  fax?: string;
+  npwp?: string;
+  // === FIELD END ===
 
   @HasOne(() => AddressModel, {
     to: 'parent_id',

@@ -4,6 +4,7 @@ export interface IAuth {
   name: string;
   iat: number;
   exp: number;
+  company_id: number;
 }
 
 export interface IAddress {

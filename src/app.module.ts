@@ -3,6 +3,10 @@ import { AppController } from './app.controller';
 import { AuthModule } from './api/auth/auth.module';
 import { JoiPipeModule } from 'nestjs-joi';
 import { JwtModule } from '@nestjs/jwt';
+import { RegionModule } from './api/region/region.module';
+import { RolesModule } from './api/roles/roles.module';
+import { EmployeesModule } from './api/employees/employees.module';
+import { UserModule } from './api/user/user.module';
 import 'dotenv/config';
 
 @Module({
@@ -18,6 +22,10 @@ import 'dotenv/config';
       },
     }),
     AuthModule,
+    RegionModule,
+    RolesModule,
+    EmployeesModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [],
