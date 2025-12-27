@@ -10,8 +10,8 @@ import { map, Observable } from 'rxjs';
 export class ResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest();
-    const page = Number(req.query.page || 0);
-    const pageSize = Number(req.query.pageSize || 0);
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
 
     return next.handle().pipe(
       map((data) => {
@@ -38,7 +38,7 @@ export class ResponseInterceptor implements NestInterceptor {
               total: total,
               page: page,
               pageSize: pageSize,
-              lastPage: lastPage,
+              lastPage: lastPage || 1,
               from: from,
               to: Math.min(page * pageSize, total),
             },

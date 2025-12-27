@@ -7,6 +7,7 @@ import { RegionModule } from './api/region/region.module';
 import { RolesModule } from './api/roles/roles.module';
 import { EmployeesModule } from './api/employees/employees.module';
 import { UserModule } from './api/user/user.module';
+import { ServicesModule } from './api/services/services.module';
 import 'dotenv/config';
 
 @Module({
@@ -26,6 +27,7 @@ import 'dotenv/config';
     RolesModule,
     EmployeesModule,
     UserModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [],

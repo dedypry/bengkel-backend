@@ -24,7 +24,7 @@ async function makeModel() {
   rows.forEach((r: any) => tables.push(r.table_name));
   for (const table of tables) {
     let columns: ColumnInfo[] = [];
-    const excludes = ['id', 'created_at', 'updated_at'];
+    const excludes = ['id', 'created_at', 'updated_at', 'deleted_at'];
 
     const cols = await db
       .select('column_name', 'data_type', 'is_nullable', 'column_default')
