@@ -7,4 +7,6 @@ export class IQuery {
 
   @JoiSchema(Joi.number().default(10))
   pageSize: number;
+
+  q?: string;
 }
