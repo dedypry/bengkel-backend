@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UsersModel } from 'models/users.model';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,7 +23,11 @@ export class AuthGuard implements CanActivate {
         secret: process.env.SECRET_KEY,
       });
 
-      req['user'] = payload;
+      const user = await UsersModel.query().findById(payload.id);
+
+      if (!user) throw new UnauthorizedException();
+
+      req['user'] = user;
       return true;
     } catch (error) {
       console.error(error);

@@ -8,7 +8,7 @@ import { CompaniesModel } from './companies.model';
 import { ProfilesModel } from './profiles.model';
 import { RolesModel } from './roles.model';
 
-@Table('users')
+@Table('users', { softDelete: true })
 export class UsersModel extends BaseModel {
   // === FIELD START ===
   nik?: string;

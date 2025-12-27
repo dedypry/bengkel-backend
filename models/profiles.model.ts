@@ -1,5 +1,8 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { ProvinceModel } from './province.model';
+import { CityModel } from './city.model';
+import { DistrictModel } from './district.model';
 
 @Table('profiles')
 export class ProfilesModel extends BaseModel {
@@ -19,4 +22,19 @@ export class ProfilesModel extends BaseModel {
   birth_date?: string;
   place_birth?: string;
   // === FIELD END ===
+
+  @BelongsToOne(() => ProvinceModel, {
+    from: 'province_id',
+  })
+  province?: ProvinceModel;
+
+  @BelongsToOne(() => CityModel, {
+    from: 'city_id',
+  })
+  city?: CityModel;
+
+  @BelongsToOne(() => DistrictModel, {
+    from: 'district_id',
+  })
+  district?: DistrictModel;
 }

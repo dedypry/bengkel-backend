@@ -1,10 +1,16 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { Modifier, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import type { AnyQueryBuilder } from 'objection';
 
-@Table('city')
+@Table('city', { hide: ['created_at', 'updated_at', 'province_id'] })
 export class CityModel extends BaseModel {
   // === FIELD START ===
   province_id?: number;
   name?: string;
   // === FIELD END ===
+
+  @Modifier()
+  list(query: AnyQueryBuilder) {
+    query.select('id', 'name');
+  }
 }

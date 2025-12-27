@@ -1,4 +1,4 @@
-import { AnyQueryBuilder, Model, ModelClass } from 'objection';
+import { AnyQueryBuilder, Model, ModelClass, QueryBuilder } from 'objection';
 const tableMetadataKey = Symbol('tableName');
 import pluralize from 'pluralize';
 
@@ -26,7 +26,10 @@ interface RelationMeta {
   join: IJoin;
 }
 
-export function Table(name?: string, options?: { hide?: string[] }) {
+export function Table(
+  name?: string,
+  options?: { hide?: string[]; softDelete?: boolean },
+) {
   return function (target: any) {
     let tableName = name
       ? name
@@ -64,6 +67,29 @@ export function Table(name?: string, options?: { hide?: string[] }) {
       });
 
       return json;
+    };
+
+    target.QueryBuilder = class extends QueryBuilder<any> {
+      execute() {
+        if (options?.softDelete) {
+          this.whereNull(`${tableName}.deleted_at`);
+        }
+        return super.execute();
+      }
+
+      // Method tambahan untuk mempermudah pemanggilan
+      softDelete() {
+        return this.patch({ deleted_at: new Date().toISOString() } as any);
+      }
+
+      restore() {
+        return this.patch({ deleted_at: null } as any);
+      }
+    };
+
+    // Helper static untuk bypass filter deleted_at
+    target.queryWithDeleted = function () {
+      return this.query().context({ includeDeleted: true });
     };
 
     Object.defineProperty(target, 'modifiers', {

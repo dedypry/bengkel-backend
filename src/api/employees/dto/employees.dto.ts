@@ -5,6 +5,8 @@ import { JoiSchema } from 'nestjs-joi';
  * Interface untuk data User/Karyawan Bengkel
  */
 export class EmployeeDto {
+  id?: number;
+
   @JoiSchema(Joi.string().required())
   name: string;
 
