@@ -8,6 +8,8 @@ import { RolesModule } from './api/roles/roles.module';
 import { EmployeesModule } from './api/employees/employees.module';
 import { UserModule } from './api/user/user.module';
 import { ServicesModule } from './api/services/services.module';
+import { ProductsModule } from './api/products/products.module';
+import { SuppliersModule } from './api/suppliers/suppliers.module';
 import 'dotenv/config';
 
 @Module({
@@ -28,6 +30,8 @@ import 'dotenv/config';
     EmployeesModule,
     UserModule,
     ServicesModule,
+    ProductsModule,
+    SuppliersModule,
   ],
   controllers: [AppController],
   providers: [],
