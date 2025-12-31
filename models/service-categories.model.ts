@@ -11,5 +11,6 @@ export class ServiceCategoriesModel extends BaseModel {
   slug?: string;
   description?: string;
   is_active?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 }

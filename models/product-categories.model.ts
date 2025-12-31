@@ -9,5 +9,6 @@ export class ProductCategoriesModel extends BaseModel {
   company_id?: number;
   description?: string;
   is_active?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 }

@@ -21,6 +21,7 @@ export class UsersModel extends BaseModel {
   department?: string;
   status?: string;
   company_id?: number;
+  updated_by?: number;
   // === FIELD END ===
 
   @ManyToMany(() => CompaniesModel, {

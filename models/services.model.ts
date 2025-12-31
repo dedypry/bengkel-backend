@@ -17,6 +17,7 @@ export class ServicesModel extends BaseModel {
   difficulty?: any;
   category_id?: number;
   is_active?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 
   @BelongsToOne(() => ServiceCategoriesModel, {

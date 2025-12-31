@@ -13,5 +13,6 @@ export class ImagesModel extends BaseModel {
   size: number;
   path: string;
   is_primary?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 }

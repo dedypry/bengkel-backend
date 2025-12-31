@@ -10,6 +10,9 @@ import { UserModule } from './api/user/user.module';
 import { ServicesModule } from './api/services/services.module';
 import { ProductsModule } from './api/products/products.module';
 import { SuppliersModule } from './api/suppliers/suppliers.module';
+import { UploadModule } from './api/upload/upload.module';
+import { CustomersModule } from './api/customers/customers.module';
+import { WebsocketModule } from './api/websocket/websocket.module';
 import 'dotenv/config';
 
 @Module({
@@ -32,6 +35,9 @@ import 'dotenv/config';
     ServicesModule,
     ProductsModule,
     SuppliersModule,
+    UploadModule,
+    CustomersModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [],

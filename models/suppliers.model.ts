@@ -13,5 +13,6 @@ export class SuppliersModel extends BaseModel {
   address?: string;
   npwp?: string;
   is_active?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 }

@@ -10,6 +10,11 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Post()
+  createCustomer() {
+    return 'sedang proses';
+  }
+
   @Post('company')
   async updateUserCompany(@Body() body: UserCompanyDto, @Auth() auth: IAuth) {
     await this.userService.setCompany(body, auth);

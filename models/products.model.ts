@@ -18,5 +18,6 @@ export class ProductsModel extends BaseModel {
   unit?: string;
   location?: string;
   is_active?: boolean;
+  updated_by?: number;
   // === FIELD END ===
 }

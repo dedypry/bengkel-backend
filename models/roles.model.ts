@@ -7,5 +7,6 @@ export class RolesModel extends BaseModel {
   name: string;
   slug: string;
   description?: string;
+  updated_by?: number;
   // === FIELD END ===
 }
