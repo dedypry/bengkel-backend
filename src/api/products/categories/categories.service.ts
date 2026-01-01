@@ -26,6 +26,17 @@ export class CategoriesService {
       });
   }
 
+  async detail(id: number, auth: IAuth) {
+    const cat = await ProductCategoriesModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!cat) throw new NotFoundException();
+
+    return cat;
+  }
+
   async create(body: CreateCategoryDto, auth: IAuth) {
     const payload = {
       ...body,

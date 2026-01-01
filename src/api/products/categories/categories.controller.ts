@@ -25,6 +25,11 @@ export class CategoriesController {
     return this.categoriesService.list(query, auth);
   }
 
+  @Get('id')
+  detail(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.categoriesService.detail(id, auth);
+  }
+
   @Post()
   async create(@Body() body: CreateCategoryDto, @Auth() auth: IAuth) {
     await this.categoriesService.create(body, auth);
