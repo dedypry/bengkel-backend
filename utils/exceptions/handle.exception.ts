@@ -17,6 +17,8 @@ export class HandleExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : 500;
 
+    console.error('EXCEPTION', exception, status);
+
     if (exception instanceof JoiPipeValidationException) {
       const errorDdata: Record<string, string[]> = {};
 
@@ -45,8 +47,6 @@ export class HandleExceptionFilter implements ExceptionFilter {
         message: message,
       });
     }
-
-    console.error('EXCEPTION', exception.message, status);
 
     res.status(status).json({
       message: status == 500 ? 'internal server error' : exception.message,
