@@ -1,7 +1,8 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { ManyToMany, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { CustomersModel } from './customers.model';
 
-@Table('vehicles')
+@Table('vehicles', { hide: ['company_id', 'updated_by'], softDelete: true })
 export class VehiclesModel extends BaseModel {
   // === FIELD START ===
   plate_number: string;
@@ -17,4 +18,11 @@ export class VehiclesModel extends BaseModel {
   company_id?: number;
   updated_by?: number;
   // === FIELD END ===
+
+  @ManyToMany(() => CustomersModel, {
+    from: 'vehicle_id',
+    to: 'customer_id',
+    table: 'customer_vehicle',
+  })
+  customers?: CustomersModel[];
 }

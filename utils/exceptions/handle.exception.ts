@@ -35,14 +35,11 @@ export class HandleExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof UniqueViolationError) {
-      // Ambil nama kolom yang menyebabkan duplikasi (misal: plate_number)
-      const column = exception.columns.join(', ');
+      const column = exception.columns.join(', ').replaceAll('_', ' ');
 
-      // Buat pesan yang lebih ramah pengguna
-      const message = `Data dengan ${column} tersebut sudah terdaftar di sistem.`;
+      const message = `Data dengan ${column}  tersebut sudah terdaftar di sistem.`;
 
       return res.status(409).json({
-        // 409 adalah status Conflict
         statusCode: 409,
         error: 'Conflict',
         message: message,

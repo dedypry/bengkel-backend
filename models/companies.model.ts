@@ -1,6 +1,11 @@
-import { HasOne, Table } from 'utils/decorators/objections.decorator';
+import {
+  HasOne,
+  ManyToMany,
+  Table,
+} from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { AddressModel } from './address.model';
+import { UsersModel } from './users.model';
 
 @Table('companies', { hide: ['created_at', 'updated_at'] })
 export class CompaniesModel extends BaseModel {
@@ -20,4 +25,11 @@ export class CompaniesModel extends BaseModel {
     filter: (query) => query.where('model', 'company'),
   })
   address?: AddressModel;
+
+  @ManyToMany(() => UsersModel, {
+    table: 'company_user',
+    to: 'user_id',
+    from: 'company_id',
+  })
+  users?: UsersModel;
 }

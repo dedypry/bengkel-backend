@@ -42,6 +42,7 @@ export class ResponseInterceptor implements NestInterceptor {
               from: from,
               to: Math.min(page * pageSize, total),
             },
+            stats: data.stats,
           };
         }
         return data;

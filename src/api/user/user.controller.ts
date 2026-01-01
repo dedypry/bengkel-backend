@@ -16,9 +16,7 @@ export class UserController {
   }
 
   @Post('company')
-  async updateUserCompany(@Body() body: UserCompanyDto, @Auth() auth: IAuth) {
-    await this.userService.setCompany(body, auth);
-
-    return 'Company berhasil di update';
+  updateUserCompany(@Body() body: UserCompanyDto, @Auth() auth: IAuth) {
+    return this.userService.setCompany(body, auth);
   }
 }

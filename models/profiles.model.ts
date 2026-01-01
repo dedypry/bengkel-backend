@@ -4,7 +4,7 @@ import { ProvinceModel } from './province.model';
 import { CityModel } from './city.model';
 import { DistrictModel } from './district.model';
 
-@Table('profiles')
+@Table('profiles', { hide: ['model', 'updated_by'] })
 export class ProfilesModel extends BaseModel {
   // === FIELD START ===
   user_id: number;
@@ -22,6 +22,7 @@ export class ProfilesModel extends BaseModel {
   birth_date?: string;
   place_birth?: string;
   updated_by?: number;
+  model?: string;
   // === FIELD END ===
 
   @BelongsToOne(() => ProvinceModel, {

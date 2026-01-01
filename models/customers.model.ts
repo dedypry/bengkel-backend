@@ -1,6 +1,11 @@
-import { ManyToMany, Table } from 'utils/decorators/objections.decorator';
+import {
+  HasOne,
+  ManyToMany,
+  Table,
+} from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { VehiclesModel } from './vehicles.model';
+import { ProfilesModel } from './profiles.model';
 
 @Table('customers')
 export class CustomersModel extends BaseModel {
@@ -9,13 +14,13 @@ export class CustomersModel extends BaseModel {
   phone: string;
   email?: string;
   code_verify?: string;
-  address?: string;
   customer_type?: string;
   nik_ktp?: string;
   credit_limit?: number;
   notes?: string;
   company_id?: number;
   updated_by?: number;
+  status?: string;
   // === FIELD END ===
 
   @ManyToMany(() => VehiclesModel, {
@@ -24,4 +29,10 @@ export class CustomersModel extends BaseModel {
     table: 'customer_vehicle',
   })
   vehicles?: VehiclesModel[];
+
+  @HasOne(() => ProfilesModel, {
+    filter: (query) => query.where('model', 'customers'),
+    to: 'user_id',
+  })
+  profile?: ProfilesModel;
 }

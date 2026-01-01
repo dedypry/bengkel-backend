@@ -14,8 +14,8 @@ export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
-  list(@Query(new PaginationPipe()) query: IQuery) {
-    return this.servicesService.list(query);
+  list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
+    return this.servicesService.list(query, auth);
   }
 
   @Get('categories')

@@ -1,13 +1,68 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCustomerDto } from './dto/customer.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
 import { sendWelcomeMessage } from 'utils/helpers/send-wa';
 import { CompaniesModel } from 'models/companies.model';
-
+import { fn } from 'objection';
+import { IQuery } from 'utils/interfaces/query';
+import dayjs from 'dayjs';
 @Injectable()
 export class CustomersService {
+  async listCustomer(query: IQuery) {
+    const startOfThisMonth = dayjs().startOf('month').toISOString();
+
+    const startOfLastMonth = dayjs()
+      .subtract(1, 'month')
+      .startOf('month')
+      .toISOString();
+    const endOfLastMonth = dayjs()
+      .subtract(1, 'month')
+      .endOf('month')
+      .toISOString();
+
+    const result = await CustomersModel.query()
+      .select([
+        'customers.*',
+        CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
+      ])
+      .withGraphFetched('[profile]')
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('name', `%${query.q}%`)
+            .orWhereILike('email', `%${query.q}%`)
+            .orWhereILike('phone', `%${query.q}%`);
+        }
+      })
+      .whereNull('deleted_at')
+      .page(query.page, query.pageSize);
+
+    const totalThisMonth = await CustomersModel.query()
+      .where('created_at', '>=', startOfThisMonth)
+      .resultSize();
+
+    const totalLastMonth = await CustomersModel.query()
+      .whereBetween('created_at', [startOfLastMonth, endOfLastMonth])
+      .resultSize();
+
+    let growth = 0;
+    if (totalLastMonth > 0) {
+      growth = ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100;
+    } else {
+      growth = totalThisMonth > 0 ? 100 : 0;
+    }
+    return {
+      ...result,
+      stats: {
+        this_month: totalThisMonth,
+        last_month: totalLastMonth,
+        growth: Math.round(growth),
+        label: `${growth >= 0 ? 'Meningkat' : 'Menurun'} ${Math.abs(Math.round(growth))}% dibandingkan bulan lalu`,
+      },
+    };
+  }
   async createCustomer(body: CreateCustomerDto, auth: IAuth) {
     if (!body?.id) {
       body.vehicles = body.vehicles.map((item) => ({
@@ -16,6 +71,15 @@ export class CustomersService {
         updated_by: auth.id,
       }));
     }
+
+    body.profile = {
+      ...body.profile,
+      full_name: body.name,
+      phone_number: body.phone,
+      join_date: fn.now(),
+      updated_by: auth.id,
+      model: 'customers',
+    } as any;
 
     const phone = formatPhoneNumber(body.phone);
     await CustomersModel.transaction(async (trx) => {
@@ -41,5 +105,25 @@ export class CustomersService {
       to: phone,
     });
     return true;
+  }
+
+  async detail(id: number) {
+    return CustomersModel.query()
+      .withGraphFetched('[profile.[province,city,district],vehicles]')
+      .findById(id);
+  }
+
+  async destroy(id: number, auth: IAuth) {
+    const find = await CustomersModel.query().findOne({
+      company_id: auth.company_id,
+      id,
+    });
+
+    if (!find) throw new NotFoundException();
+
+    await find.$query().patch({
+      deleted_at: fn.now(),
+      updated_by: auth.id,
+    });
   }
 }

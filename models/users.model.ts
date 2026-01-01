@@ -22,6 +22,7 @@ export class UsersModel extends BaseModel {
   status?: string;
   company_id?: number;
   updated_by?: number;
+  work_status?: string;
   // === FIELD END ===
 
   @ManyToMany(() => CompaniesModel, {
@@ -39,6 +40,7 @@ export class UsersModel extends BaseModel {
   roles?: CompaniesModel[];
 
   @HasOne(() => ProfilesModel, {
+    filter: (query) => query.where('model', 'users'),
     to: 'user_id',
   })
   profile?: ProfilesModel;

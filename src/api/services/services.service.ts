@@ -8,7 +8,7 @@ import { CreateServiceDto } from './dto/service.dto';
 
 @Injectable()
 export class ServicesService {
-  async list(query: IQuery) {
+  async list(query: IQuery, auth: IAuth) {
     return await ServicesModel.query()
       .withGraphFetched('[category]')
       .orderBy('created_at', 'desc')
@@ -17,6 +17,7 @@ export class ServicesService {
           build.whereILike('name', `%${query.q}%`);
         }
       })
+      .where('company_id', auth.company_id)
       .page(query.page, query.pageSize);
   }
 

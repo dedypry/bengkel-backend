@@ -26,7 +26,7 @@ export class BaseModel extends Model {
   }
 
   async $afterInsert(queryContext: any) {
-    await this.saveHistory('POST', queryContext);
+    await this.saveHistory('INSERT', queryContext);
   }
 
   async $afterUpdate(opt: any, queryContext: any) {
@@ -41,7 +41,7 @@ export class BaseModel extends Model {
     const knex = (this.constructor as typeof BaseModel).knex();
 
     if ((this as any).updated_by) {
-      console.log(this);
+      console.log(queryContext);
       await knex('user_histories').insert({
         model_name: (this.constructor as typeof BaseModel).tableName,
         model_id: this.id,
