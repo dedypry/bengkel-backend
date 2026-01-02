@@ -12,10 +12,11 @@ import { ProductsModule } from './api/products/products.module';
 import { SuppliersModule } from './api/suppliers/suppliers.module';
 import { UploadModule } from './api/upload/upload.module';
 import { CustomersModule } from './api/customers/customers.module';
-import { WebsocketModule } from './api/websocket/websocket.module';
+import { WebsocketModule } from './websocket/websocket.module';
 import { VehiclesModule } from './api/vehicles/vehicles.module';
 import { CompaniesModule } from './api/companies/companies.module';
 import { MechanicsModule } from './api/mechanics/mechanics.module';
+import { BackupModule } from './crons/backup/backup.module';
 import 'dotenv/config';
 
 @Module({
@@ -44,6 +45,7 @@ import 'dotenv/config';
     VehiclesModule,
     CompaniesModule,
     MechanicsModule,
+    BackupModule,
   ],
   controllers: [AppController],
   providers: [],
