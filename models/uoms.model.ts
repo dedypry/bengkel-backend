@@ -1,7 +1,7 @@
 import { Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 
-@Table('uoms')
+@Table('uoms', { hide: ['company_id', 'created_at', 'updated_at'] })
 export class UomsModel extends BaseModel {
   // === FIELD START ===
   code?: string;

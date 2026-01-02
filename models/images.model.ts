@@ -1,7 +1,9 @@
 import { Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 
-@Table('images')
+@Table('images', {
+  hide: ['model', 'company_id', 'parent_id', 'deleted_at', 'updated_by'],
+})
 export class ImagesModel extends BaseModel {
   // === FIELD START ===
   model?: string;

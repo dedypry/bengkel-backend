@@ -2,7 +2,7 @@ import { HasMany, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { ProductsModel } from './products.model';
 
-@Table('product_categories', { softDelete: true })
+@Table('product_categories', { softDelete: true, hide: ['company_id'] })
 export class ProductCategoriesModel extends BaseModel {
   // === FIELD START ===
   name: string;

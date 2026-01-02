@@ -3,8 +3,8 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
-import { formatFileSize } from 'utils/helpers/global';
 import path from 'path';
+import { ImagesModel } from 'models/images.model';
 
 @Injectable()
 export class UploadService {
@@ -51,14 +51,16 @@ export class UploadService {
       });
       await this.s3Client.send(command);
 
-      // 2. Return metadata untuk disimpan ke tabel `images` database Anda
-      return {
+      const payload = {
         filename: fileName,
         original_name: file.originalname,
         mime_type: 'image/webp',
-        size: formatFileSize(uploadBuffer.length),
+        size: uploadBuffer.length,
         path: `https://${this.bucketName}.s3.${process.env.S3_REGION}.amazonaws.com/${fileName}`,
       };
+
+      const image = await ImagesModel.query().insert(payload);
+      return image;
     } catch (error) {
       console.error('S3 Upload Error:', error);
       throw new InternalServerErrorException('Gagal mengunggah file ke S3');
