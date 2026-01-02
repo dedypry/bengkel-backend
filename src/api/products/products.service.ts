@@ -9,7 +9,7 @@ import { IQuery } from 'utils/interfaces/query';
 export class ProductsService {
   async list(query: IQuery, auth: IAuth) {
     return await ProductsModel.query()
-      .withGraphFetched('[category,uom,images]')
+      .withGraphFetched('[category,uom]')
       .where((builder) => {
         if (query.q) {
           builder.whereILike('name', `%${query.q}%`);
