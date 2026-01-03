@@ -1,22 +1,43 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProductDto } from './dto/products.dto';
+import { CreateProductDto, ProductQueryDto } from './dto/products.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { ProductsModel } from 'models/products.model';
 import slugify from 'slugify';
 import { ImagesModel } from 'models/images.model';
-import { IQuery } from 'utils/interfaces/query';
 @Injectable()
 export class ProductsService {
-  async list(query: IQuery, auth: IAuth) {
-    return await ProductsModel.query()
+  async list(query: ProductQueryDto, auth: IAuth) {
+    const result = await ProductsModel.query()
       .withGraphFetched('[category,uom]')
       .where((builder) => {
         if (query.q) {
           builder.whereILike('name', `%${query.q}%`);
         }
+        if (query.categoryId) {
+          builder.where('category_id', query.categoryId);
+        }
       })
       .where('company_id', auth.company_id)
       .page(query.page, query.pageSize);
+
+    const stats = await ProductsModel.query()
+      .where('company_id', auth.company_id)
+      .first()
+      .select([
+        ProductsModel.raw(
+          'COUNT(CASE WHEN stock <= min_stock THEN 1 END)::INTEGER as low_stock_count',
+        ),
+        ProductsModel.raw(
+          'SUM(stock * purchase_price)::BIGINT as total_inventory_value',
+        ),
+        ProductsModel.raw(
+          'SUM(stock * sell_price)::BIGINT as total_potential_revenue',
+        ),
+      ]);
+    return {
+      ...result,
+      stats,
+    };
   }
   async create(body: CreateProductDto, auth: IAuth) {
     const payload = {

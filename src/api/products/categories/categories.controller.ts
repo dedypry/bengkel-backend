@@ -9,11 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
-import { IQuery } from 'utils/interfaces/query';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { CreateCategoryDto } from './dto/categories.dto';
+import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
 
 @UseGuards(AuthGuard)
 @Controller('products/categories')
@@ -21,7 +20,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  list(@Query() query: IQuery, @Auth() auth: IAuth) {
+  list(@Query() query: CategoryQueryDto, @Auth() auth: IAuth) {
     return this.categoriesService.list(query, auth);
   }
 

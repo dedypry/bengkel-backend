@@ -1,14 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductCategoriesModel } from 'models/product-categories.model';
 import { IAuth } from 'utils/interfaces/IAuth';
-import { IQuery } from 'utils/interfaces/query';
-import { CreateCategoryDto } from './dto/categories.dto';
+import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
 import slugify from 'slugify';
 import { fn } from 'objection';
 
 @Injectable()
 export class CategoriesService {
-  async list(query: IQuery, auth: IAuth) {
+  async list(query: CategoryQueryDto, auth: IAuth) {
     return await ProductCategoriesModel.query()
       .select([
         'product_categories.*',

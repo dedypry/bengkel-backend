@@ -1,5 +1,6 @@
 import * as Joi from 'joi';
 import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
+import { IQuery } from 'utils/interfaces/query';
 
 @JoiSchemaOptions({
   allowUnknown: false,
@@ -52,4 +53,8 @@ export class CreateProductDto {
     }),
   )
   images: string[];
+}
+
+export class ProductQueryDto extends IQuery {
+  categoryId?: number;
 }
