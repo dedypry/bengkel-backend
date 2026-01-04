@@ -1,5 +1,6 @@
 import * as Joi from 'joi';
 import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
+import { IQuery } from 'utils/interfaces/query';
 
 export class ProfileDto {
   id?: number;
@@ -110,4 +111,9 @@ export class CreateCustomerDto {
       .required(),
   )
   vehicles: VehicleDto[];
+}
+
+export class CustomerQueryDto extends IQuery {
+  noStats?: boolean;
+  isVehicle?: boolean;
 }

@@ -9,12 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
-import { CreateCustomerDto } from './dto/customer.dto';
+import { CreateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
-import { IQuery } from 'utils/interfaces/query';
 
 @UseGuards(AuthGuard)
 @Controller('customers')
@@ -22,7 +21,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  list(@Query(new PaginationPipe()) query: IQuery) {
+  list(@Query(new PaginationPipe()) query: CustomerQueryDto) {
     return this.customersService.listCustomer(query);
   }
 

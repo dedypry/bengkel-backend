@@ -1,16 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateCustomerDto } from './dto/customer.dto';
+import { CreateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
 import { sendWelcomeMessage } from 'utils/helpers/send-wa';
 import { CompaniesModel } from 'models/companies.model';
 import { fn } from 'objection';
-import { IQuery } from 'utils/interfaces/query';
 import dayjs from 'dayjs';
 @Injectable()
 export class CustomersService {
-  async listCustomer(query: IQuery) {
+  async getStats() {
     const startOfThisMonth = dayjs().startOf('month').toISOString();
 
     const startOfLastMonth = dayjs()
@@ -21,23 +20,6 @@ export class CustomersService {
       .subtract(1, 'month')
       .endOf('month')
       .toISOString();
-
-    const result = await CustomersModel.query()
-      .select([
-        'customers.*',
-        CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
-      ])
-      .withGraphFetched('[profile]')
-      .where((builder) => {
-        if (query.q) {
-          builder
-            .whereILike('name', `%${query.q}%`)
-            .orWhereILike('email', `%${query.q}%`)
-            .orWhereILike('phone', `%${query.q}%`);
-        }
-      })
-      .whereNull('deleted_at')
-      .page(query.page, query.pageSize);
 
     const totalThisMonth = await CustomersModel.query()
       .where('created_at', '>=', startOfThisMonth)
@@ -53,14 +35,41 @@ export class CustomersService {
     } else {
       growth = totalThisMonth > 0 ? 100 : 0;
     }
+
+    return {
+      this_month: totalThisMonth,
+      last_month: totalLastMonth,
+      growth: Math.round(growth),
+      label: `${growth >= 0 ? 'Meningkat' : 'Menurun'} ${Math.abs(Math.round(growth))}% dibandingkan bulan lalu`,
+    };
+  }
+  async listCustomer(query: CustomerQueryDto) {
+    const result = await CustomersModel.query()
+      .select([
+        'customers.*',
+        CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
+      ])
+      .withGraphFetched(`[profile, ${query.isVehicle ? 'vehicles' : ''} ]`)
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('name', `%${query.q}%`)
+            .orWhereILike('email', `%${query.q}%`)
+            .orWhereILike('phone', `%${query.q}%`);
+        }
+      })
+      .whereNull('deleted_at')
+      .page(query.page, query.pageSize);
+
+    let stats = undefined as any;
+
+    if (!query.noStats) {
+      stats = await this.getStats();
+    }
+
     return {
       ...result,
-      stats: {
-        this_month: totalThisMonth,
-        last_month: totalLastMonth,
-        growth: Math.round(growth),
-        label: `${growth >= 0 ? 'Meningkat' : 'Menurun'} ${Math.abs(Math.round(growth))}% dibandingkan bulan lalu`,
-      },
+      stats,
     };
   }
   async createCustomer(body: CreateCustomerDto, auth: IAuth) {
