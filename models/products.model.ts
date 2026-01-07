@@ -28,6 +28,7 @@ export class ProductsModel extends BaseModel {
   updated_by?: number;
   slug?: string;
   uom_id?: number;
+  ppn?: number;
   // === FIELD END ===
 
   @BelongsToOne(() => ProductCategoriesModel, {

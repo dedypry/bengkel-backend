@@ -17,6 +17,7 @@ export class VehiclesModel extends BaseModel {
   tire_size?: string;
   company_id?: number;
   updated_by?: number;
+  color?: string;
   // === FIELD END ===
 
   @ManyToMany(() => CustomersModel, {

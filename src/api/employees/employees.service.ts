@@ -5,6 +5,12 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import dayjs from 'utils/helpers/dayjs';
 import { IQuery } from 'utils/interfaces/query';
 import { ProfilesModel } from 'models/profiles.model';
+import { Row } from 'exceljs';
+import { dataEmployer } from './dto/data';
+import { ProvinceModel } from 'models/province.model';
+import { CityModel } from 'models/city.model';
+import slugify from 'slugify';
+import { hashPassword } from 'utils/helpers/bcrypt';
 
 @Injectable()
 export class EmployeesService {
@@ -130,5 +136,70 @@ export class EmployeesService {
     if (!user) throw new NotFoundException('User tidak di temukan');
 
     await (user.$query() as any).softDelete();
+  }
+
+  createFromImport(row: Row, auth: IAuth) {
+    console.log(row.getCell('A').value, auth);
+  }
+
+  async autoCreate(auth: IAuth) {
+    for (const item of dataEmployer) {
+      let province = null as any;
+      let city = null as any;
+
+      if (item['PROVINSI']) {
+        province = await ProvinceModel.query()
+          .whereILike('name', item['PROVINSI'])
+          .first();
+      }
+      if (item['KOTA']) {
+        city = await CityModel.query().whereILike('name', item['KOTA']).first();
+      }
+
+      const payload = {
+        nik: item['KODE'],
+        name: item['NAMA'],
+        email:
+          slugify(item['NAMA'], {
+            lower: true,
+            strict: true,
+            replacement: '',
+            trim: true,
+          }) + '@gmail.com',
+        password: hashPassword('hcp@2025'),
+        position: item['JABATAN'],
+        company_id: auth.company_id,
+        updated_by: auth.id,
+        type: 'employed',
+        status:
+          item['STATUS'].toLowerCase() === 'tetap' ? 'permanent' : 'contract',
+      };
+
+      const payloadProfile = {
+        full_name: item['NAMA'],
+        phone_number: (item['NO. HP'] || item['NO. TELEPON'])?.replaceAll(
+          "'",
+          '',
+        ),
+        address: item['ALAMAT'],
+        province_id: province?.id,
+        city_id: city?.id,
+        model: 'users',
+      };
+
+      const user = await UsersModel.query().findOne('nik', payload.nik);
+
+      if (user) {
+        await user.$query().patch(payload);
+        await ProfilesModel.query()
+          .update(payloadProfile)
+          .where('user_id', user.id);
+      } else {
+        await UsersModel.query().insertGraph({
+          ...payload,
+          profile: payloadProfile,
+        });
+      }
+    }
   }
 }

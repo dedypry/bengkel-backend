@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,7 +7,9 @@ import {
   Param,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { EmployeeDto } from './dto/employees.dto';
@@ -15,11 +18,16 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import type { IQuery } from 'utils/interfaces/query';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ExcelJsService } from 'utils/services/exceljs.service';
 
 @UseGuards(AuthGuard)
 @Controller('employees')
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(
+    private readonly employeesService: EmployeesService,
+    private readonly excelJs: ExcelJsService,
+  ) {}
 
   @Get()
   list(@Auth() auth: IAuth, @Query(new PaginationPipe()) query: IQuery) {
@@ -34,6 +42,36 @@ export class EmployeesController {
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.employeesService.detail(id, auth);
+  }
+
+  @Post('/create/auto')
+  async autoImport(@Auth() auth: IAuth) {
+    await this.employeesService.autoCreate(auth);
+    return 'Karyawan Berhasil di proses, mohon tunggu beberapa saat';
+  }
+
+  @Post('/import')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.originalname.match(/\.(xlsx)$/)) {
+          return callback(
+            new BadRequestException('Hanya file .xlsx yang diperbolehkan!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  import(@UploadedFile() file: Express.Multer.File, @Auth() auth: IAuth) {
+    this.excelJs.uploadStreamFile({
+      lineStart: 1,
+      fileBuffer: file.buffer,
+      worksheetName: 'Laporan',
+      parseRow: (row) => this.employeesService.createFromImport(row, auth),
+    });
+    return 'Karyawan Berhasil di proses, mohon tunggu beberapa saat';
   }
 
   @Post()

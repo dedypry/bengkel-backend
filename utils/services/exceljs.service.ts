@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
 import { Injectable } from '@nestjs/common';
-import { Workbook, Worksheet } from 'exceljs';
+import { Row, Workbook, Worksheet, stream } from 'exceljs';
 import { Response } from 'express';
+import { Readable } from 'stream';
 
 interface IHeader {
   header: string;
@@ -16,6 +18,17 @@ interface IBody {
   res?: Response;
 }
 
+interface IUploadStreamOptions {
+  fileBuffer: Buffer;
+  worksheetName?: string;
+  onSuccess?: (batch: any[]) => void;
+  onFinish?: (allData: any[], total: number) => void;
+  onError?: (error: Error) => void;
+  parseRow?: (row: Row) => any;
+  batchSize?: number;
+  lineStart?: number;
+  cellNotNull?: number | string; // Bisa index (number) atau key (string)
+}
 @Injectable()
 export class ExcelJsService {
   constructor() {}
@@ -82,5 +95,102 @@ export class ExcelJsService {
 
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer;
+  }
+
+  async uploadStreamFile({
+    fileBuffer,
+    worksheetName,
+    onSuccess,
+    onFinish,
+    onError,
+    parseRow,
+    batchSize,
+    lineStart = 2,
+    cellNotNull,
+  }: IUploadStreamOptions) {
+    return new Promise<void>((resolve, reject) => {
+      // 1. Gunakan Readable stream dari buffer
+      const bufferStream = new Readable();
+      bufferStream.push(fileBuffer);
+      bufferStream.push(null);
+
+      let batch: any[] = [];
+      let total = 0;
+      const allData: any[] = [];
+
+      // 2. Inisialisasi WorkbookReader
+      const workbookReader: any = new stream.xlsx.WorkbookReader(
+        bufferStream,
+        {},
+      );
+
+      workbookReader.on('worksheet', (worksheet: any) => {
+        // Cek apakah worksheet name cocok
+        if (worksheetName && worksheet.name !== worksheetName) {
+          worksheet.on('row', () => {}); // Drain worksheet yang tidak dipakai
+          return;
+        }
+
+        worksheet.on('row', (row: any) => {
+          // 3. Logika Filter Baris
+          if (row.number >= lineStart) {
+            // Cek jika cell tertentu harus ada isinya
+            if (cellNotNull) {
+              const checkCell = row.getCell(cellNotNull);
+              if (
+                !checkCell ||
+                checkCell.value === null ||
+                checkCell.value === undefined
+              ) {
+                return;
+              }
+            }
+
+            // 4. Parsing data
+            const rowData = parseRow ? parseRow(row) : row.values;
+            batch.push(rowData);
+            total++;
+
+            // 5. Handling Batch
+            if (batchSize && batch.length >= batchSize) {
+              if (onSuccess) {
+                onSuccess([...batch]);
+              } else {
+                allData.push([...batch]);
+              }
+              batch = [];
+            }
+          }
+        });
+
+        worksheet.on('end', () => {
+          // Pastikan batch terakhir terkirim jika worksheet selesai
+          if (batch.length > 0) {
+            if (onSuccess) {
+              onSuccess([...batch]);
+            } else {
+              allData.push([...batch]);
+            }
+            batch = [];
+          }
+        });
+      });
+
+      workbookReader.on('end', () => {
+        if (onFinish) {
+          onFinish(allData, total);
+        }
+        resolve();
+      });
+
+      workbookReader.on('error', (err) => {
+        console.error('ExcelJS Stream Error:', err);
+        if (onError) onError(err);
+        reject(err);
+      });
+
+      // 6. Mulai eksekusi pembacaan
+      workbookReader.read();
+    });
   }
 }

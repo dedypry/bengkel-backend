@@ -1,3 +1,5 @@
+import { Row } from 'exceljs';
+
 export function randomString(length: number): string {
   const chars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -15,3 +17,7 @@ export const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
+
+export function getRow(row: Row, val: string): string {
+  return (row.getCell(val).value as any)?.toString().trim();
+}

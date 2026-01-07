@@ -14,5 +14,11 @@ export class SuppliersModel extends BaseModel {
   npwp?: string;
   is_active?: boolean;
   updated_by?: number;
+  province_id?: number;
+  city_id?: number;
+  district_id?: number;
+  zipcode?: string;
+  fax_number?: string;
+  website?: string;
   // === FIELD END ===
 }

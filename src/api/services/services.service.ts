@@ -5,6 +5,8 @@ import { IQuery } from 'utils/interfaces/query';
 import { CreateCategoryDto } from './dto/category.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CreateServiceDto } from './dto/service.dto';
+import { Row } from 'exceljs';
+import { getRow } from 'utils/helpers/global';
 
 @Injectable()
 export class ServicesService {
@@ -14,7 +16,9 @@ export class ServicesService {
       .orderBy('created_at', 'desc')
       .where((build) => {
         if (query.q) {
-          build.whereILike('name', `%${query.q}%`);
+          build
+            .whereILike('name', `%${query.q}%`)
+            .orWhereILike('code', `%${query.q}%`);
         }
       })
       .where('company_id', auth.company_id)
@@ -48,5 +52,40 @@ export class ServicesService {
     });
 
     return category;
+  }
+
+  async createFromImport(row: Row, auth: IAuth) {
+    const category = await ServiceCategoriesModel.findOrCreate(
+      getRow(row, 'D') || getRow(row, 'C'),
+      getRow(row, 'C'),
+      auth.company_id,
+    );
+    const payload = {
+      code: getRow(row, 'A'),
+      name: getRow(row, 'B'),
+      price: getRow(row, 'E'),
+      estimated_duration: getRow(row, 'G'),
+      estimated_type: 'hours',
+      category_id: category?.id,
+      updated_by: auth.id,
+      company_id: auth.company_id,
+    };
+
+    const es = getRow(row, 'G').toLowerCase();
+    if (es) {
+      if (es === 'menit') {
+        payload.estimated_type = 'minutes';
+      } else if (es === 'hari') {
+        payload.estimated_type = 'days';
+      }
+    }
+
+    const service = await ServicesModel.query().findOne('code', payload.code);
+
+    if (service) {
+      await service.$query().patch(payload as any);
+    } else {
+      await ServicesModel.query().insert(payload as any);
+    }
   }
 }

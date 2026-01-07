@@ -8,6 +8,7 @@ export class ProfileDto {
   city_id?: number;
   distric_id?: number;
   address?: string;
+  birth_date?: string;
 }
 
 export class VehicleDto {
@@ -83,6 +84,7 @@ export class CreateCustomerDto {
       city_id: Joi.number().allow('', null),
       district_id: Joi.number().allow('', null),
       address: Joi.string().allow('', null),
+      birth_date: Joi.string().allow('', null),
     }),
   )
   profile: ProfileDto;
@@ -105,6 +107,7 @@ export class CreateCustomerDto {
           vin_number: Joi.string().allow('', null),
           engine_number: Joi.string().allow('', null),
           tire_size: Joi.string().allow('', null),
+          color: Joi.string().allow('', null),
         }),
       )
       .min(1)

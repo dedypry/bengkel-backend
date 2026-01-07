@@ -106,13 +106,15 @@ export class CustomersService {
 
     const company = await CompaniesModel.query().findById(auth.company_id);
 
-    sendWelcomeMessage({
-      customerName: body.name,
-      vehicleName: `${body.vehicles[0].brand} - ${body.vehicles[0].model}`,
-      plateNumber: body.vehicles[0].plate_number,
-      workshopName: company?.name || '',
-      to: phone,
-    });
+    if (!body?.id) {
+      sendWelcomeMessage({
+        customerName: body.name,
+        vehicleName: `${body.vehicles[0].brand} - ${body.vehicles[0].model}`,
+        plateNumber: body.vehicles[0].plate_number,
+        workshopName: company?.name || '',
+        to: phone,
+      });
+    }
     return true;
   }
 
