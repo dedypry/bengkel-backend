@@ -47,6 +47,8 @@ export class WorkOrderService {
         'wo.id',
         'wo.created_at',
         'wo.updated_at',
+        'wo.start_at',
+        'wo.end_at',
       )
       .where('wo.company_id', auth.company_id)
       .orderBy('wo.created_at', 'desc')
