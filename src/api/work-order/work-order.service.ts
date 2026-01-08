@@ -14,7 +14,6 @@ import { ServicesModel } from 'models/services.model';
 import { ProductsModel } from 'models/products.model';
 import { calculateTotalEstimation } from 'utils/helpers/global';
 import { fn, raw } from 'objection';
-import { UsersModel } from 'models/users.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -233,10 +232,12 @@ export class WorkOrderService {
   }
 
   async updateProgres(id: number, body: UpdateStatusWoDto, auth: IAuth) {
-    const wo = await WorkOrdersModel.query().findOne({
-      id,
-      company_id: auth.company_id,
-    });
+    const wo = await WorkOrdersModel.query()
+      .withGraphFetched('mechanics')
+      .findOne({
+        id,
+        company_id: auth.company_id,
+      });
 
     if (!wo) throw new NotFoundException();
 
@@ -249,6 +250,26 @@ export class WorkOrderService {
         end_at: fn.now(),
       }),
     });
+
+    await Promise.all(
+      (wo.mechanics || []).map(async (mechanic) => {
+        if (body.progress === 'on_progress') {
+          await mechanic.$query().patch({ work_status: 'busy' });
+        } else if (body.progress === 'ready') {
+          const activeJob = await WorkOrdersModel.query()
+            .alias('wo')
+            .joinRelated('mechanics')
+            .where('mechanics.id', mechanic.id)
+            .whereNot('wo.id', id)
+            .whereIn('wo.progress', ['pending', 'on_progress'])
+            .first();
+
+          await mechanic.$query().patch({
+            work_status: activeJob ? 'busy' : 'ready',
+          });
+        }
+      }),
+    );
   }
 
   async updateMechanichs(id: number, body: UpdateMechanicWoDto, auth: IAuth) {
@@ -260,9 +281,6 @@ export class WorkOrderService {
     if (!wo) throw new NotFoundException();
 
     return await WorkOrdersModel.transaction(async (trx) => {
-      await UsersModel.query().whereIn('id', body.ids).update({
-        work_status: 'busy',
-      });
       await WorkOrdersModel.query(trx).upsertGraph(
         {
           id: id,
