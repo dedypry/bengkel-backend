@@ -71,7 +71,7 @@ export class EmployeesService {
       } as any);
 
       await UsersModel.relatedQuery('roles').for(data.id).unrelate();
-      await UsersModel.relatedQuery('roles').for(data.id).relate(data.role_id);
+      await UsersModel.relatedQuery('roles').for(data.id).relate(data.role_ids);
     } else {
       const [{ count }]: any = await UsersModel.query()
         .where('company_id', auth.company_id)
@@ -86,7 +86,7 @@ export class EmployeesService {
         {
           ...payloadUser,
           profile: payloadProfile as any,
-          roles: [{ id: data.role_id }],
+          roles: data.role_ids.map((e) => ({ id: e })),
         },
         {
           relate: ['roles'],

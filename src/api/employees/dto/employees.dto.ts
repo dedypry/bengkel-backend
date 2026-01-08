@@ -16,8 +16,8 @@ export class EmployeeDto {
   @JoiSchema(Joi.string().required())
   phone: string;
 
-  @JoiSchema(Joi.number().required())
-  role_id: number;
+  @JoiSchema(Joi.array().min(1))
+  role_ids: number[];
 
   @JoiSchema(Joi.string().required())
   department: string;
