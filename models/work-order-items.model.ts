@@ -1,12 +1,11 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { Modifier, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
-import { ProductsModel } from './products.model';
-import { ServicesModel } from './services.model';
+import { raw, type AnyQueryBuilder } from 'objection';
 
 @Table('work_order_items')
 export class WorkOrderItemsModel extends BaseModel {
   // === FIELD START ===
-  data?: ProductsModel | ServicesModel;
+  data?: any;
   qty?: number;
   price?: number;
   total_price?: number;
@@ -16,4 +15,13 @@ export class WorkOrderItemsModel extends BaseModel {
   updated_by?: number;
   type?: string;
   // === FIELD END ===
+
+  @Modifier()
+  srBuild(query: AnyQueryBuilder) {
+    query.select(
+      raw(`data->>'name'`).as('name'),
+      raw(`data->>'estimated_type'`).as('type'),
+      raw(`(data->>'estimated_duration')::numeric`).as('estimated'),
+    );
+  }
 }

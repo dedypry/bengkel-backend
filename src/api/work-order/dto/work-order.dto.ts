@@ -95,3 +95,20 @@ export class WorkOrderRequestDto {
 export class WoQuery extends IQuery {
   status?: string;
 }
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class UpdateStatusWoDto {
+  @JoiSchema(
+    Joi.string().valid('queue', 'on_progress', 'ready', 'finish').required(),
+  )
+  progress: string;
+}
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class UpdateMechanicWoDto {
+  @JoiSchema(Joi.array().min(1).required())
+  ids: number[];
+}

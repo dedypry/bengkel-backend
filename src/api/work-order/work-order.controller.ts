@@ -1,6 +1,20 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { WorkOrderService } from './work-order.service';
-import { WoQuery, WorkOrderRequestDto } from './dto/work-order.dto';
+import {
+  UpdateMechanicWoDto,
+  UpdateStatusWoDto,
+  WoQuery,
+  WorkOrderRequestDto,
+} from './dto/work-order.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -15,9 +29,33 @@ export class WorkOrderController {
   list(@Query(new PaginationPipe()) query: WoQuery, @Auth() auth: IAuth) {
     return this.workOrderService.list(query, auth);
   }
+  @Get(':id')
+  detail(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.workOrderService.detail(id, auth);
+  }
 
   @Post()
   create(@Body() body: WorkOrderRequestDto, @Auth() auth: IAuth) {
     return this.workOrderService.createWO(body, auth);
+  }
+
+  @Patch('mechanic/:id')
+  updateMechanic(
+    @Param('id') id: number,
+    @Body() body: UpdateMechanicWoDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.updateMechanichs(id, body, auth);
+  }
+
+  @Patch(':id')
+  async updateStatus(
+    @Param('id') id: number,
+    @Body() body: UpdateStatusWoDto,
+    @Auth() auth: IAuth,
+  ) {
+    await this.workOrderService.updateProgres(id, body, auth);
+
+    return 'Status Berhasil diubah';
   }
 }

@@ -1,6 +1,7 @@
 import {
   BelongsToOne,
   HasMany,
+  ManyToMany,
   Table,
 } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
@@ -31,6 +32,8 @@ export class WorkOrdersModel extends BaseModel {
   ppn_amount?: number;
   progress?: string;
   discount_amount?: number;
+  start_at?: string;
+  end_at?: string;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {
@@ -59,6 +62,13 @@ export class WorkOrdersModel extends BaseModel {
     from: 'mechanic_id',
   })
   mechanic?: UsersModel;
+
+  @ManyToMany(() => UsersModel, {
+    from: 'work_order_id',
+    to: 'mechanic_id',
+    table: 'mechanic_work',
+  })
+  mechanics?: UsersModel[];
 
   @BelongsToOne(() => UsersModel, {
     from: 'updated_by',

@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { WoQuery, WorkOrderRequestDto } from './dto/work-order.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  UpdateMechanicWoDto,
+  UpdateStatusWoDto,
+  WoQuery,
+  WorkOrderRequestDto,
+} from './dto/work-order.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { VehiclesModel } from 'models/vehicles.model';
@@ -8,7 +13,8 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { ServicesModel } from 'models/services.model';
 import { ProductsModel } from 'models/products.model';
 import { calculateTotalEstimation } from 'utils/helpers/global';
-import { raw } from 'objection';
+import { fn, raw } from 'objection';
+import { UsersModel } from 'models/users.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -16,7 +22,9 @@ export class WorkOrderService {
     const data = await WorkOrdersModel.query()
       .alias('wo')
       .joinRelated('[vehicle, customer]')
-      .withGraphFetched('[services(srBuild),mechanic.profile,vehicle,customer]')
+      .withGraphFetched(
+        '[services(srBuild),mechanics.profile,vehicle,customer]',
+      )
       .where((builder) => {
         if (query.q) {
           builder
@@ -26,7 +34,7 @@ export class WorkOrderService {
         }
       })
       .where((builder) => {
-        if (query.status) {
+        if (query.status && query.status != 'all') {
           builder.where('progress', query.status);
         }
       })
@@ -41,15 +49,7 @@ export class WorkOrderService {
         'wo.updated_at',
       )
       .where('wo.company_id', auth.company_id)
-      .modifiers({
-        srBuild: (query) => {
-          query.select(
-            raw(`data->>'name'`).as('name'),
-            raw(`data->>'estimated_type'`).as('type'),
-            raw(`(data->>'estimated_duration')::numeric`).as('estimated'),
-          );
-        },
-      })
+      .orderBy('wo.created_at', 'desc')
       .page(query.page, query.pageSize);
 
     const results = data.results.map((item) => {
@@ -81,6 +81,22 @@ export class WorkOrderService {
       },
     };
   }
+
+  async detail(id: number, auth: IAuth) {
+    const result = await WorkOrdersModel.query()
+      .withGraphFetched(
+        '[services,mechanics.profile,spareparts,vehicle,customer]',
+      )
+      .findOne({
+        id,
+        company_id: auth.company_id,
+      });
+
+    if (!result) throw new NotFoundException();
+
+    return result;
+  }
+
   async createWO(body: WorkOrderRequestDto, auth: IAuth) {
     await WorkOrdersModel.transaction(async (trx) => {
       const customerData = {
@@ -212,5 +228,51 @@ export class WorkOrderService {
     }
     const formattedNumber = nextNumber.toString().padStart(4, '0');
     return `TRX${formattedNumber}`;
+  }
+
+  async updateProgres(id: number, body: UpdateStatusWoDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await wo.$query().patch({
+      ...body,
+      ...(body.progress === 'on_progress' && {
+        start_at: fn.now(),
+      }),
+      ...(body.progress === 'ready' && {
+        end_at: fn.now(),
+      }),
+    });
+  }
+
+  async updateMechanichs(id: number, body: UpdateMechanicWoDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    return await WorkOrdersModel.transaction(async (trx) => {
+      await UsersModel.query().whereIn('id', body.ids).update({
+        work_status: 'busy',
+      });
+      await WorkOrdersModel.query(trx).upsertGraph(
+        {
+          id: id,
+          mechanics: body.ids.map((id) => ({ id })),
+        },
+        {
+          relate: true,
+          unrelate: true,
+          noUpdate: true,
+        },
+      );
+      return { message: 'Mekanik berhasil diperbarui' };
+    });
   }
 }
