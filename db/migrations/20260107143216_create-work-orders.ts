@@ -3,7 +3,7 @@ import type { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('work_orders', (table) => {
     table.increments('id').primary();
-    table.string('trx_no').unique();
+    table.string('trx_no');
     table.string('queue_no');
     table.integer('current_km').defaultTo(0);
     table.string('priority').defaultTo('normal');

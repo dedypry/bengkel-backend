@@ -35,4 +35,24 @@ export class CustomersModel extends BaseModel {
     to: 'user_id',
   })
   profile?: ProfilesModel;
+
+  static async upsert(
+    data: CustomersModel,
+    trx?: any,
+  ): Promise<CustomersModel> {
+    if (data.id) {
+      const profile = await ProfilesModel.query()
+        .select('id')
+        .findOne('user_id', data.id);
+
+      if (profile && data['profile']) {
+        data['profile']['id'] = profile.id;
+      }
+    }
+    return await this.query(trx).upsertGraph(data, {
+      relate: true,
+      insertMissing: true,
+      noDelete: true,
+    });
+  }
 }

@@ -17,6 +17,7 @@ import { VehiclesModule } from './api/vehicles/vehicles.module';
 import { CompaniesModule } from './api/companies/companies.module';
 import { MechanicsModule } from './api/mechanics/mechanics.module';
 import { BackupModule } from './crons/backup/backup.module';
+import { WorkOrderModule } from './api/work-order/work-order.module';
 import 'dotenv/config';
 
 @Module({
@@ -46,6 +47,7 @@ import 'dotenv/config';
     CompaniesModule,
     MechanicsModule,
     BackupModule,
+    WorkOrderModule,
   ],
   controllers: [AppController],
   providers: [],

@@ -26,4 +26,29 @@ export class VehiclesModel extends BaseModel {
     table: 'customer_vehicle',
   })
   customers?: CustomersModel[];
+
+  static async upsertAndRelate(
+    data: VehiclesModel,
+    customerId: number,
+    trx?: any,
+  ): Promise<VehiclesModel> {
+    let vehicle = null as VehiclesModel | null | undefined;
+
+    if (data.id) {
+      vehicle = await this.query(trx).updateAndFetchById(data.id, data);
+    } else {
+      vehicle = await this.query(trx).insertAndFetch(data);
+    }
+
+    const isRelated = await vehicle
+      .$relatedQuery('customers', trx)
+      .where('customers.id', customerId)
+      .first();
+
+    if (!isRelated) {
+      await vehicle.$relatedQuery('customers', trx).relate(customerId);
+    }
+
+    return vehicle;
+  }
 }
