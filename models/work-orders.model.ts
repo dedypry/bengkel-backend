@@ -34,6 +34,8 @@ export class WorkOrdersModel extends BaseModel {
   discount_amount?: number;
   start_at?: string;
   end_at?: string;
+  promo_data?: any;
+  promo_amount?: number;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

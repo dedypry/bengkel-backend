@@ -37,18 +37,6 @@ export class WorkOrderService {
           builder.where('progress', query.status);
         }
       })
-      .select(
-        'trx_no',
-        'queue_no',
-        'priority',
-        'wo.status',
-        'progress',
-        'wo.id',
-        'wo.created_at',
-        'wo.updated_at',
-        'wo.start_at',
-        'wo.end_at',
-      )
       .where('wo.company_id', auth.company_id)
       .orderBy('wo.created_at', 'desc')
       .page(query.page, query.pageSize);
@@ -208,6 +196,7 @@ export class WorkOrderService {
         sparepart_total: sparepartTotal,
         service_total: serviceTotal,
         sub_total: subTotal,
+        grand_total: subTotal,
       });
     });
     return 'Order Berhasil disimpan';

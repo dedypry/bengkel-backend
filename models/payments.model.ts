@@ -5,7 +5,6 @@ import { BaseModel } from './base.model';
 export class PaymentsModel extends BaseModel {
   // === FIELD START ===
   payment_no: string;
-  invoice_id: number;
   amount: number;
   method?: string;
   payment_date?: string;
@@ -13,5 +12,6 @@ export class PaymentsModel extends BaseModel {
   bank_name?: string;
   proof_image?: string;
   updated_by?: number;
+  work_order_id?: number;
   // === FIELD END ===
 }

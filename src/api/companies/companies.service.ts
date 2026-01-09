@@ -1,8 +1,13 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCompanyDto } from './dto/company.dto';
 import { UsersModel } from 'models/users.model';
 import { CompaniesModel } from 'models/companies.model';
 import slugify from 'slugify';
+import { IAuth } from 'utils/interfaces/IAuth';
 @Injectable()
 export class CompaniesService {
   async create(body: CreateCompanyDto, auth: UsersModel) {
@@ -29,5 +34,13 @@ export class CompaniesService {
 
       return company;
     });
+  }
+
+  async detail(id: number, auth: IAuth) {
+    const find = await CompaniesModel.query().findOne({ id });
+
+    if (!find && auth.company_id !== id) throw new NotFoundException();
+
+    return find;
   }
 }

@@ -18,6 +18,8 @@ export class CompaniesModel extends BaseModel {
   fax?: string;
   npwp?: string;
   updated_by?: number;
+  is_ppn?: boolean;
+  ppn?: number;
   // === FIELD END ===
 
   @HasOne(() => AddressModel, {

@@ -18,6 +18,7 @@ import { CompaniesModule } from './api/companies/companies.module';
 import { MechanicsModule } from './api/mechanics/mechanics.module';
 import { BackupModule } from './crons/backup/backup.module';
 import { WorkOrderModule } from './api/work-order/work-order.module';
+import { SettingsModule } from './api/settings/settings.module';
 import 'dotenv/config';
 
 @Module({
@@ -48,6 +49,7 @@ import 'dotenv/config';
     MechanicsModule,
     BackupModule,
     WorkOrderModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [],
