@@ -22,7 +22,7 @@ export class WorkOrderService {
       .alias('wo')
       .joinRelated('[vehicle, customer]')
       .withGraphFetched(
-        '[services(srBuild),mechanics.profile,vehicle,customer]',
+        '[services(srBuild),mechanics.profile,vehicle,customer.profile]',
       )
       .where((builder) => {
         if (query.q) {

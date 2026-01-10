@@ -37,7 +37,9 @@ export class CompaniesService {
   }
 
   async detail(id: number, auth: IAuth) {
-    const find = await CompaniesModel.query().findOne({ id });
+    const find = await CompaniesModel.query()
+      .withGraphFetched('[address]')
+      .findOne({ id });
 
     if (!find && auth.company_id !== id) throw new NotFoundException();
 

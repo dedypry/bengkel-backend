@@ -20,6 +20,8 @@ export class CompaniesModel extends BaseModel {
   updated_by?: number;
   is_ppn?: boolean;
   ppn?: number;
+  is_discount_birth_day?: boolean;
+  total_discount_birth_day?: number;
   // === FIELD END ===
 
   @HasOne(() => AddressModel, {

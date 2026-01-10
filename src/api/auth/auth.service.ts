@@ -21,7 +21,7 @@ export class AuthService {
 
     const isValid = comparePassword(body.password, user.password!);
 
-    if (!isValid) throw new ForbiddenException();
+    if (!isValid) throw new ForbiddenException('Email/Password salah');
 
     const payload = {
       id: user.id,
