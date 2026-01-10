@@ -1,6 +1,14 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CompaniesService } from './companies.service';
-import { CreateCompanyDto } from './dto/company.dto';
+import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import { UsersModel } from 'models/users.model';
 import { AuthGuard } from 'src/guards/auth.guard';
@@ -20,5 +28,10 @@ export class CompaniesController {
     await this.companiesService.create(body, auth);
 
     return 'data perusahaan berhasil tersimpan';
+  }
+
+  @Patch()
+  update(@Body() body: UpdateCompanyDto, @Auth() auth: IAuth) {
+    return this.companiesService.update(body, auth);
   }
 }

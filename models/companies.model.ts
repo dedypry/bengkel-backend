@@ -22,11 +22,13 @@ export class CompaniesModel extends BaseModel {
   ppn?: number;
   is_discount_birth_day?: boolean;
   total_discount_birth_day?: number;
+  max_discount_birth_day?: number;
+  type_discount_birth_day?: string;
   // === FIELD END ===
 
   @HasOne(() => AddressModel, {
     to: 'parent_id',
-    filter: (query) => query.where('model', 'company'),
+    filter: (query) => query.where('model', 'companies'),
   })
   address?: AddressModel;
 
