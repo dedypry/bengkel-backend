@@ -16,5 +16,6 @@ export class PromosModel extends BaseModel {
   quota?: number;
   used_count?: number;
   is_active?: boolean;
+  description?: string;
   // === FIELD END ===
 }
