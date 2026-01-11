@@ -112,3 +112,26 @@ export class UpdateMechanicWoDto {
   @JoiSchema(Joi.array().min(1).required())
   ids: number[];
 }
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class MechanicRatting {
+  @JoiSchema(Joi.number().required())
+  work_order_id?: number;
+
+  @JoiSchema(
+    Joi.array().items(
+      Joi.object({
+        id: Joi.number().required(),
+        rating: Joi.number().required(),
+        notes: Joi.string().optional(),
+      }),
+    ),
+  )
+  mechanics: {
+    id: number;
+    notes: string;
+    rating: number;
+  }[];
+}

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { WorkOrderService } from './work-order.service';
 import {
+  MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
   WoQuery,
@@ -57,5 +58,10 @@ export class WorkOrderController {
     await this.workOrderService.updateProgres(id, body, auth);
 
     return 'Status Berhasil diubah';
+  }
+
+  @Post('rating')
+  mechanicRatting(@Body() body: MechanicRatting, @Auth() auth: IAuth) {
+    return this.workOrderService.mechanicRatting(body, auth);
   }
 }

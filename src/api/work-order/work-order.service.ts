@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Body, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
   WoQuery,
   WorkOrderRequestDto,
 } from './dto/work-order.dto';
-import { IAuth } from 'utils/interfaces/IAuth';
+import type { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { VehiclesModel } from 'models/vehicles.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
@@ -16,6 +17,7 @@ import { fn, raw } from 'objection';
 import { CompaniesModel } from 'models/companies.model';
 import dayjs from 'dayjs';
 import { PromosModel } from 'models/promos.model';
+import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -40,6 +42,7 @@ export class WorkOrderService {
         }
       })
       .where('wo.company_id', auth.company_id)
+      .orderByRaw(`CASE WHEN wo.status = 'closed' THEN 1 ELSE 0 END ASC`)
       .orderBy('wo.created_at', 'desc')
       .page(query.page, query.pageSize);
 
@@ -349,5 +352,27 @@ export class WorkOrderService {
       );
       return { message: 'Mekanik berhasil diperbarui' };
     });
+  }
+
+  async mechanicRatting(@Body() body: MechanicRatting, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id: body.work_order_id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await MechanicRatingsModel.query().insertGraph(
+      body.mechanics?.map((item) => ({
+        work_order_id: body.work_order_id,
+        mechanic_id: item.id,
+        supervisor_id: auth.id,
+        rating: item.rating,
+        notes: item.notes,
+        company_id: auth.company_id,
+      })),
+    );
+
+    return 'Berhasil kasih ratting';
   }
 }
