@@ -67,6 +67,7 @@ export class CompaniesService {
         fax: body.phone_number,
         npwp: body.npwp,
         updated_by: auth.id,
+        is_ppn: body.is_ppn,
         ppn: body.ppn,
         is_discount_birth_day: body.is_discount_birth_day,
         total_discount_birth_day: body.total_discount_birth_day,

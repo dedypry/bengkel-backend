@@ -17,5 +17,7 @@ export class PromosModel extends BaseModel {
   used_count?: number;
   is_active?: boolean;
   description?: string;
+  updated_by?: number;
+  price?: number;
   // === FIELD END ===
 }

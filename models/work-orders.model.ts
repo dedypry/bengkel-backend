@@ -1,6 +1,7 @@
 import {
   BelongsToOne,
   HasMany,
+  HasOne,
   ManyToMany,
   Table,
 } from 'utils/decorators/objections.decorator';
@@ -9,6 +10,7 @@ import { UsersModel } from './users.model';
 import { CustomersModel } from './customers.model';
 import { VehiclesModel } from './vehicles.model';
 import { WorkOrderItemsModel } from './work-order-items.model';
+import { PaymentsModel } from './payments.model';
 
 @Table('work_orders')
 export class WorkOrdersModel extends BaseModel {
@@ -37,6 +39,11 @@ export class WorkOrdersModel extends BaseModel {
   promo_data?: any;
   promo_amount?: number;
   // === FIELD END ===
+
+  @HasMany(() => WorkOrderItemsModel, {
+    to: 'work_order_id',
+  })
+  items?: WorkOrderItemsModel[];
 
   @HasMany(() => WorkOrderItemsModel, {
     filter: (query) => query.where('type', 'service'),
@@ -76,4 +83,9 @@ export class WorkOrdersModel extends BaseModel {
     from: 'updated_by',
   })
   updated?: UsersModel;
+
+  @HasOne(() => PaymentsModel, {
+    to: 'work_order_id',
+  })
+  payment?: PaymentsModel;
 }

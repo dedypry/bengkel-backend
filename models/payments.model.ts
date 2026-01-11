@@ -13,5 +13,6 @@ export class PaymentsModel extends BaseModel {
   proof_image?: string;
   updated_by?: number;
   work_order_id?: number;
+  received_amount?: number;
   // === FIELD END ===
 }

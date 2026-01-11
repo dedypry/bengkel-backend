@@ -47,6 +47,10 @@ export class CustomersModel extends BaseModel {
 
       if (profile && data['profile']) {
         data['profile']['id'] = profile.id;
+
+        if (profile.birth_date) {
+          delete data['profile']['birth_date'];
+        }
       }
     }
     return await this.query(trx).upsertGraph(data, {

@@ -6,6 +6,9 @@ import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
   abortEarly: false, // Agar menampilkan semua error sekaligus
 })
 export class CreatePromoDto {
+  @JoiSchema(Joi.number())
+  id: number;
+
   @JoiSchema(Joi.string().min(3).required())
   name: string;
 
@@ -39,4 +42,17 @@ export class CreatePromoDto {
 
   @JoiSchema(Joi.string().optional().allow('', null))
   description: string;
+}
+
+export class UpdatePromoDto {
+  @JoiSchema(Joi.boolean())
+  is_active: boolean;
+}
+
+export class QueryPromo {
+  q?: string;
+  status?: 'all' | 'active' | 'end';
+}
+export class CheckPromo {
+  code?: string;
 }

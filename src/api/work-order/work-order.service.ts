@@ -9,11 +9,13 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { VehiclesModel } from 'models/vehicles.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
-import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { ServicesModel } from 'models/services.model';
 import { ProductsModel } from 'models/products.model';
 import { calculateTotalEstimation } from 'utils/helpers/global';
 import { fn, raw } from 'objection';
+import { CompaniesModel } from 'models/companies.model';
+import dayjs from 'dayjs';
+import { PromosModel } from 'models/promos.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -74,7 +76,7 @@ export class WorkOrderService {
   async detail(id: number, auth: IAuth) {
     const result = await WorkOrdersModel.query()
       .withGraphFetched(
-        '[services,mechanics.profile,spareparts,vehicle,customer]',
+        '[services,mechanics.profile,spareparts,vehicle,customer,payment]',
       )
       .findOne({
         id,
@@ -87,7 +89,7 @@ export class WorkOrderService {
   }
 
   async createWO(body: WorkOrderRequestDto, auth: IAuth) {
-    await WorkOrdersModel.transaction(async (trx) => {
+    const result = await WorkOrdersModel.transaction(async (trx) => {
       const customerData = {
         ...(body.customer?.id && {
           id: body.customer.id,
@@ -101,6 +103,7 @@ export class WorkOrderService {
           full_name: body.customer.name,
           phone_number: body.customer.phone,
           model: 'customers',
+          birth_date: body.customer.birth_date,
         },
       } as any;
 
@@ -116,28 +119,7 @@ export class WorkOrderService {
         trx,
       );
 
-      const woPayload = {
-        current_km: body.current_km,
-        priority: body.priority,
-        company_id: auth.company_id,
-        customer_id: customer.id,
-        vehicle_id: vehicle.id,
-        updated_by: auth.id,
-        status: 'queue',
-        ...(!body.id && {
-          trx_no: await this.generateTrxNo(trx, auth),
-        }),
-      };
-
-      let wo = null as WorkOrdersModel | null;
-      if (body.id) {
-        wo = await WorkOrdersModel.query(trx).updateAndFetchById(
-          body.id,
-          woPayload,
-        );
-      } else {
-        wo = await WorkOrdersModel.query(trx).insert(woPayload);
-      }
+      const company = await CompaniesModel.query().findById(auth.company_id);
 
       const [service, sparepart] = await Promise.all([
         ServicesModel.query(trx)
@@ -167,7 +149,6 @@ export class WorkOrderService {
             qty: find?.qty,
             price: item.price,
             total_price: totalPrice,
-            work_order_id: wo.id,
           };
         }),
         ...sparepart.map((item: any) => {
@@ -180,26 +161,111 @@ export class WorkOrderService {
             qty: find?.qty,
             price: item.sell_price,
             total_price: totalPrice,
-            work_order_id: wo.id,
           };
         }),
       ];
 
-      await WorkOrderItemsModel.query(trx)
-        .where('work_order_id', wo.id)
-        .delete();
-
-      await WorkOrderItemsModel.query(trx).insertGraph(payloadItem);
-
       const subTotal = sparepartTotal + serviceTotal;
-      await WorkOrdersModel.query(trx).findById(wo.id).patch({
+      let promoBirtDate = 0;
+      const promoData: PromosModel[] = [];
+
+      const birthDate = customer?.profile?.birth_date;
+
+      if (birthDate && company?.is_discount_birth_day) {
+        const today = dayjs();
+        const birthday = dayjs(birthDate);
+
+        const isBirthdayToday =
+          today.month() === birthday.month() &&
+          today.date() === birthday.date();
+
+        if (isBirthdayToday) {
+          const type = company.type_discount_birth_day;
+          const discountValue = Number(company.total_discount_birth_day || 0);
+          const maxDiscount = Number(company.max_discount_birth_day || 0);
+
+          if (type === 'percentage') {
+            const totalP = (subTotal * discountValue) / 100;
+            if (maxDiscount > 0) {
+              promoBirtDate = Math.min(totalP, maxDiscount);
+            } else {
+              promoBirtDate = totalP;
+            }
+          } else {
+            promoBirtDate = discountValue;
+          }
+
+          promoData.push({
+            code: 'BIRTHDAY',
+            name: 'PROMO ULANG TAHUN',
+            is_active: true,
+            start_date: new Date().toISOString(),
+            end_date: new Date().toISOString(),
+            type: type,
+            value: discountValue,
+            max_discount: maxDiscount,
+            company_id: auth.company_id,
+            updated_by: auth.id,
+            description: '',
+            used_count: 0,
+            quota: 0,
+            min_purchase: 0,
+            price: promoBirtDate,
+          } as any);
+        }
+      }
+
+      const dpp = Math.max(0, subTotal - promoBirtDate);
+
+      const ppnAmount = company?.is_ppn
+        ? (dpp * Number(company.ppn || 0)) / 100
+        : 0;
+
+      const grandTotal = dpp + ppnAmount;
+
+      const woPayload = {
+        current_km: body.current_km,
+        priority: body.priority,
+        company_id: auth.company_id,
+        customer_id: customer.id,
+        vehicle_id: vehicle.id,
+        updated_by: auth.id,
+        status: 'queue',
+        progress: 'queue',
+        ...(!body.id && {
+          trx_no: await this.generateTrxNo(trx, auth),
+        }),
         sparepart_total: sparepartTotal,
         service_total: serviceTotal,
         sub_total: subTotal,
-        grand_total: subTotal,
-      });
+        grand_total: grandTotal,
+        ...(company?.is_ppn && {
+          ppn_amount: ppnAmount,
+          ppn_percent: company?.ppn,
+        }),
+        promo_amount: promoBirtDate,
+        promo_data: JSON.stringify(promoData),
+        items: payloadItem,
+      };
+
+      const wo = await WorkOrdersModel.query(trx).upsertGraphAndFetch(
+        {
+          ...(body.id && {
+            id: body.id,
+          }),
+          ...woPayload,
+        },
+        {
+          relate: true,
+          unrelate: true,
+        },
+      );
+      return wo;
     });
-    return 'Order Berhasil disimpan';
+    return {
+      message: 'Order Berhasil disimpan',
+      data: result,
+    };
   }
 
   async generateTrxNo(trx: any, auth: IAuth) {

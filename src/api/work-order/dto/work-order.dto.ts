@@ -79,16 +79,16 @@ export class WorkOrderRequestDto {
 
   @JoiSchema(
     Joi.string()
-      .valid('low', 'normal', 'high', 'urgent')
+      .valid('low', 'normal', 'hight', 'urgent')
       .default('normal')
       .required(),
   )
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: 'low' | 'normal' | 'hight' | 'urgent';
 
   @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
   services: IWorkOrderItem[];
 
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
+  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
   sparepart: IWorkOrderItem[];
 }
 
