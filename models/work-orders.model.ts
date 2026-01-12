@@ -11,6 +11,7 @@ import { CustomersModel } from './customers.model';
 import { VehiclesModel } from './vehicles.model';
 import { WorkOrderItemsModel } from './work-order-items.model';
 import { PaymentsModel } from './payments.model';
+import { CompaniesModel } from './companies.model';
 
 @Table('work_orders')
 export class WorkOrdersModel extends BaseModel {
@@ -88,4 +89,9 @@ export class WorkOrdersModel extends BaseModel {
     to: 'work_order_id',
   })
   payment?: PaymentsModel;
+
+  @BelongsToOne(() => CompaniesModel, {
+    from: 'company_id',
+  })
+  company?: CompaniesModel;
 }

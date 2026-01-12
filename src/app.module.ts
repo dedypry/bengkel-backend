@@ -21,6 +21,7 @@ import { WorkOrderModule } from './api/work-order/work-order.module';
 import { SettingsModule } from './api/settings/settings.module';
 import { PromosModule } from './api/promos/promos.module';
 import { PaymentsModule } from './api/payments/payments.module';
+import { InvoicesModule } from './api/invoices/invoices.module';
 import 'dotenv/config';
 
 @Module({
@@ -54,6 +55,7 @@ import 'dotenv/config';
     SettingsModule,
     PromosModule,
     PaymentsModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [],
