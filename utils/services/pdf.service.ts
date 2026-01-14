@@ -5,9 +5,9 @@ import * as puppeteer from 'puppeteer';
 
 interface IPdf {
   htmlContent: string;
-  header?: any;
   format?: string;
   landscape?: boolean;
+  width?: string;
 }
 
 interface IPdfDownload extends IPdf {
@@ -20,7 +20,7 @@ export class PdfService {
     htmlContent,
     format = 'A4',
     landscape,
-    header,
+    width,
   }: IPdf): Promise<Buffer> {
     const browser = await puppeteer.launch({
       headless: true,
@@ -33,10 +33,15 @@ export class PdfService {
     });
 
     const pdfBuffer = await page.pdf({
-      format: format as any,
+      ...(width
+        ? {
+            width,
+          }
+        : {
+            format: format as any,
+          }),
+
       printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: header,
       landscape,
     });
 
@@ -50,10 +55,14 @@ export class PdfService {
     res,
     name,
     landscape = false,
+    width,
+    format,
   }: IPdfDownload) {
     const pdf = await this.generatePdf({
       htmlContent,
       landscape,
+      width,
+      format,
     });
 
     if (!res) {

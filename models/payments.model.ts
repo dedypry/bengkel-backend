@@ -1,5 +1,9 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { OrdersModel } from './orders.model';
+import { WorkOrdersModel } from './work-orders.model';
+import { UsersModel } from './users.model';
+import { CompaniesModel } from './companies.model';
 
 @Table('payments')
 export class PaymentsModel extends BaseModel {
@@ -14,5 +18,27 @@ export class PaymentsModel extends BaseModel {
   updated_by?: number;
   work_order_id?: number;
   received_amount?: number;
+  order_id?: number;
+  company_id?: number;
   // === FIELD END ===
+
+  @BelongsToOne(() => UsersModel, {
+    from: 'updated_by',
+  })
+  cashier?: UsersModel;
+
+  @BelongsToOne(() => OrdersModel, {
+    from: 'order_id',
+  })
+  order?: OrdersModel;
+
+  @BelongsToOne(() => WorkOrdersModel, {
+    from: 'order_id',
+  })
+  work_order?: OrdersModel;
+
+  @BelongsToOne(() => CompaniesModel, {
+    from: 'company_id',
+  })
+  company?: CompaniesModel;
 }

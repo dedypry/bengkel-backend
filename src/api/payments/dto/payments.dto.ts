@@ -5,7 +5,7 @@ import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
   allowUnknown: false,
 })
 export class CreatePayment {
-  @JoiSchema(Joi.number().required())
+  @JoiSchema(Joi.number().optional())
   woId: number;
 
   @JoiSchema(Joi.number().optional().allow('', null))
@@ -25,4 +25,13 @@ export class CreatePayment {
 
   @JoiSchema(Joi.string().optional().allow('', null))
   proofImage?: string;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  type?: string;
+
+  @JoiSchema(Joi.array().optional().allow('', null))
+  products?: {
+    id: number;
+    qty: number;
+  }[];
 }

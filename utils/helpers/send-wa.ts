@@ -4,7 +4,7 @@ import FormData from 'form-data';
 export async function sendWhatsAppMessage(
   to: string,
   message: string,
-  file?: string,
+  file?: any,
 ) {
   const data = new FormData();
 

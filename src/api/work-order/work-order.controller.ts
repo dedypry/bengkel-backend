@@ -15,6 +15,7 @@ import {
   UpdateStatusWoDto,
   WoQuery,
   WorkOrderRequestDto,
+  WorkOrderUpdateServiceDto,
 } from './dto/work-order.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
@@ -49,6 +50,15 @@ export class WorkOrderController {
     return this.workOrderService.updateMechanichs(id, body, auth);
   }
 
+  @Patch('service/:id')
+  updateService(
+    @Param('id') id: number,
+    @Body() body: WorkOrderUpdateServiceDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.updateServiceWo(id, body, auth);
+  }
+
   @Patch(':id')
   async updateStatus(
     @Param('id') id: number,
@@ -58,6 +68,12 @@ export class WorkOrderController {
     await this.workOrderService.updateProgres(id, body, auth);
 
     return 'Status Berhasil diubah';
+  }
+  @Patch('cancel/:id')
+  async cancelWo(@Param('id') id: number, @Auth() auth: IAuth) {
+    await this.workOrderService.cancelWo(id, auth);
+
+    return 'Work Order Berhasil dibatalkan';
   }
 
   @Post('rating')

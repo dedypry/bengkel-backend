@@ -18,7 +18,7 @@ export class UploadService {
 
   private readonly bucketName = process.env.S3_BUCKET_NAME;
 
-  async uploadFile(file: Express.Multer.File) {
+  async uploadFile(file: Express.Multer.File): Promise<ImagesModel> {
     const isImage = file.mimetype.startsWith('image/');
     let uploadBuffer: Buffer = file.buffer;
     let fileName: string;

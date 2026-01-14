@@ -1,10 +1,16 @@
-import { Body, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Body,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
   WoQuery,
   WorkOrderRequestDto,
+  WorkOrderUpdateServiceDto,
 } from './dto/work-order.dto';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
@@ -18,6 +24,7 @@ import { CompaniesModel } from 'models/companies.model';
 import dayjs from 'dayjs';
 import { PromosModel } from 'models/promos.model';
 import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
+import { WorkOrderItemsModel } from 'models/work-order-items.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -124,49 +131,8 @@ export class WorkOrderService {
 
       const company = await CompaniesModel.query().findById(auth.company_id);
 
-      const [service, sparepart] = await Promise.all([
-        ServicesModel.query(trx)
-          .whereIn(
-            'id',
-            body.services.map((e) => e.id),
-          )
-          .catch(() => []),
-        ProductsModel.query(trx)
-          .whereIn(
-            'id',
-            body.sparepart.map((e) => e.id),
-          )
-          .catch(() => []),
-      ]);
-
-      let serviceTotal = 0;
-      let sparepartTotal = 0;
-      const payloadItem = [
-        ...service.map((item: any) => {
-          const find = body.services.find((e) => e.id === item.id);
-          const totalPrice = (find?.qty || 0) * (item?.price || 0);
-          serviceTotal += totalPrice;
-          return {
-            data: item,
-            type: 'service',
-            qty: find?.qty,
-            price: item.price,
-            total_price: totalPrice,
-          };
-        }),
-        ...sparepart.map((item: any) => {
-          const find = body.sparepart.find((e) => e.id === item.id);
-          const totalPrice = (find?.qty || 0) * (item?.sell_price || 0);
-          sparepartTotal += totalPrice;
-          return {
-            data: item,
-            type: 'sparepart',
-            qty: find?.qty,
-            price: item.sell_price,
-            total_price: totalPrice,
-          };
-        }),
-      ];
+      const { serviceTotal, sparepartTotal, payloadItem } =
+        await this.getServiceList(body as any, trx);
 
       const subTotal = sparepartTotal + serviceTotal;
       let promoBirtDate = 0;
@@ -259,7 +225,6 @@ export class WorkOrderService {
           ...woPayload,
         },
         {
-          relate: true,
           unrelate: true,
         },
       );
@@ -374,5 +339,145 @@ export class WorkOrderService {
     );
 
     return 'Berhasil kasih ratting';
+  }
+
+  async cancelWo(id: number, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await wo.$query().patch({
+      status: 'cancel',
+      progress: 'cancel',
+    });
+  }
+
+  async updateServiceWo(
+    id: number,
+    body: WorkOrderUpdateServiceDto,
+    auth: IAuth,
+  ) {
+    const wo = await WorkOrdersModel.query()
+      .withGraphFetched('[spareparts]')
+      .findOne({
+        id: id,
+        company_id: auth.company_id,
+      });
+
+    if (!wo) throw new NotFoundException();
+
+    const result = await WorkOrdersModel.transaction(async (trx) => {
+      if (wo?.spareparts && wo.spareparts.length > 0) {
+        await Promise.all(
+          wo?.spareparts.map((e) =>
+            ProductsModel.query(trx)
+              .findById(e.data.id)
+              .increment('stock', e.qty),
+          ),
+        );
+      }
+
+      await WorkOrderItemsModel.query(trx)
+        .where('work_order_id', wo.id)
+        .delete();
+
+      const { grandTotal, sparepartTotal, serviceTotal, payloadItem } =
+        await this.getServiceList(body as any, trx);
+
+      const subTotal = grandTotal - Number(wo.promo_amount || 0);
+
+      const total = subTotal - Number(wo.ppn_amount || 0);
+      const woData = await WorkOrdersModel.query(trx).upsertGraph(
+        {
+          id: wo.id,
+          sparepart_total: sparepartTotal,
+          service_total: serviceTotal,
+          sub_total: subTotal,
+          grand_total: total,
+          items: payloadItem,
+          updated_by: auth.id,
+        } as any,
+        {
+          unrelate: true,
+        },
+      );
+
+      return woData;
+    });
+
+    return {
+      message: 'WO Berhasil di update',
+      data: result,
+    };
+  }
+  async getServiceList(body: WorkOrderUpdateServiceDto, trx?: any) {
+    const [service, sparepart] = await Promise.all([
+      ServicesModel.query(trx).whereIn(
+        'id',
+        body.services.map((e) => e.id),
+      ),
+      ProductsModel.query(trx).whereIn(
+        'id',
+        body.sparepart.map((e) => e.id),
+      ),
+    ]);
+
+    let serviceTotal = 0;
+    let sparepartTotal = 0;
+
+    const sparepartsData = sparepart.map((item: any) => {
+      const find = body.sparepart.find((e) => e.id === item.id);
+      const totalPrice = (find?.qty || 0) * (item?.sell_price || 0);
+      sparepartTotal += totalPrice;
+      const qty = Number(find?.qty || 0);
+
+      if (Number(item.stock) < qty) {
+        throw new ForbiddenException(
+          `Stok untuk produk ${item.name} tidak mencukupi.`,
+        );
+      }
+      return {
+        data: item,
+        type: 'sparepart',
+        qty: find?.qty,
+        price: item.sell_price,
+        total_price: totalPrice,
+      };
+    });
+
+    const payloadItem = [
+      ...service.map((item: any) => {
+        const find = body.services.find((e) => e.id === item.id);
+        const totalPrice = (find?.qty || 0) * (item?.price || 0);
+        serviceTotal += totalPrice;
+        return {
+          data: item,
+          type: 'service',
+          qty: find?.qty,
+          price: item.price,
+          total_price: totalPrice,
+        };
+      }),
+      ...sparepartsData,
+    ];
+
+    if (sparepartsData.length > 0) {
+      await Promise.all(
+        sparepartsData.map((s: any) =>
+          ProductsModel.query(trx)
+            .findById(s.data.id)
+            .decrement('stock', s.qty),
+        ),
+      );
+    }
+    return {
+      serviceTotal,
+      sparepartTotal,
+      payloadItem,
+      grandTotal: serviceTotal + sparepartTotal,
+    };
   }
 }

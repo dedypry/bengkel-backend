@@ -4,7 +4,7 @@ import { IQuery } from 'utils/interfaces/query';
 const WorkOrderItemSchema = Joi.object({
   id: Joi.number().required(),
   qty: Joi.number().min(1).required(),
-  price: Joi.number().min(0).required(),
+  price: Joi.number().optional(),
 });
 export interface ICustomer {
   id: number;
@@ -85,6 +85,17 @@ export class WorkOrderRequestDto {
   )
   priority: 'low' | 'normal' | 'hight' | 'urgent';
 
+  @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
+  services: IWorkOrderItem[];
+
+  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  sparepart: IWorkOrderItem[];
+}
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class WorkOrderUpdateServiceDto {
   @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
   services: IWorkOrderItem[];
 

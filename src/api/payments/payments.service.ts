@@ -9,6 +9,8 @@ import { PromosModel } from 'models/promos.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
 import { PaymentsModel } from 'models/payments.model';
 import { fn } from 'objection';
+import { ProductsModel } from 'models/products.model';
+import { OrdersModel } from 'models/orders.model';
 
 @Injectable()
 export class PaymentsService {
@@ -120,9 +122,98 @@ export class PaymentsService {
         updated_by: auth.id,
         received_amount: body.receivedAmount,
         proof_image: body.proofImage,
+        company_id: auth.company_id,
       } as any);
       return payment;
     });
     return 'Pembayaran Berhasil';
+  }
+
+  async createPaymentProduct(body: CreatePayment, auth: IAuth) {
+    const result = await OrdersModel.transaction(async (trx) => {
+      const products = await ProductsModel.query()
+        .whereIn('id', body.products?.map((item) => item.id) || [])
+        .where('company_id', auth.company_id);
+
+      let grand_total = 0;
+      const items = products.map((e) => {
+        const find = body.products?.find((fn) => fn.id === e.id);
+        const qty = Number(find?.qty || 0);
+
+        const total_price = qty * Number(e.sell_price);
+        grand_total += total_price;
+
+        return {
+          data: e,
+          qty,
+          product_id: e.id,
+          price: e.sell_price,
+          total_price,
+        };
+      });
+
+      const trxNo = await this.generateTrxNo(trx, auth);
+
+      const order = await OrdersModel.query(trx).insertGraph({
+        trx_no: trxNo,
+        grand_total,
+        company_id: auth.company_id,
+        updated_id: auth.id,
+        items,
+      });
+
+      const payment = await PaymentsModel.query(trx).insert({
+        order_id: order.id,
+        payment_no: `PAY-${Date.now()}`,
+        amount: grand_total,
+        method: body.paymentMethod,
+        payment_date: fn.now(),
+        reference_no: trxNo,
+        updated_by: auth.id,
+        received_amount: body.receivedAmount,
+        proof_image: body.proofImage,
+        company_id: auth.company_id,
+      } as any);
+
+      return payment;
+    });
+
+    return {
+      data: result,
+      message: 'berhasil disimpan',
+    };
+  }
+
+  async generateTrxNo(trx: any, auth: IAuth) {
+    const lastOrder = await OrdersModel.query(trx)
+      .select('trx_no')
+      .where('trx_no', 'like', 'TRX%')
+      .where('company_id', auth.company_id)
+      .orderBy('id', 'desc')
+      .first();
+
+    let nextNumber = 1;
+
+    if (lastOrder && lastOrder.trx_no) {
+      const lastNumber = parseInt(lastOrder.trx_no.replace('TRX', ''), 10);
+      nextNumber = lastNumber + 1;
+    }
+    const formattedNumber = nextNumber.toString().padStart(4, '0');
+    return `TRX${formattedNumber}`;
+  }
+
+  async paymentDetail(id: number, auth: IAuth) {
+    const result = await PaymentsModel.query()
+      .withGraphFetched(
+        '[order.items,work_order.[services,spareparts],cashier,company]',
+      )
+      .findOne({
+        id: id,
+        company_id: auth.company_id,
+      });
+
+    if (!result) throw new NotFoundException();
+
+    return result;
   }
 }
