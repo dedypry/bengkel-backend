@@ -21,5 +21,8 @@ export class CreateServiceDto {
   @JoiSchema(Joi.number().required())
   category_id: string;
 
+  @JoiSchema(Joi.number().optional().allow(null, ''))
+  supplier_id: string;
+
   description: string;
 }

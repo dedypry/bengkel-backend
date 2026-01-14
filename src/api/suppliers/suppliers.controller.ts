@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Controller,
+  Get,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -12,6 +14,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { Auth } from 'utils/decorators/auth.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { IQuery } from 'utils/interfaces/query';
+import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 
 @UseGuards(AuthGuard)
 @Controller('suppliers')
@@ -20,6 +24,11 @@ export class SuppliersController {
     private readonly suppliersService: SuppliersService,
     private readonly excelJs: ExcelJsService,
   ) {}
+
+  @Get()
+  list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
+    return this.suppliersService.list(query, auth);
+  }
 
   @Post('/create/auto')
   async createAuto(@Auth() auth: IAuth) {

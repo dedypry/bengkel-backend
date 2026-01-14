@@ -6,9 +6,21 @@ import { getRow } from 'utils/helpers/global';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { supplierData } from './data';
 import { SuppliersModel } from 'models/suppliers.model';
+import { IQuery } from 'utils/interfaces/query';
 
 @Injectable()
 export class SuppliersService {
+  async list(query: IQuery, auth: IAuth) {
+    return await SuppliersModel.query()
+      .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (query.q) {
+          builder.whereILike('name', `%${query.q}%`);
+        }
+      })
+      .page(query.page, query.pageSize);
+  }
+
   async createAuto(auth: IAuth) {
     for (const item of supplierData) {
       let province = null as any;
