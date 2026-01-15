@@ -11,9 +11,25 @@ import { PaymentsModel } from 'models/payments.model';
 import { fn } from 'objection';
 import { ProductsModel } from 'models/products.model';
 import { OrdersModel } from 'models/orders.model';
+import { IQuery } from 'utils/interfaces/query';
 
 @Injectable()
 export class PaymentsService {
+  async list(query: IQuery) {
+    return await PaymentsModel.query()
+      .leftJoinRelated('[work_order.customer, cashier.profile]')
+      .withGraphFetched('[work_order.customer,cashier.profile]')
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('payment_no', `%${query.q}%`)
+            .orWhereILike('reference_no', `%${query.q}%`)
+            .orWhereILike('work_order:customer.name', `%${query.q}%`)
+            .orWhereILike('cashier.name', `%${query.q}%`);
+        }
+      })
+      .page(query.page, query.pageSize);
+  }
   async createPayment(body: CreatePayment, auth: IAuth) {
     await PromosModel.transaction(async (trx) => {
       let promo = null as PromosModel | null | undefined;

@@ -1,7 +1,7 @@
 import { Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 
-@Table('suppliers')
+@Table('suppliers', { softDelete: true })
 export class SuppliersModel extends BaseModel {
   // === FIELD START ===
   code: string;

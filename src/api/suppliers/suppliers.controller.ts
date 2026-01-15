@@ -1,7 +1,10 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Query,
   UploadedFile,
@@ -16,6 +19,7 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { IQuery } from 'utils/interfaces/query';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
+import { CreateSupplierDto } from './dto/suppliers.dto';
 
 @UseGuards(AuthGuard)
 @Controller('suppliers')
@@ -28,6 +32,11 @@ export class SuppliersController {
   @Get()
   list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
     return this.suppliersService.list(query, auth);
+  }
+
+  @Post()
+  create(@Body() body: CreateSupplierDto, @Auth() auth: IAuth) {
+    return this.suppliersService.create(body, auth);
   }
 
   @Post('/create/auto')
@@ -57,5 +66,10 @@ export class SuppliersController {
       parseRow: (row) => this.suppliersService.createFromImport(row, auth),
     });
     return 'Product Berhasil di proses, mohon tunggu beberapa saat';
+  }
+
+  @Delete(':id')
+  destroy(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.suppliersService.destroy(id, auth);
   }
 }

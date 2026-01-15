@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Row } from 'exceljs';
 import { CityModel } from 'models/city.model';
 import { ProvinceModel } from 'models/province.model';
@@ -7,6 +7,8 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { supplierData } from './data';
 import { SuppliersModel } from 'models/suppliers.model';
 import { IQuery } from 'utils/interfaces/query';
+import { CreateSupplierDto } from './dto/suppliers.dto';
+import { fn } from 'objection';
 
 @Injectable()
 export class SuppliersService {
@@ -18,7 +20,17 @@ export class SuppliersService {
           builder.whereILike('name', `%${query.q}%`);
         }
       })
+      .orderBy('created_at', 'DESC')
       .page(query.page, query.pageSize);
+  }
+
+  async create(body: CreateSupplierDto, auth: IAuth) {
+    await SuppliersModel.query().upsertGraph({
+      ...body,
+      company_id: auth.company_id,
+    });
+
+    return 'data berhasil disimpan';
   }
 
   async createAuto(auth: IAuth) {
@@ -91,5 +103,21 @@ export class SuppliersService {
 
     console.log('PAYLOAD', payload);
     return payload;
+  }
+
+  async destroy(id: number, auth: IAuth) {
+    const supp = await SuppliersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!supp) throw new NotFoundException();
+
+    await supp.$query().patch({
+      deleted_at: fn.now(),
+      updated_by: auth.id,
+    });
+
+    return 'supplier berhasil di hapus';
   }
 }

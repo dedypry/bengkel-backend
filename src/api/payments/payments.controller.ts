@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 import { getHtmlContent } from 'utils/helpers/html-contect';
 import { PdfService } from 'utils/services/pdf.service';
 import type { Response } from 'express';
+import { IQuery } from 'utils/interfaces/query';
+import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 
 @UseGuards(AuthGuard)
 @Controller('payments')
@@ -23,6 +26,11 @@ export class PaymentsController {
     private readonly paymentsService: PaymentsService,
     private readonly pdfService: PdfService,
   ) {}
+
+  @Get()
+  list(@Query(new PaginationPipe()) query: IQuery) {
+    return this.paymentsService.list(query);
+  }
 
   @Post()
   createPayment(@Body() body: CreatePayment, @Auth() auth: IAuth) {

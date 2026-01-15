@@ -33,7 +33,7 @@ export class PaymentsModel extends BaseModel {
   order?: OrdersModel;
 
   @BelongsToOne(() => WorkOrdersModel, {
-    from: 'order_id',
+    from: 'work_order_id',
   })
   work_order?: OrdersModel;
 
