@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 
 import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
@@ -9,8 +9,6 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import type { Response } from 'express';
 import { PdfService } from 'utils/services/pdf.service';
 import { getHtmlContent } from 'utils/helpers/html-contect';
-import { sendWhatsAppMessage } from 'utils/helpers/send-wa';
-import { ImagesModel } from 'models/images.model';
 
 @UseGuards(AuthGuard)
 @Controller('invoices')
@@ -28,6 +26,7 @@ export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
     private readonly pdfService: PdfService,
+    // private readonly waService: WhatsappService,
   ) {}
 
   @Get(':id')
@@ -57,41 +56,13 @@ export class InvoicesController {
       htmlContent: html,
     });
 
-    const fileName = `${result.trx_no}.pdf`;
-    const folderPath = `company-${auth.company_id}/invoices`;
-    const fullKey = `${folderPath}/${fileName}`;
+    return buffer;
 
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: fullKey,
-      Body: buffer,
-      ContentType: 'application/pdf',
-      Metadata: {
-        'updated-at': new Date().toISOString(),
-      },
-    });
-
-    await this.s3Client.send(command);
-
-    const url = `https://${this.bucketName}.s3.${process.env.S3_REGION}.amazonaws.com/${fullKey}`;
-
-    const img = await ImagesModel.query().findOne('path', url);
-    if (!img) {
-      await ImagesModel.query().insert({
-        model: 'invoice',
-        company_id: auth.company_id,
-        filename: fileName,
-        size: 1000,
-        path: url,
-        updated_by: auth.id,
-        mime_type: 'application/pdf',
-      });
-    }
-    const wa = await sendWhatsAppMessage(
-      '+6281286141441',
-      'Halo, berikut adalah invoice Anda.',
-      url,
-    );
-    return wa;
+    // return this.waService.sendMessage({
+    //   to: '6281286141441',
+    //   file: buffer.toString('base64'),
+    //   content: 'INI INVOICE NYA',
+    //   fileType: 'application/pdf',
+    // });
   }
 }

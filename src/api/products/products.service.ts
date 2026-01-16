@@ -45,6 +45,14 @@ export class ProductsService {
       stats,
     };
   }
+
+  async detail(id: number, auth: IAuth) {
+    return await ProductsModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+  }
+
   async create(body: CreateProductDto, auth: IAuth) {
     const payload = {
       ...body,

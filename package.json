@@ -58,7 +58,9 @@
     "sharp": "^0.34.5",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.3",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "whatsapp-web.js": "^1.34.4",
+    "wwebjs-aws-s3": "^1.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -25,6 +25,7 @@ export class PdfService {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      userDataDir: '.wwebjs_auth/puppeteer_pdf_gen',
     });
 
     const page = await browser.newPage();
