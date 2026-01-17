@@ -8,6 +8,7 @@ import { ImagesModel } from 'models/images.model';
 import { Row } from 'exceljs';
 import { UomsModel } from 'models/uoms.model';
 import { ProductCategoriesModel } from 'models/product-categories.model';
+import { GoodsReceiptsModel } from 'models/goods-receipts.model';
 @Injectable()
 export class ProductsService {
   async list(query: ProductQueryDto, auth: IAuth) {
@@ -120,5 +121,30 @@ export class ProductsService {
       ...payload,
     } as any);
     return payload;
+  }
+
+   async generateGsNumber(trx: any, auth: IAuth) {
+      const lastOrder = await GoodsReceiptsModel.query(trx)
+        .select('grn_number')
+        .where('grn_number', 'like', 'GR%')
+        .where('company_id', auth.company_id)
+        .orderBy('id', 'desc')
+        .first();
+  
+      let nextNumber = 1;
+  
+      if (lastOrder && lastOrder.grn_number) {
+        const lastNumber = parseInt(lastOrder.grn_number.replace('TRX', ''), 10);
+        nextNumber = lastNumber + 1;
+      }
+      const formattedNumber = nextNumber.toString().padStart(4, '0');
+      return `GR${formattedNumber}`;
+    }
+
+  async receiptProduct(body:ProductReceiptDto, auth:IAuth){
+    
+    const payload ={
+      po_number
+    }
   }
 }

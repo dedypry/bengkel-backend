@@ -62,4 +62,53 @@ export class ProductQueryDto extends IQuery {
 @JoiSchemaOptions({
   allowUnknown: false,
 })
-export class ProductReceiptDto {}
+export class ProductReceiptDto {
+  @JoiSchema(
+    Joi.string().required().messages({
+      'string.empty': 'Purchase Order number is required',
+    }),
+  )
+  poNumber: string;
+
+  @JoiSchema(Joi.number().integer().required())
+  supplierId: number;
+
+  @JoiSchema(Joi.date().iso().required())
+  receiptDate: string;
+
+  @JoiSchema(Joi.string().required())
+  suratJalanNumber: string; // Delivery Note Number
+
+  @JoiSchema(Joi.string().required())
+  policeNumber: string; // License Plate
+
+  @JoiSchema(Joi.string().required())
+  expedition: string;
+
+  @JoiSchema(Joi.string().allow('', null).optional())
+  notes: string;
+
+  @JoiSchema(
+    Joi.array()
+      .items(
+        Joi.object({
+          productId: Joi.number().integer().required(),
+          qtyPo: Joi.number().min(1).required(),
+          qtyRec: Joi.number().min(0).required(),
+          purchasePrice: Joi.number().min(0).required(),
+          condition: Joi.string().valid('Baik', 'Rusak', 'Kurang').required(),
+        }),
+      )
+      .min(1)
+      .required(),
+  )
+  items: ReceiptItemDto[];
+}
+
+export class ReceiptItemDto {
+  productId: number;
+  qtyPo: number;
+  qtyRec: number;
+  purchasePrice: number;
+  condition: string;
+}

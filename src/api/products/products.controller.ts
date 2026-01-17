@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { CreateProductDto, ProductQueryDto } from './dto/products.dto';
+import {
+  CreateProductDto,
+  ProductQueryDto,
+  ProductReceiptDto,
+} from './dto/products.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
@@ -68,5 +72,10 @@ export class ProductsController {
   async create(@Body() body: CreateProductDto, @Auth() auth: IAuth) {
     await this.productsService.create(body, auth);
     return 'Produk Berhasil di tambahkan';
+  }
+
+  @Post('receipt')
+  receipt(@Body() body: ProductReceiptDto, @Auth() auth: IAuth) {
+    return this.productsService.receiptProduct(body, auth);
   }
 }

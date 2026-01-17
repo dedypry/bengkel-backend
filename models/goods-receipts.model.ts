@@ -16,5 +16,6 @@ export class GoodsReceiptsModel extends BaseModel {
   driver_name?: string;
   license_plate?: string;
   notes?: string;
+  company_id?: number;
   // === FIELD END ===
 }
