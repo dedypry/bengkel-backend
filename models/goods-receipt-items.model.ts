@@ -1,5 +1,6 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { ProductsModel } from './products.model';
 
 @Table('goods_receipt_items')
 export class GoodsReceiptItemsModel extends BaseModel {
@@ -11,4 +12,9 @@ export class GoodsReceiptItemsModel extends BaseModel {
   qty_receipt?: number;
   purchase_price?: number;
   // === FIELD END ===
+
+  @BelongsToOne(() => ProductsModel, {
+    from: 'product_id',
+  })
+  product: ProductsModel;
 }

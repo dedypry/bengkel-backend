@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -12,11 +13,7 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { AuthGuard } from 'src/guards/auth.guard';
-import {
-  CreateProductDto,
-  ProductQueryDto,
-  ProductReceiptDto,
-} from './dto/products.dto';
+import { CreateProductDto, ProductQueryDto } from './dto/products.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
@@ -74,8 +71,8 @@ export class ProductsController {
     return 'Produk Berhasil di tambahkan';
   }
 
-  @Post('receipt')
-  receipt(@Body() body: ProductReceiptDto, @Auth() auth: IAuth) {
-    return this.productsService.receiptProduct(body, auth);
+  @Delete(':id')
+  destroy(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.productsService.destroy(id, auth);
   }
 }

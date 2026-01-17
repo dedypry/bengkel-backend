@@ -9,7 +9,7 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 export class UomsController {
   constructor(private readonly uomsService: UomsService) {}
 
-  @Get()
+  @Get('list')
   list(@Auth() auth: IAuth) {
     return this.uomsService.list(auth);
   }

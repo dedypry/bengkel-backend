@@ -4,10 +4,11 @@ import { ProductsController } from './products.controller';
 import { CategoriesModule } from './categories/categories.module';
 import { UomsModule } from './uoms/uoms.module';
 import { ExcelJsService } from 'utils/services/exceljs.service';
+import { ReceiptModule } from './receipt/receipt.module';
 
 @Module({
   controllers: [ProductsController],
   providers: [ProductsService, ExcelJsService],
-  imports: [CategoriesModule, UomsModule],
+  imports: [CategoriesModule, UomsModule, ReceiptModule],
 })
 export class ProductsModule {}

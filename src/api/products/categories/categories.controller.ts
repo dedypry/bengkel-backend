@@ -19,7 +19,7 @@ import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
-  @Get()
+  @Get('list')
   list(@Query() query: CategoryQueryDto, @Auth() auth: IAuth) {
     return this.categoriesService.list(query, auth);
   }

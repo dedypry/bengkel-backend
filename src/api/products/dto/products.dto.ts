@@ -46,12 +46,7 @@ export class CreateProductDto {
   @JoiSchema(Joi.boolean().default(true))
   is_active: boolean;
 
-  @JoiSchema(
-    Joi.array().items(Joi.string().uri()).min(1).required().messages({
-      'array.min': 'Minimal harus ada 1 gambar yang diunggah',
-      'string.uri': 'Format URL gambar tidak valid',
-    }),
-  )
+  @JoiSchema(Joi.array().items(Joi.string().uri()).optional())
   images: string[];
 }
 
@@ -70,28 +65,35 @@ export class ProductReceiptDto {
   )
   poNumber: string;
 
+  @JoiSchema(Joi.number().optional())
+  id?: number;
+
   @JoiSchema(Joi.number().integer().required())
   supplierId: number;
 
   @JoiSchema(Joi.date().iso().required())
   receiptDate: string;
 
-  @JoiSchema(Joi.string().required())
-  suratJalanNumber: string; // Delivery Note Number
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  suratJalanNumber?: string;
 
-  @JoiSchema(Joi.string().required())
-  policeNumber: string; // License Plate
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  driverName?: string;
 
-  @JoiSchema(Joi.string().required())
-  expedition: string;
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  policeNumber?: string; // License Plate
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  expedition?: string;
 
   @JoiSchema(Joi.string().allow('', null).optional())
-  notes: string;
+  notes?: string;
 
   @JoiSchema(
     Joi.array()
       .items(
         Joi.object({
+          id: Joi.number().optional(),
           productId: Joi.number().integer().required(),
           qtyPo: Joi.number().min(1).required(),
           qtyRec: Joi.number().min(0).required(),
@@ -106,6 +108,7 @@ export class ProductReceiptDto {
 }
 
 export class ReceiptItemDto {
+  id?: number;
   productId: number;
   qtyPo: number;
   qtyRec: number;

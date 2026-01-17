@@ -8,7 +8,7 @@ import { ProductCategoriesModel } from './product-categories.model';
 import { UomsModel } from './uoms.model';
 import { ImagesModel } from './images.model';
 
-@Table('products')
+@Table('products', { softDelete: true })
 export class ProductsModel extends BaseModel {
   // === FIELD START ===
   code: string;

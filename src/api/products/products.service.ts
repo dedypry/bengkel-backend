@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto, ProductQueryDto } from './dto/products.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { ProductsModel } from 'models/products.model';
@@ -8,7 +8,7 @@ import { ImagesModel } from 'models/images.model';
 import { Row } from 'exceljs';
 import { UomsModel } from 'models/uoms.model';
 import { ProductCategoriesModel } from 'models/product-categories.model';
-import { GoodsReceiptsModel } from 'models/goods-receipts.model';
+import { fn } from 'objection';
 @Injectable()
 export class ProductsService {
   async list(query: ProductQueryDto, auth: IAuth) {
@@ -25,6 +25,7 @@ export class ProductsService {
         }
       })
       .where('company_id', auth.company_id)
+      .orderByRaw('CAST(stock AS NUMERIC) ASC')
       .page(query.page, query.pageSize);
 
     const stats = await ProductsModel.query()
@@ -48,10 +49,12 @@ export class ProductsService {
   }
 
   async detail(id: number, auth: IAuth) {
-    return await ProductsModel.query().findOne({
-      id,
-      company_id: auth.company_id,
-    });
+    return await ProductsModel.query()
+      .withGraphFetched('[category,uom,images]')
+      .findOne({
+        id,
+        company_id: auth.company_id,
+      });
   }
 
   async create(body: CreateProductDto, auth: IAuth) {
@@ -63,15 +66,29 @@ export class ProductsService {
       images: undefined,
     };
 
-    const product = await ProductsModel.query().upsertGraphAndFetch(payload);
+    const result = await ProductsModel.transaction(async (trx) => {
+      let product = null as ProductsModel | null;
 
-    await ImagesModel.query().whereIn('path', body.images).update({
-      parent_id: product.id,
-      updated_by: auth.id,
-      model: 'products',
-      company_id: auth.company_id,
+      if (body?.id) {
+        product = await ProductsModel.query(trx).updateAndFetchById(
+          body.id,
+          payload,
+        );
+      } else {
+        product = await ProductsModel.query(trx).insert(payload);
+      }
+
+      await ImagesModel.query().whereIn('path', body.images).update({
+        parent_id: product.id,
+        updated_by: auth.id,
+        model: 'products',
+        company_id: auth.company_id,
+      });
+
+      return product;
     });
-    return product;
+
+    return result;
   }
 
   async createFromImport(row: Row, auth: IAuth) {
@@ -123,28 +140,19 @@ export class ProductsService {
     return payload;
   }
 
-   async generateGsNumber(trx: any, auth: IAuth) {
-      const lastOrder = await GoodsReceiptsModel.query(trx)
-        .select('grn_number')
-        .where('grn_number', 'like', 'GR%')
-        .where('company_id', auth.company_id)
-        .orderBy('id', 'desc')
-        .first();
-  
-      let nextNumber = 1;
-  
-      if (lastOrder && lastOrder.grn_number) {
-        const lastNumber = parseInt(lastOrder.grn_number.replace('TRX', ''), 10);
-        nextNumber = lastNumber + 1;
-      }
-      const formattedNumber = nextNumber.toString().padStart(4, '0');
-      return `GR${formattedNumber}`;
-    }
+  async destroy(id: number, auth: IAuth) {
+    const product = await ProductsModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
 
-  async receiptProduct(body:ProductReceiptDto, auth:IAuth){
-    
-    const payload ={
-      po_number
-    }
+    if (!product) throw new NotFoundException();
+
+    await product.$query().patch({
+      updated_by: auth.id,
+      deleted_at: fn.now(),
+    });
+
+    return 'Product berhasil di hapus';
   }
 }
