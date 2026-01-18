@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { WorkOrderService } from './work-order.service';
 import {
+  ChangeSugestionDto,
   MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
@@ -79,5 +80,14 @@ export class WorkOrderController {
   @Post('rating')
   mechanicRatting(@Body() body: MechanicRatting, @Auth() auth: IAuth) {
     return this.workOrderService.mechanicRatting(body, auth);
+  }
+
+  @Patch(':id/sugestion')
+  changeSugestion(
+    @Param('id') id: number,
+    @Body() body: ChangeSugestionDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.sugestion(id, body, auth);
   }
 }

@@ -136,7 +136,7 @@ export class MechanicRatting {
       Joi.object({
         id: Joi.number().required(),
         rating: Joi.number().required(),
-        notes: Joi.string().optional(),
+        notes: Joi.string().optional().allow('', null),
       }),
     ),
   )
@@ -145,4 +145,9 @@ export class MechanicRatting {
     notes: string;
     rating: number;
   }[];
+}
+
+export class ChangeSugestionDto {
+  @JoiSchema(Joi.string().required())
+  next_sugestion: string;
 }

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  ChangeSugestionDto,
   MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
@@ -215,6 +216,7 @@ export class WorkOrderService {
         promo_amount: promoBirtDate,
         promo_data: JSON.stringify(promoData),
         items: payloadItem,
+        complaints: body.complaints,
       };
 
       const wo = await WorkOrdersModel.query(trx).upsertGraphAndFetch(
@@ -479,5 +481,20 @@ export class WorkOrderService {
       payloadItem,
       grandTotal: serviceTotal + sparepartTotal,
     };
+  }
+
+  async sugestion(id: number, body: ChangeSugestionDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await wo.$query().patch({
+      next_sugestion: body.next_sugestion,
+    });
+
+    return 'Saran Selanjutnya berhasil disimpan';
   }
 }

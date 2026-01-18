@@ -39,6 +39,8 @@ export class WorkOrdersModel extends BaseModel {
   end_at?: string;
   promo_data?: any;
   promo_amount?: number;
+  complaints?: string;
+  next_sugestion?: string;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {
