@@ -23,6 +23,8 @@ import { PromosModule } from './api/promos/promos.module';
 import { PaymentsModule } from './api/payments/payments.module';
 import { InvoicesModule } from './api/invoices/invoices.module';
 import { DashboardModule } from './api/dashboard/dashboard.module';
+import { ReportsModule } from './api/reports/reports.module';
+import { PermissionsModule } from './api/permissions/permissions.module';
 import 'dotenv/config';
 
 @Module({
@@ -58,6 +60,8 @@ import 'dotenv/config';
     PaymentsModule,
     InvoicesModule,
     DashboardModule,
+    ReportsModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [],

@@ -85,3 +85,14 @@ export function formatEstimationResult(totalMinutes: number): string {
 
   return result.join(' ');
 }
+
+export const formatNumber = (value: number | string): string => {
+  if (value === null || value === undefined) return '0';
+
+  // Konversi ke number jika input berupa string
+  const numberValue = typeof value === 'string' ? parseFloat(value) : value;
+
+  if (isNaN(numberValue)) return '0';
+
+  return new Intl.NumberFormat('id-ID').format(numberValue);
+};

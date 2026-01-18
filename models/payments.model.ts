@@ -35,7 +35,7 @@ export class PaymentsModel extends BaseModel {
   @BelongsToOne(() => WorkOrdersModel, {
     from: 'work_order_id',
   })
-  work_order?: OrdersModel;
+  work_order?: WorkOrdersModel;
 
   @BelongsToOne(() => CompaniesModel, {
     from: 'company_id',
