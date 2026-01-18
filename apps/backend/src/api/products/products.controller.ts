@@ -36,6 +36,11 @@ export class ProductsController {
     return this.productsService.list(query, auth);
   }
 
+  @Get('top-part')
+  topPart(@Auth() auth: IAuth) {
+    return this.productsService.topParts(auth);
+  }
+
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.productsService.detail(id, auth);

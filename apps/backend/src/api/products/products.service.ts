@@ -8,7 +8,9 @@ import { ImagesModel } from 'models/images.model';
 import { Row } from 'exceljs';
 import { UomsModel } from 'models/uoms.model';
 import { ProductCategoriesModel } from 'models/product-categories.model';
-import { fn } from 'objection';
+import { fn, raw } from 'objection';
+import { WorkOrderItemsModel } from 'models/work-order-items.model';
+import { OrderItemsModel } from 'models/order-items.model';
 @Injectable()
 export class ProductsService {
   async list(query: ProductQueryDto, auth: IAuth) {
@@ -154,5 +156,49 @@ export class ProductsService {
     });
 
     return 'Product berhasil di hapus';
+  }
+
+  async topParts(auth: IAuth) {
+    const wo: any = await WorkOrderItemsModel.query()
+      .select(raw("(data->>'id')::int").as('product_id'))
+      .joinRelated('work_order')
+      .where('work_order.company_id', auth.company_id);
+
+    const order = await OrderItemsModel.query()
+      .select('product_id')
+      .joinRelated('order')
+      .where('order.company_id', auth.company_id);
+
+    const allProductIds = [
+      ...wo.map((item: { product_id: number }) => item.product_id),
+      ...order.map((item) => item.product_id),
+    ];
+
+    const counts: Record<number, number> = {};
+    allProductIds.forEach((id) => {
+      counts[id] = (counts[id] || 0) + 1;
+    });
+
+    const sortedProducts = Object.entries(counts)
+      .map(([id, count]) => ({
+        product_id: Number(id),
+        total: count,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    const products = await ProductsModel.query()
+      .withGraphFetched('[category,uom]')
+      .whereIn(
+        'id',
+        sortedProducts.map((item) => item.product_id),
+      );
+
+    const result = sortedProducts.map((sp) => ({
+      sold: sp.total,
+      ...products.find((p) => p.id === sp.product_id),
+    }));
+
+    return result;
   }
 }

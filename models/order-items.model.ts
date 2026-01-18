@@ -1,5 +1,6 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { OrdersModel } from './orders.model';
 
 @Table('order_items')
 export class OrderItemsModel extends BaseModel {
@@ -11,4 +12,9 @@ export class OrderItemsModel extends BaseModel {
   price?: number;
   total_price?: number;
   // === FIELD END ===
+
+  @BelongsToOne(() => OrdersModel, {
+    from: 'order_id',
+  })
+  order: OrdersModel;
 }

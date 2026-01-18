@@ -1,6 +1,11 @@
-import { Modifier, Table } from 'utils/decorators/objections.decorator';
+import {
+  BelongsToOne,
+  Modifier,
+  Table,
+} from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { raw, type AnyQueryBuilder } from 'objection';
+import { WorkOrdersModel } from './work-orders.model';
 
 @Table('work_order_items')
 export class WorkOrderItemsModel extends BaseModel {
@@ -24,4 +29,9 @@ export class WorkOrderItemsModel extends BaseModel {
       raw(`(data->>'estimated_duration')::numeric`).as('estimated'),
     );
   }
+
+  @BelongsToOne(() => WorkOrdersModel, {
+    from: 'work_order_id',
+  })
+  work_order: WorkOrdersModel;
 }

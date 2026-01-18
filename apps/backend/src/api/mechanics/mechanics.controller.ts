@@ -13,4 +13,9 @@ export class MechanicsController {
   list(@Auth() auth: IAuth) {
     return this.mechanicsService.list(auth);
   }
+
+  @Get('performa')
+  performa(@Auth() auth: IAuth) {
+    return this.mechanicsService.performa(auth);
+  }
 }

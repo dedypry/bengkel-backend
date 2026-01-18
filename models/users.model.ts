@@ -7,6 +7,7 @@ import { BaseModel } from './base.model';
 import { CompaniesModel } from './companies.model';
 import { ProfilesModel } from './profiles.model';
 import { RolesModel } from './roles.model';
+import { WorkOrdersModel } from './work-orders.model';
 
 @Table('users', { softDelete: true })
 export class UsersModel extends BaseModel {
@@ -44,4 +45,11 @@ export class UsersModel extends BaseModel {
     to: 'user_id',
   })
   profile?: ProfilesModel;
+
+  @ManyToMany(() => WorkOrdersModel, {
+    to: 'work_order_id',
+    from: 'mechanic_id',
+    table: 'mechanic_work',
+  })
+  works?: WorkOrdersModel[];
 }
