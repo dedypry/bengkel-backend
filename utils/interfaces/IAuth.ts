@@ -1,6 +1,7 @@
 export interface IAuth {
   id: number;
   email: string;
+  type: string;
   name: string;
   iat: number;
   exp: number;

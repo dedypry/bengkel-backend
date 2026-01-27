@@ -9,8 +9,8 @@ export async function sendWhatsAppMessage(
   const data = new FormData();
 
   // Parameter Wajib
-  data.append('appkey', '9168e9bb-04a1-4e71-930b-288a3dea6823');
-  data.append('authkey', '41XnHX4Rxj8A05PZ9bo4jVCiP5Xgz3rmtvEQ1aG1zmv1XCEAdl');
+  data.append('appkey', '03868ebb-9520-4b9b-af4d-265909bdb573');
+  data.append('authkey', 'bUvRbBiB3AgnjYXIBS8elzCUB5ZQ4XwYzloOSiW4pnX4L1x9c5');
   data.append('to', to);
   if (file) {
     data.append('file', file);
@@ -31,7 +31,6 @@ export async function sendWhatsAppMessage(
     return response.data;
   } catch (error: any) {
     console.error('Error:', error.response?.data || error.message);
-    throw error;
   }
 }
 

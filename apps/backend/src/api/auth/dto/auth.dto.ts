@@ -7,3 +7,10 @@ export class AuthDto {
   @JoiSchema(Joi.string().required())
   password: string;
 }
+
+export class VerifyCodeDto {
+  @JoiSchema(Joi.string().required())
+  phone: string;
+
+  code: string;
+}
