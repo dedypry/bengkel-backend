@@ -26,6 +26,7 @@ import { DashboardModule } from './api/dashboard/dashboard.module';
 import { ReportsModule } from './api/reports/reports.module';
 import { PermissionsModule } from './api/permissions/permissions.module';
 import 'dotenv/config';
+import { EmailModule } from 'utils/modules/email.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import 'dotenv/config';
         usePipeValidationException: true,
       },
     }),
+    EmailModule,
     AuthModule,
     RegionModule,
     RolesModule,

@@ -1,10 +1,16 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthDto, VerifyCodeDto } from './dto/auth.dto';
-import { comparePassword } from 'utils/helpers/bcrypt';
+import {
+  AuthDto,
+  VerifyCodeDto,
+  SendForgotEmailDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
+import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
 import dayjs from 'dayjs';
@@ -13,10 +19,14 @@ import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
 import { randomInt } from 'crypto';
 import { IAuth } from 'utils/interfaces/IAuth';
-
+import 'dotenv/config';
+import { MailerService } from '@nestjs-modules/mailer';
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private readonly mailService: MailerService,
+  ) {}
 
   async login(body: AuthDto) {
     const user = await UsersModel.query().findOne('email', body.email);
@@ -64,7 +74,7 @@ export class AuthService {
   async loginCustomer(body: AuthDto) {
     const user = await CustomersModel.query()
       .where('email', body.email)
-      .orWhere('phone', body.email)
+      .orWhere('phone', formatPhoneNumber(body.email))
       .first();
 
     if (!user) throw new NotFoundException();
@@ -144,5 +154,67 @@ export class AuthService {
       access_token: token,
       user: payload,
     };
+  }
+
+  async sendForgotEmail(data: SendForgotEmailDto) {
+    let user: any = null;
+    let url = '';
+
+    const code = randomInt(1000, 10000).toString();
+    if (data.type === 'cs') {
+      user = await CustomersModel.query()
+        .where('email', data.email)
+        .orWhere('phone', formatPhoneNumber(data.email))
+        .first();
+
+      if (!user || !user.email) throw new NotFoundException();
+      await user.$query().patch({
+        code_verify: code,
+      });
+
+      url = process.env.LANDING_URL + `/reset-password?token=${code}`;
+    } else {
+      user = await UsersModel.query().where('email', data.email).first();
+      if (!user || !user.email) throw new NotFoundException();
+      url = process.env.ADMIN_URL + `/reset-password?token=${code}`;
+    }
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: 'Reset Password - Clinic Pradana Workshop',
+      template: 'forgot-password',
+      context: { name: user.name, url },
+    });
+  }
+
+  async ressetPassword(body: ResetPasswordDto) {
+    if (body.type) {
+      const user = await CustomersModel.query().findOne(
+        'code_verify',
+        body.token,
+      );
+
+      if (!user) throw new NotFoundException();
+
+      // 1. Ambil waktu sekarang
+      const now = dayjs();
+      // 2. Ambil waktu update terakhir
+      const updatedAt = dayjs(user.updated_at);
+
+      // 3. Cek selisih jam
+      const diffInHours = now.diff(updatedAt, 'hour');
+
+      if (diffInHours >= 1) {
+        throw new BadRequestException(
+          'Kode verifikasi telah kedaluwarsa (lebih dari 1 jam).',
+        );
+      }
+      await user.$query().patch({
+        code_verify: '',
+        password: hashPassword(body.password),
+      });
+    }
+
+    return 'Berhasil mengubah password';
   }
 }

@@ -1,6 +1,11 @@
 import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDto, VerifyCodeDto } from './dto/auth.dto';
+import {
+  AuthDto,
+  ResetPasswordDto,
+  SendForgotEmailDto,
+  VerifyCodeDto,
+} from './dto/auth.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
@@ -19,6 +24,18 @@ export class AuthController {
   @Post('login/customer')
   loginCustomer(@Body() body: AuthDto) {
     return this.authService.loginCustomer(body);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: SendForgotEmailDto) {
+    this.authService.sendForgotEmail(body);
+
+    return `kami sudah mengirim email ke ${body.email}, Cek secara berkala`;
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.ressetPassword(body);
   }
 
   @Post('send-verify-code')
