@@ -9,10 +9,13 @@ export class InvoicesService {
       .withGraphFetched(
         '[items,services,spareparts,vehicle,customer.profile,mechanics,company]',
       )
-      .findOne({
-        id,
-        company_id: auth.company_id,
-      });
+      .where('id', id)
+      .where((builder) => {
+        if (auth.type !== 'cs') {
+          builder.where('company_id', auth.company_id);
+        }
+      })
+      .first();
 
     if (!wo) throw new NotFoundException();
 

@@ -7,6 +7,7 @@ import { sendWelcomeMessage } from 'utils/helpers/send-wa';
 import { CompaniesModel } from 'models/companies.model';
 import { fn } from 'objection';
 import dayjs from 'dayjs';
+import { ServicesModel } from 'models/services.model';
 @Injectable()
 export class CustomersService {
   async getStats() {
@@ -136,5 +137,9 @@ export class CustomersService {
       deleted_at: fn.now(),
       updated_by: auth.id,
     });
+  }
+
+  async listService() {
+    return await ServicesModel.query();
   }
 }

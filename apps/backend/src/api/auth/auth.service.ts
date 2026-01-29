@@ -62,7 +62,7 @@ export class AuthService {
   async profile(auth: IAuth) {
     if (auth.type === 'cs') {
       return await CustomersModel.query()
-        .withGraphFetched('[profile]')
+        .withGraphFetched('[profile,vehicles]')
         .findById(auth.id);
     }
 
@@ -87,6 +87,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      type: 'cs',
     };
 
     const token = await this.jwtService.signAsync(payload);
