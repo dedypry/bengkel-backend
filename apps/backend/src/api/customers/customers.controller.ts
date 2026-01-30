@@ -15,22 +15,29 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 
-@UseGuards(AuthGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Get()
+  @UseGuards(AuthGuard)
   list(@Query(new PaginationPipe()) query: CustomerQueryDto) {
     return this.customersService.listCustomer(query);
   }
 
+  @Get('brands')
+  brands() {
+    return this.customersService.listBrand();
+  }
+
   @Get(':id')
+  @UseGuards(AuthGuard)
   detail(@Param('id') id: number) {
     return this.customersService.detail(id);
   }
 
   @Post()
+  @UseGuards(AuthGuard)
   async createCustomer(@Body() body: CreateCustomerDto, @Auth() auth: IAuth) {
     await this.customersService.createCustomer(body, auth);
 
@@ -38,6 +45,7 @@ export class CustomersController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async destroy(@Param('id') id: number, @Auth() auth: IAuth) {
     await this.customersService.destroy(id, auth);
     return 'Customer berhasil di hapus';

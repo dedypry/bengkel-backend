@@ -142,4 +142,8 @@ export class CustomersService {
   async listService() {
     return await ServicesModel.query();
   }
+
+  async listBrand() {
+    return await CompaniesModel.query().withGraphFetched('address');
+  }
 }

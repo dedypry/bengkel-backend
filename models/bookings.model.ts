@@ -1,7 +1,8 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { VehiclesModel } from './vehicles.model';
 
-@Table('bookings')
+@Table('bookings', { softDelete: true })
 export class BookingsModel extends BaseModel {
   // === FIELD START ===
   customer_id: number;
@@ -15,4 +16,9 @@ export class BookingsModel extends BaseModel {
   created_by?: number;
   updated_by?: number;
   // === FIELD END ===
+
+  @BelongsToOne(() => VehiclesModel, {
+    from: 'vehicle_id',
+  })
+  vehicle?: VehiclesModel;
 }

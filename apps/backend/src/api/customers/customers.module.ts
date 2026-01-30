@@ -4,10 +4,11 @@ import { CustomersController } from './customers.controller';
 import { ProfileModule } from './profile/profile.module';
 import { WoModule } from './wo/wo.module';
 import { VehicleModule } from './vehicle/vehicle.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   controllers: [CustomersController],
   providers: [CustomersService],
-  imports: [ProfileModule, WoModule, VehicleModule],
+  imports: [ProfileModule, WoModule, VehicleModule, DashboardModule],
 })
 export class CustomersModule {}
