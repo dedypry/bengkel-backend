@@ -15,6 +15,13 @@ export class CreateBookingDto {
     }),
   )
   vehicle_id: string;
+  @JoiSchema(
+    Joi.string().required().messages({
+      'string.empty': 'Silahkan pilih Cabang',
+      'any.required': 'Silahkan pilih Cabang',
+    }),
+  )
+  branch_id: string;
 
   @JoiSchema(
     Joi.date()

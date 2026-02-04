@@ -21,6 +21,7 @@ export class ServicesModel extends BaseModel {
   estimated_type?: string;
   ppn?: number;
   supplier_id?: number;
+  search_vector?: any;
   // === FIELD END ===
 
   @BelongsToOne(() => ServiceCategoriesModel, {
