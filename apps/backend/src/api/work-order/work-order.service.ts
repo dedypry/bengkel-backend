@@ -106,16 +106,16 @@ export class WorkOrderService {
         ...(body.customer?.id && {
           id: body.customer.id,
         }),
-        name: body.customer.name,
-        email: body.customer.email,
-        phone: body.customer.phone,
+        name: body?.customer?.name,
+        email: body?.customer?.email,
+        phone: body?.customer?.phone,
         company_id: auth.company_id,
         updated_by: auth.id,
         profile: {
-          full_name: body.customer.name,
-          phone_number: body.customer.phone,
+          full_name: body?.customer?.name,
+          phone_number: body?.customer?.phone,
           model: 'customers',
-          birth_date: body.customer.birth_date,
+          birth_date: body?.customer?.birth_date,
         },
       } as any;
 
