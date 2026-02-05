@@ -70,13 +70,16 @@ export class AuthService {
       .withGraphFetched('[companies.address,profile,roles.permissions]')
       .findById(auth.id);
 
-    return {
+    const result = {
       ...profile,
       permissions:
         profile?.roles?.flatMap((role) =>
           role.permissions.map((pr) => pr.slug),
         ) || [],
     };
+    delete result.password;
+
+    return result;
   }
 
   async loginCustomer(body: AuthDto) {
