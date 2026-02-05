@@ -66,9 +66,17 @@ export class AuthService {
         .findById(auth.id);
     }
 
-    return await UsersModel.query()
-      .withGraphFetched('[companies.address,profile,roles]')
+    const profile = await UsersModel.query()
+      .withGraphFetched('[companies.address,profile,roles.permissions]')
       .findById(auth.id);
+
+    return {
+      ...profile,
+      permissions:
+        profile?.roles?.flatMap((role) =>
+          role.permissions.map((pr) => pr.slug),
+        ) || [],
+    };
   }
 
   async loginCustomer(body: AuthDto) {

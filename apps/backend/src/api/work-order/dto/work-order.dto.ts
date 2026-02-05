@@ -42,6 +42,9 @@ export class WorkOrderRequestDto {
   @JoiSchema(Joi.number().optional().allow('', null))
   id?: number;
 
+  @JoiSchema(Joi.number().optional().allow('', null))
+  booking_id?: number;
+
   @JoiSchema(
     Joi.object({
       id: Joi.optional(),
@@ -51,7 +54,7 @@ export class WorkOrderRequestDto {
       birth_date: Joi.string().allow('', null),
     }),
   )
-  customer: ICustomer;
+  customer: ICustomer | undefined;
 
   @JoiSchema(
     Joi.object({
@@ -69,13 +72,13 @@ export class WorkOrderRequestDto {
       tire_size: Joi.string().allow('', null),
     }).required(),
   )
-  vehicle: IVehicle;
+  vehicle: IVehicle | undefined;
 
   @JoiSchema(Joi.number().required())
-  current_km: number;
+  current_km!: number;
 
   @JoiSchema(Joi.string().allow('', null))
-  complaints: string;
+  complaints!: string;
 
   @JoiSchema(
     Joi.string()
@@ -83,13 +86,13 @@ export class WorkOrderRequestDto {
       .default('normal')
       .required(),
   )
-  priority: 'low' | 'normal' | 'hight' | 'urgent';
-
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
-  services: IWorkOrderItem[];
+  priority!: 'low' | 'normal' | 'hight' | 'urgent';
 
   @JoiSchema(Joi.array().items(WorkOrderItemSchema))
-  sparepart: IWorkOrderItem[];
+  services!: IWorkOrderItem[];
+
+  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  sparepart!: IWorkOrderItem[];
 }
 
 @JoiSchemaOptions({
@@ -97,10 +100,10 @@ export class WorkOrderRequestDto {
 })
 export class WorkOrderUpdateServiceDto {
   @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
-  services: IWorkOrderItem[];
+  services!: IWorkOrderItem[];
 
   @JoiSchema(Joi.array().items(WorkOrderItemSchema))
-  sparepart: IWorkOrderItem[];
+  sparepart!: IWorkOrderItem[];
 }
 
 export class WoQuery extends IQuery {
@@ -114,14 +117,14 @@ export class UpdateStatusWoDto {
   @JoiSchema(
     Joi.string().valid('queue', 'on_progress', 'ready', 'finish').required(),
   )
-  progress: string;
+  progress!: string;
 }
 @JoiSchemaOptions({
   allowUnknown: false,
 })
 export class UpdateMechanicWoDto {
   @JoiSchema(Joi.array().min(1).required())
-  ids: number[];
+  ids!: number[];
 }
 
 @JoiSchemaOptions({
@@ -140,7 +143,7 @@ export class MechanicRatting {
       }),
     ),
   )
-  mechanics: {
+  mechanics!: {
     id: number;
     notes: string;
     rating: number;
@@ -149,5 +152,5 @@ export class MechanicRatting {
 
 export class ChangeSugestionDto {
   @JoiSchema(Joi.string().required())
-  next_sugestion: string;
+  next_sugestion!: string;
 }

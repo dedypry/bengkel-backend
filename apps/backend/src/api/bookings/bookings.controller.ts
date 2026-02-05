@@ -26,6 +26,11 @@ export class BookingsController {
     return this.bookingsService.list(query, auth);
   }
 
+  @Get(':id')
+  detail(@Param('id') id: number) {
+    return this.bookingsService.detail(id);
+  }
+
   @Post()
   booking(@Body() body: CreateBookingDto, @Auth() auth: IAuth) {
     return this.bookingsService.create(body, auth);

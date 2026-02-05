@@ -9,9 +9,22 @@ import { fn } from 'objection';
 export class BookingsService {
   async list(query: IQuery, auth: IAuth) {
     return await BookingsModel.query()
-      .withGraphFetched('[vehicle]')
-      .where('customer_id', auth.id)
+      .withGraphFetched('[vehicle,customer]')
+      .where((builder) => {
+        if (auth.type === 'cs') {
+          builder.where('customer_id', auth.id);
+        } else {
+          builder.where('branch_id', auth.company_id);
+        }
+      })
+      .orderBy('id', 'desc')
       .page(query.page, query.pageSize);
+  }
+
+  async detail(id: number) {
+    return await BookingsModel.query()
+      .withGraphFetched('[vehicle,customer.profile]')
+      .findById(id);
   }
 
   async create(data: CreateBookingDto, auth: IAuth) {

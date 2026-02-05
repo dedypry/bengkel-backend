@@ -26,6 +26,7 @@ import dayjs from 'dayjs';
 import { PromosModel } from 'models/promos.model';
 import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
+import { BookingsModel } from 'models/bookings.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -117,6 +118,12 @@ export class WorkOrderService {
           birth_date: body.customer.birth_date,
         },
       } as any;
+
+      if (body.booking_id) {
+        await BookingsModel.query(trx).findById(body.booking_id).update({
+          status: 'CONFIRMED',
+        });
+      }
 
       const customer = await CustomersModel.upsert(customerData, trx);
 

@@ -1,6 +1,7 @@
 import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { VehiclesModel } from './vehicles.model';
+import { CustomersModel } from './customers.model';
 
 @Table('bookings', { softDelete: true })
 export class BookingsModel extends BaseModel {
@@ -21,4 +22,9 @@ export class BookingsModel extends BaseModel {
     from: 'vehicle_id',
   })
   vehicle?: VehiclesModel;
+
+  @BelongsToOne(() => CustomersModel, {
+    from: 'customer_id',
+  })
+  customer?: CustomersModel;
 }

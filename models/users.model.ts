@@ -38,7 +38,7 @@ export class UsersModel extends BaseModel {
     from: 'user_id',
     to: 'role_id',
   })
-  roles?: CompaniesModel[];
+  roles?: RolesModel[];
 
   @HasOne(() => ProfilesModel, {
     filter: (query) => query.where('model', 'users'),

@@ -41,6 +41,7 @@ export class WorkOrdersModel extends BaseModel {
   promo_amount?: number;
   complaints?: string;
   next_sugestion?: string;
+  booking_id?: number;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

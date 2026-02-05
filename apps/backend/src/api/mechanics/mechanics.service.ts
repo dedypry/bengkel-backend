@@ -3,10 +3,11 @@ import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { UsersModel } from 'models/users.model';
 import { raw } from 'objection';
 import { IAuth } from 'utils/interfaces/IAuth';
+import { IQuery } from 'utils/interfaces/query';
 
 @Injectable()
 export class MechanicsService {
-  async list(auth: IAuth) {
+  async list(query: IQuery, auth: IAuth) {
     return await UsersModel.query()
       .alias('users')
       .joinRelated('roles')
@@ -21,6 +22,11 @@ export class MechanicsService {
       )
       .where('roles.slug', 'mechanic')
       .where('users.company_id', auth.company_id)
+      .where((build) => {
+        if (query.q) {
+          build.whereILike('users.name', `%${query.q}%`);
+        }
+      })
       .withGraphFetched('[roles,profile.[province, city, district]]')
       .leftJoin(
         MechanicRatingsModel.query()
