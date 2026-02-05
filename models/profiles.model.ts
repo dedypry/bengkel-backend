@@ -7,8 +7,8 @@ import { DistrictModel } from './district.model';
 @Table('profiles', { hide: ['model', 'updated_by'] })
 export class ProfilesModel extends BaseModel {
   // === FIELD START ===
-  user_id: number;
-  full_name: string;
+  user_id!: number;
+  full_name!: string;
   phone_number?: string;
   address?: string;
   gender?: string;

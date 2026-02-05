@@ -8,7 +8,7 @@ export class MechanicRatingsModel extends BaseModel {
   mechanic_id?: number;
   supervisor_id?: number;
   customer_id?: number;
-  rating: number;
+  rating!: number;
   notes?: string;
   company_id?: number;
   // === FIELD END ===

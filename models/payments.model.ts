@@ -8,8 +8,8 @@ import { CompaniesModel } from './companies.model';
 @Table('payments')
 export class PaymentsModel extends BaseModel {
   // === FIELD START ===
-  payment_no: string;
-  amount: number;
+  payment_no!: string;
+  amount!: number;
   method?: string;
   payment_date?: string;
   reference_no?: string;

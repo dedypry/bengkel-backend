@@ -13,9 +13,9 @@ import { WorkOrdersModel } from './work-orders.model';
 export class UsersModel extends BaseModel {
   // === FIELD START ===
   nik?: string;
-  name: string;
-  email: string;
-  password: string;
+  name!: string;
+  email!: string;
+  password!: string;
   position?: string;
   is_active?: boolean;
   type?: string;

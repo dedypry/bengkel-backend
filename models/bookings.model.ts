@@ -6,12 +6,12 @@ import { CustomersModel } from './customers.model';
 @Table('bookings', { softDelete: true })
 export class BookingsModel extends BaseModel {
   // === FIELD START ===
-  customer_id: number;
-  vehicle_id: number;
+  customer_id!: number;
+  vehicle_id!: number;
   branch_id?: number;
-  booking_date: string;
-  booking_time: any;
-  service_type: string;
+  booking_date!: string;
+  booking_time!: any;
+  service_type!: string;
   complaint?: string;
   status?: string;
   created_by?: number;

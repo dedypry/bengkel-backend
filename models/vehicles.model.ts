@@ -5,9 +5,9 @@ import { CustomersModel } from './customers.model';
 @Table('vehicles', { hide: ['company_id', 'updated_by'], softDelete: true })
 export class VehiclesModel extends BaseModel {
   // === FIELD START ===
-  plate_number: string;
-  brand: string;
-  model: string;
+  plate_number!: string;
+  brand!: string;
+  model!: string;
   year?: string;
   engine_capacity?: string;
   transmission_type?: string;

@@ -7,8 +7,8 @@ import { DistrictModel } from './district.model';
 @Table('address', { hide: ['model', 'parent_id'] })
 export class AddressModel extends BaseModel {
   // === FIELD START ===
-  parent_id: number;
-  model: string;
+  parent_id!: number;
+  model!: string;
   title?: string;
   zip_code?: string;
   updated_by?: number;

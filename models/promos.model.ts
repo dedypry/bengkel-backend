@@ -4,8 +4,8 @@ import { BaseModel } from './base.model';
 @Table('promos')
 export class PromosModel extends BaseModel {
   // === FIELD START ===
-  code: string;
-  name: string;
+  code!: string;
+  name!: string;
   type?: string;
   value?: number;
   max_discount?: number;

@@ -10,8 +10,8 @@ import { ProfilesModel } from './profiles.model';
 @Table('customers')
 export class CustomersModel extends BaseModel {
   // === FIELD START ===
-  name: string;
-  phone: string;
+  name!: string;
+  phone!: string;
   email?: string;
   code_verify?: string;
   customer_type?: string;

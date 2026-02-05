@@ -1,7 +1,6 @@
 import 'dotenv/config';
-import { S3Client } from '@aws-sdk/client-s3';
 
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
@@ -9,23 +8,16 @@ import { AuthGuard } from 'utils/guards/auth.guard';
 import type { Response } from 'express';
 import { PdfService } from 'utils/services/pdf.service';
 import { getHtmlContent } from 'utils/helpers/html-contect';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 
 @UseGuards(AuthGuard)
 @Controller('invoices')
 export class InvoicesController {
-  private readonly s3Client = new S3Client({
-    region: process.env.S3_REGION,
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-    },
-  });
-
-  private readonly bucketName = process.env.S3_BUCKET_NAME;
-
   constructor(
     private readonly invoicesService: InvoicesService,
     private readonly pdfService: PdfService,
+    @InjectQueue('MAIL-QUEUE') private readonly queue: Queue,
     // private readonly waService: WhatsappService,
   ) {}
 
@@ -46,17 +38,17 @@ export class InvoicesController {
     });
   }
 
-  @Get(':id/send-wa')
+  @Post(':id/send')
   async invoiceSendWa(@Param('id') id: number, @Auth() auth: IAuth) {
     const result = await this.invoicesService.payment(id, auth);
 
-    const html = await getHtmlContent('invoice', result);
-
-    const buffer = await this.pdfService.generatePdf({
-      htmlContent: html,
+    this.queue.add('send-mail-inv', {
+      to: result.customer?.email,
+      subject: `invoice-${result.trx_no}`,
+      template: 'invoice',
+      context: result,
     });
-
-    return buffer;
+    return 'Email sedang proses pengiriman';
 
     // return this.waService.sendMessage({
     //   to: '6281286141441',

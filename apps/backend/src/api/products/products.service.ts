@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateProductDto, ProductQueryDto } from './dto/products.dto';
+import {
+  CreateProductDto,
+  ProductQueryDto,
+  UpdateStockDto,
+} from './dto/products.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { ProductsModel } from 'models/products.model';
 import slugify from 'slugify';
@@ -13,9 +17,9 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { OrderItemsModel } from 'models/order-items.model';
 @Injectable()
 export class ProductsService {
-  async list(query: ProductQueryDto, auth: IAuth) {
-    const result = await ProductsModel.query()
-      .withGraphFetched('[category,uom]')
+  async list(query: ProductQueryDto, auth: IAuth, isDownload: boolean = false) {
+    let queryData: any = ProductsModel.query()
+      .withGraphFetched('[category.parent,uom]')
       .where((builder) => {
         if (query.q) {
           builder
@@ -27,8 +31,15 @@ export class ProductsService {
         }
       })
       .where('company_id', auth.company_id)
-      .orderByRaw('CAST(stock AS NUMERIC) ASC')
-      .page(query.page, query.pageSize);
+      .orderByRaw('CAST(stock AS NUMERIC) ASC');
+
+    if (isDownload) {
+      return await queryData;
+    }
+
+    queryData = queryData.page(query.page, query.pageSize);
+
+    const result = await queryData;
 
     const stats = await ProductsModel.query()
       .where('company_id', auth.company_id)
@@ -91,6 +102,19 @@ export class ProductsService {
     });
 
     return result;
+  }
+
+  async updateStock(id: number, body: UpdateStockDto, auth: IAuth) {
+    const product = await ProductsModel.query().findById(id);
+
+    if (!product) throw new NotFoundException();
+
+    await product.$query().patch({
+      stock: (product.stock || 0) + body.stock,
+      updated_by: auth.id,
+    });
+
+    return 'Stock berhasil diperbaharui';
   }
 
   async createFromImport(row: Row, auth: IAuth) {

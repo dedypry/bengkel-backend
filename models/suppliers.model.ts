@@ -4,11 +4,11 @@ import { BaseModel } from './base.model';
 @Table('suppliers', { softDelete: true })
 export class SuppliersModel extends BaseModel {
   // === FIELD START ===
-  code: string;
+  code!: string;
   company_id?: number;
-  name: string;
+  name!: string;
   contact_name?: string;
-  phone: string;
+  phone!: string;
   email?: string;
   address?: string;
   npwp?: string;

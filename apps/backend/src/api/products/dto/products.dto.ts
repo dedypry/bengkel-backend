@@ -14,40 +14,40 @@ export class CreateProductDto {
       .required()
       .messages({ 'any.required': 'Kode produk wajib diisi' }),
   )
-  code: string;
+  code!: string;
 
   @JoiSchema(Joi.string().required())
-  name: string;
+  name!: string;
 
   @JoiSchema(Joi.string().allow('', null).optional())
   description?: string;
 
   @JoiSchema(Joi.number().integer().required())
-  category_id: number;
+  category_id!: number;
 
   @JoiSchema(Joi.number().precision(2).min(0).required())
-  purchase_price: number;
+  purchase_price!: number;
 
   @JoiSchema(Joi.number().precision(2).min(0).required())
-  sell_price: number;
+  sell_price!: number;
 
   @JoiSchema(Joi.number().integer().min(0).required())
-  stock: number;
+  stock!: number;
 
   @JoiSchema(Joi.number().integer().min(0).required())
-  min_stock: number;
+  min_stock!: number;
 
   @JoiSchema(Joi.number().integer().required())
-  uom_id: number;
+  uom_id!: number;
 
   @JoiSchema(Joi.string().allow('', null).optional())
   location?: string;
 
   @JoiSchema(Joi.boolean().default(true))
-  is_active: boolean;
+  is_active!: boolean;
 
   @JoiSchema(Joi.array().items(Joi.string().uri()).optional())
-  images: string[];
+  images!: string[];
 }
 
 export class ProductQueryDto extends IQuery {
@@ -63,16 +63,16 @@ export class ProductReceiptDto {
       'string.empty': 'Purchase Order number is required',
     }),
   )
-  poNumber: string;
+  poNumber!: string;
 
   @JoiSchema(Joi.number().optional())
   id?: number;
 
   @JoiSchema(Joi.number().integer().required())
-  supplierId: number;
+  supplierId!: number;
 
   @JoiSchema(Joi.date().iso().required())
-  receiptDate: string;
+  receiptDate!: string;
 
   @JoiSchema(Joi.string().optional().allow(null, ''))
   suratJalanNumber?: string;
@@ -104,14 +104,20 @@ export class ProductReceiptDto {
       .min(1)
       .required(),
   )
-  items: ReceiptItemDto[];
+  items!: ReceiptItemDto[];
 }
 
 export class ReceiptItemDto {
   id?: number;
-  productId: number;
-  qtyPo: number;
-  qtyRec: number;
-  purchasePrice: number;
-  condition: string;
+  productId!: number;
+  qtyPo!: number;
+  qtyRec!: number;
+  purchasePrice!: number;
+  condition!: string;
+}
+
+@JoiSchemaOptions({ allowUnknown: false })
+export class UpdateStockDto {
+  @JoiSchema(Joi.number().required())
+  stock!: number;
 }

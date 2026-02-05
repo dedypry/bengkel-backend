@@ -11,9 +11,9 @@ import { ImagesModel } from './images.model';
 @Table('products', { softDelete: true })
 export class ProductsModel extends BaseModel {
   // === FIELD START ===
-  code: string;
+  code!: string;
   company_id?: number;
-  name: string;
+  name!: string;
   image?: string;
   description?: string;
   category_id?: number;

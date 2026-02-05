@@ -8,7 +8,7 @@ import slugify from 'slugify';
 export class ServiceCategoriesModel extends BaseModel {
   // === FIELD START ===
   company_id?: number;
-  name: string;
+  name!: string;
   slug?: string;
   description?: string;
   is_active?: boolean;

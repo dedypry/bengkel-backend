@@ -9,7 +9,7 @@ import { ServiceCategoriesModel } from './service-categories.model';
 export class ServicesModel extends BaseModel {
   // === FIELD START ===
   company_id?: number;
-  name: string;
+  name!: string;
   code?: string;
   description?: string;
   price?: number;

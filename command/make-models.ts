@@ -141,7 +141,7 @@ function pgToTs(type: string, defaultValue: string) {
 
 function generateInterfaces(col: ColumnInfo) {
   const tsType = pgToTs(col.type, col.defaultValue);
-  const optional = col.nullable ? '?' : '';
+  const optional = col.nullable ? '?' : '!';
   const safeName = /\s/.test(col.name) ? `'${col.name}'` : col.name;
   return `  ${safeName}${optional}: ${tsType};`;
 }

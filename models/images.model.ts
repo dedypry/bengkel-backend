@@ -9,11 +9,11 @@ export class ImagesModel extends BaseModel {
   model?: string;
   parent_id?: number;
   company_id?: number;
-  filename: string;
-  original_name: string;
-  mime_type: string;
-  size: number;
-  path: string;
+  filename!: string;
+  original_name!: string;
+  mime_type!: string;
+  size!: number;
+  path!: string;
   is_primary?: boolean;
   updated_by?: number;
   // === FIELD END ===

@@ -5,8 +5,8 @@ import { PermissionsModel } from './permissions.model';
 @Table('roles', { hide: ['created_at', 'updated_at'], softDelete: true })
 export class RolesModel extends BaseModel {
   // === FIELD START ===
-  name: string;
-  slug: string;
+  name!: string;
+  slug!: string;
   description?: string;
   updated_by?: number;
   company_id?: number;

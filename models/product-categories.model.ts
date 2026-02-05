@@ -10,8 +10,8 @@ import slugify from 'slugify';
 @Table('product_categories', { softDelete: true, hide: ['company_id'] })
 export class ProductCategoriesModel extends BaseModel {
   // === FIELD START ===
-  name: string;
-  slug: string;
+  name!: string;
+  slug!: string;
   company_id?: number;
   description?: string;
   is_active?: boolean;

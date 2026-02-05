@@ -10,8 +10,8 @@ import { UsersModel } from './users.model';
 @Table('companies', { hide: ['created_at', 'updated_at'] })
 export class CompaniesModel extends BaseModel {
   // === FIELD START ===
-  name: string;
-  slug: string;
+  name!: string;
+  slug!: string;
   logo_url?: string;
   email?: string;
   phone_number?: string;
