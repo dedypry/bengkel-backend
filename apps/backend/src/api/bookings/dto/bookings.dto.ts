@@ -8,20 +8,23 @@ export class CreateBookingDto {
   @JoiSchema(Joi.number().optional())
   id?: number;
 
+  @JoiSchema(Joi.string().optional())
+  customer_id?: string;
+
   @JoiSchema(
     Joi.string().required().messages({
       'string.empty': 'Silahkan pilih kendaraan',
       'any.required': 'Silahkan pilih kendaraan',
     }),
   )
-  vehicle_id: string;
+  vehicle_id!: string;
   @JoiSchema(
     Joi.string().required().messages({
       'string.empty': 'Silahkan pilih Cabang',
       'any.required': 'Silahkan pilih Cabang',
     }),
   )
-  branch_id: string;
+  branch_id!: string;
 
   @JoiSchema(
     Joi.date()
@@ -34,7 +37,7 @@ export class CreateBookingDto {
         'any.required': 'Tanggal booking wajib diisi',
       }),
   )
-  booking_date: string;
+  booking_date!: string;
 
   @JoiSchema(
     Joi.string().required().messages({
@@ -42,7 +45,7 @@ export class CreateBookingDto {
       'any.required': 'Jam booking wajib diisi',
     }),
   )
-  booking_time: string;
+  booking_time!: string;
 
   @JoiSchema(
     Joi.string().required().messages({
@@ -50,14 +53,8 @@ export class CreateBookingDto {
       'any.required': 'Pilih jenis servis',
     }),
   )
-  service_type: string;
+  service_type!: string;
 
-  @JoiSchema(
-    Joi.string().min(5).required().messages({
-      'string.min': 'Berikan detail keluhan minimal 5 karakter',
-      'string.empty': 'Keluhan wajib diisi',
-      'any.required': 'Keluhan wajib diisi',
-    }),
-  )
-  complaint: string;
+  @JoiSchema(Joi.string().optional().allow('', null))
+  complaint?: string;
 }

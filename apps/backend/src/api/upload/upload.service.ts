@@ -1,6 +1,10 @@
 import 'dotenv/config';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
 import path from 'path';
@@ -64,6 +68,37 @@ export class UploadService {
     } catch (error) {
       console.error('S3 Upload Error:', error);
       throw new InternalServerErrorException('Gagal mengunggah file ke S3');
+    }
+  }
+
+  async deleteFileByUrl(url: string): Promise<void> {
+    if (!url) return;
+
+    try {
+      // 1. Ekstrak 'Key' (nama file) dari URL
+      // Contoh URL: https://bucket.s3.region.amazonaws.com/filename.webp
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+
+      if (!fileName) {
+        throw new Error('FILE NAME TIDAK DITEMUKAN PADA URL');
+      }
+
+      // 2. Kirim perintah hapus ke S3
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+      });
+
+      await this.s3Client.send(command);
+
+      // 3. Hapus data dari Database (Optional tapi disarankan)
+      await ImagesModel.query().delete().where('filename', fileName);
+
+      console.log(`SUCCESS: FILE ${fileName} BERHASIL DIHAPUS DARI S3 DAN DB`);
+    } catch (error) {
+      console.error('S3 Delete Error:', error);
+      throw new InternalServerErrorException('GAGAL MENGHAPUS FILE DARI S3');
     }
   }
 }

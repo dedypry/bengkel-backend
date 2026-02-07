@@ -2,7 +2,9 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Query,
   UploadedFile,
@@ -72,5 +74,10 @@ export class ServicesController {
     await this.servicesService.createService(body, auth);
 
     return 'Service berhasil di buat';
+  }
+
+  @Delete(':id')
+  destroy(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.servicesService.destroy(id, auth);
   }
 }

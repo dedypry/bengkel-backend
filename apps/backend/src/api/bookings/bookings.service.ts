@@ -34,6 +34,10 @@ export class BookingsService {
       updated_by: auth.id,
     };
 
+    if (auth.type != 'cs') {
+      payload.customer_id = data.customer_id;
+    }
+
     if (data?.id) {
       await BookingsModel.query()
         .findById(data?.id)

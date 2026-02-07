@@ -99,7 +99,7 @@ export class WorkOrderRequestDto {
   allowUnknown: false,
 })
 export class WorkOrderUpdateServiceDto {
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema).min(1).required())
+  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
   services!: IWorkOrderItem[];
 
   @JoiSchema(Joi.array().items(WorkOrderItemSchema))
@@ -108,6 +108,11 @@ export class WorkOrderUpdateServiceDto {
 
 export class WoQuery extends IQuery {
   status?: string;
+  customerId?: number;
+  date_to?: string;
+  date_from?: string;
+  isHistory?: boolean;
+  noAuth?: boolean;
 }
 
 @JoiSchemaOptions({

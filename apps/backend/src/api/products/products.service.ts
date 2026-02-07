@@ -15,8 +15,10 @@ import { ProductCategoriesModel } from 'models/product-categories.model';
 import { fn, raw } from 'objection';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { OrderItemsModel } from 'models/order-items.model';
+import { UploadService } from '../upload/upload.service';
 @Injectable()
 export class ProductsService {
+  constructor(private readonly uploadService: UploadService) {}
   async list(query: ProductQueryDto, auth: IAuth, isDownload: boolean = false) {
     let queryData: any = ProductsModel.query()
       .withGraphFetched('[category.parent,uom]')
@@ -91,6 +93,16 @@ export class ProductsService {
         product = await ProductsModel.query(trx).insert(payload);
       }
 
+      const images = await ImagesModel.query()
+        .where('parent_id', product?.id)
+        .whereNotIn('path', body.images);
+
+      if (images.length > 0) {
+        await Promise.all(
+          images.map((e) => this.uploadService.deleteFileByUrl(e.path)),
+        );
+      }
+
       await ImagesModel.query().whereIn('path', body.images).update({
         parent_id: product.id,
         updated_by: auth.id,
@@ -110,7 +122,7 @@ export class ProductsService {
     if (!product) throw new NotFoundException();
 
     await product.$query().patch({
-      stock: (product.stock || 0) + body.stock,
+      stock: body.stock,
       updated_by: auth.id,
     });
 

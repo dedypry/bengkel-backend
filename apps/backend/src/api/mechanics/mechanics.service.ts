@@ -31,7 +31,10 @@ export class MechanicsService {
       .leftJoin(
         MechanicRatingsModel.query()
           .alias('mrm')
-          .select('mechanic_id', raw('AVG(mrm.rating)::float').as('rating'))
+          .select(
+            'mechanic_id',
+            raw('ROUND(AVG(mrm.rating)::numeric, 2)::float').as('rating'),
+          )
           .groupBy('mechanic_id')
           .as('mrm'),
         'mrm.mechanic_id',

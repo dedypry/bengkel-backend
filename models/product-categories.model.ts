@@ -1,11 +1,13 @@
 import {
   BelongsToOne,
   HasMany,
+  Modifier,
   Table,
 } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { ProductsModel } from './products.model';
 import slugify from 'slugify';
+import type { AnyQueryBuilder } from 'objection';
 
 @Table('product_categories', { softDelete: true, hide: ['company_id'] })
 export class ProductCategoriesModel extends BaseModel {
@@ -57,6 +59,11 @@ export class ProductCategoriesModel extends BaseModel {
     return category;
   }
 
+  @Modifier()
+  childrens(query: AnyQueryBuilder) {
+    query.withGraphFetched('children').whereNull('parent_id');
+  }
+
   @HasMany(() => ProductsModel, {
     to: 'category_id',
   })
@@ -66,4 +73,10 @@ export class ProductCategoriesModel extends BaseModel {
     from: 'parent_id',
   })
   parent?: ProductCategoriesModel;
+
+  @HasMany(() => ProductCategoriesModel, {
+    from: 'id',
+    to: 'parent_id',
+  })
+  children?: ProductCategoriesModel[];
 }

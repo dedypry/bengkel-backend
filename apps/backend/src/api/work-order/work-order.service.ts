@@ -46,11 +46,34 @@ export class WorkOrderService {
         }
       })
       .where((builder) => {
-        if (query.status && query.status != 'all') {
-          builder.where('progress', query.status);
+        if (query.status && query.status != 'all' && !query.isHistory) {
+          builder
+            .where('progress', query.status)
+            .orWhere('wo.status', query.status);
+        }
+
+        if (query.isHistory) {
+          builder.whereIn('wo.status', ['closed', 'cancel']);
+        }
+
+        if (!query.noAuth) {
+          builder.where('wo.company_id', auth.company_id);
+        }
+
+        if (query.customerId) {
+          builder.where('customer_id', query.customerId);
         }
       })
-      .where('wo.company_id', auth.company_id)
+      .where((builder) => {
+        if (query.date_from) {
+          const start = dayjs(query.date_from).startOf('day').toISOString();
+          builder.where('wo.created_at', '>=', start);
+        }
+        if (query.date_to) {
+          const end = dayjs(query.date_to).endOf('day').toISOString();
+          builder.where('wo.created_at', '<=', end);
+        }
+      })
       .orderByRaw(`CASE WHEN wo.status = 'closed' THEN 1 ELSE 0 END ASC`)
       .orderBy('wo.created_at', 'desc')
       .page(query.page, query.pageSize);
@@ -88,7 +111,7 @@ export class WorkOrderService {
   async detail(id: number, auth: IAuth) {
     const result = await WorkOrdersModel.query()
       .withGraphFetched(
-        '[services,mechanics.profile,spareparts,vehicle,customer,payment]',
+        '[services,mechanics.profile,spareparts,vehicle,customer,payment,company]',
       )
       .findOne({
         id,

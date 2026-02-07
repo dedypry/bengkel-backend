@@ -22,7 +22,7 @@ export class CreateProductDto {
   @JoiSchema(Joi.string().allow('', null).optional())
   description?: string;
 
-  @JoiSchema(Joi.number().integer().required())
+  @JoiSchema(Joi.number().required())
   category_id!: number;
 
   @JoiSchema(Joi.number().precision(2).min(0).required())

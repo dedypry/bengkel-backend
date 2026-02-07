@@ -14,13 +14,13 @@ export class ProfileDto {
 export class VehicleDto {
   id?: number;
   @JoiSchema(Joi.string().required().uppercase())
-  plate_number: string;
+  plate_number!: string;
 
   @JoiSchema(Joi.string().required())
-  brand: string;
+  brand!: string;
 
   @JoiSchema(Joi.string().required())
-  model: string;
+  model!: string;
 
   @JoiSchema(Joi.string().allow('', null))
   year?: string;
@@ -52,7 +52,7 @@ export class CreateCustomerDto {
   @JoiSchema(
     Joi.string().required().messages({ 'any.required': 'Nama wajib diisi' }),
   )
-  name: string;
+  name!: string;
 
   @JoiSchema(
     Joi.string()
@@ -60,19 +60,19 @@ export class CreateCustomerDto {
       .pattern(/^[0-9]+$/)
       .min(10),
   )
-  phone: string;
+  phone!: string;
 
   @JoiSchema(Joi.string().email().allow('', null))
   email?: string;
 
   @JoiSchema(Joi.string().valid('personal', 'corporate').default('personal'))
-  customer_type: string;
+  customer_type!: string;
 
   @JoiSchema(Joi.string().allow('', null))
   nik_ktp?: string;
 
   @JoiSchema(Joi.number().default(0))
-  credit_limit: number;
+  credit_limit!: number;
 
   @JoiSchema(Joi.string().allow('', null))
   notes?: string;
@@ -87,7 +87,7 @@ export class CreateCustomerDto {
       birth_date: Joi.string().allow('', null),
     }),
   )
-  profile: ProfileDto;
+  profile!: ProfileDto;
   // Mendefinisikan Array of Objects untuk Vehicles
   @JoiSchema(
     Joi.array()
@@ -113,10 +113,11 @@ export class CreateCustomerDto {
       .min(1)
       .required(),
   )
-  vehicles: VehicleDto[];
+  vehicles!: VehicleDto[];
 }
 
 export class CustomerQueryDto extends IQuery {
   noStats?: boolean;
   isVehicle?: boolean;
+  noPagination?: boolean;
 }

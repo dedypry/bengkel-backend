@@ -7,6 +7,7 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { CreateServiceDto } from './dto/service.dto';
 import { Row } from 'exceljs';
 import { getRow } from 'utils/helpers/global';
+import { fn } from 'objection';
 
 @Injectable()
 export class ServicesService {
@@ -87,5 +88,22 @@ export class ServicesService {
     } else {
       await ServicesModel.query().insert(payload as any);
     }
+  }
+
+  async destroy(id: number, auth: IAuth) {
+    console.log(auth, id);
+    const find = await ServicesModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!find) throw new NotFoundException();
+
+    await find.$query().patch({
+      deleted_at: fn.now(),
+      updated_by: auth.id,
+    });
+
+    return 'Data berhasil dihapus';
   }
 }

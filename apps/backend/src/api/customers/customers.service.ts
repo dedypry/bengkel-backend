@@ -45,7 +45,7 @@ export class CustomersService {
     };
   }
   async listCustomer(query: CustomerQueryDto) {
-    const result = await CustomersModel.query()
+    const queryData = CustomersModel.query()
       .select([
         'customers.*',
         CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
@@ -59,11 +59,15 @@ export class CustomersService {
             .orWhereILike('phone', `%${query.q}%`);
         }
       })
-      .whereNull('deleted_at')
-      .page(query.page, query.pageSize);
+      .whereNull('deleted_at');
+
+    if (query.noPagination) {
+      return await queryData;
+    }
 
     let stats = undefined as any;
 
+    const result = await queryData.page(query.page, query.pageSize);
     if (!query.noStats) {
       stats = await this.getStats();
     }

@@ -25,10 +25,23 @@ export class SuppliersService {
   }
 
   async create(body: CreateSupplierDto, auth: IAuth) {
-    await SuppliersModel.query().upsertGraph({
+    const payload = {
       ...body,
       company_id: auth.company_id,
-    });
+    };
+
+    if (body.id) {
+      const supp = await SuppliersModel.query().findOne({
+        id: body.id,
+        company_id: auth.company_id,
+      });
+
+      if (!supp) throw new NotFoundException();
+
+      await supp.$query().patch(payload);
+    } else {
+      await SuppliersModel.query().insert(payload);
+    }
 
     return 'data berhasil disimpan';
   }
