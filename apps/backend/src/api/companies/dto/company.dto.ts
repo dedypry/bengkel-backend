@@ -9,7 +9,7 @@ export class CreateCompanyDto {
   id?: number;
 
   @JoiSchema(Joi.string().required())
-  name: string;
+  name!: string;
 
   @JoiSchema(Joi.string().required())
   logo_url?: string;
@@ -37,16 +37,16 @@ export class CreateCompanyDto {
 })
 export class UpdateCompanyDto {
   @JoiSchema(Joi.number().required())
-  id: number;
+  id!: number;
 
   @JoiSchema(Joi.string().min(3).max(100).required())
-  name: string;
+  name!: string;
 
   @JoiSchema(Joi.string().uri().allow('', null).optional())
   logo_url?: string;
 
   @JoiSchema(Joi.string().email().required())
-  email: string;
+  email!: string;
 
   @JoiSchema(
     Joi.string()
@@ -55,7 +55,7 @@ export class UpdateCompanyDto {
       .max(15)
       .required(),
   )
-  phone_number: string;
+  phone_number!: string;
 
   @JoiSchema(
     Joi.string()
@@ -67,7 +67,6 @@ export class UpdateCompanyDto {
 
   @JoiSchema(
     Joi.string()
-      .length(15)
       .pattern(/^[0-9]+$/)
       .allow('', null)
       .optional(),
@@ -75,7 +74,7 @@ export class UpdateCompanyDto {
   npwp?: string;
 
   @JoiSchema(Joi.boolean().default(false))
-  is_ppn: boolean;
+  is_ppn!: boolean;
 
   @JoiSchema(
     Joi.number().min(0).max(100).when('is_ppn', {
@@ -84,29 +83,29 @@ export class UpdateCompanyDto {
       otherwise: Joi.optional(),
     }),
   )
-  ppn: number;
+  ppn!: number;
 
   @JoiSchema(Joi.boolean().default(false))
-  is_discount_birth_day: boolean;
+  is_discount_birth_day!: boolean;
 
   @JoiSchema(Joi.number().min(0).optional())
-  total_discount_birth_day: number;
+  total_discount_birth_day!: number;
 
   @JoiSchema(Joi.string().valid('percentage', 'fixed').default('percentage'))
-  type_discount_birth_day: string;
+  type_discount_birth_day!: string;
 
   @JoiSchema(Joi.number().min(0).optional())
-  max_discount_birth_day: number;
+  max_discount_birth_day!: number;
 
   @JoiSchema(
     Joi.object({
       title: Joi.string().required(),
-      province_id: Joi.number().integer().required(),
-      city_id: Joi.number().integer().required(),
-      district_id: Joi.number().integer().required(),
-    }).required(),
+      province_id: Joi.number().integer(),
+      city_id: Joi.number().integer(),
+      district_id: Joi.number().integer(),
+    }),
   )
-  address: {
+  address!: {
     title: string;
     province_id: number;
     city_id: number;
