@@ -111,8 +111,8 @@ export class WoQuery extends IQuery {
   customerId?: number;
   date_to?: string;
   date_from?: string;
-  isHistory?: boolean;
-  noAuth?: boolean;
+  isHistory?: number;
+  noAuth?: number;
 }
 
 @JoiSchemaOptions({

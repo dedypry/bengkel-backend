@@ -52,11 +52,11 @@ export class WorkOrderService {
             .orWhere('wo.status', query.status);
         }
 
-        if (query.isHistory) {
+        if (query.isHistory == 1) {
           builder.whereIn('wo.status', ['closed', 'cancel']);
         }
 
-        if (!query.noAuth) {
+        if (query.noAuth != 1) {
           builder.where('wo.company_id', auth.company_id);
         }
 
@@ -247,6 +247,7 @@ export class WorkOrderService {
         promo_data: JSON.stringify(promoData),
         items: payloadItem,
         complaints: body.complaints,
+        booking_id: body.booking_id,
       };
 
       const wo = await WorkOrdersModel.query(trx).upsertGraphAndFetch(
