@@ -65,7 +65,7 @@ export class ProductsService {
 
   async detail(id: number, auth: IAuth) {
     return await ProductsModel.query()
-      .withGraphFetched('[category,uom,images]')
+      .withGraphFetched('[category.parent,uom,images]')
       .findOne({
         id,
         company_id: auth.company_id,

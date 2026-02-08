@@ -5,8 +5,11 @@ import { IAuth } from 'utils/interfaces/IAuth';
 @Injectable()
 export class UomsService {
   async list(auth: IAuth) {
-    return await UomsModel.query().where((builder) => {
-      builder.where('company_id', auth.company_id).orWhereNull('company_id');
-    });
+    return await UomsModel.query()
+      .where((builder) => {
+        builder.where('company_id', auth.company_id).orWhereNull('company_id');
+      })
+      .distinctOn('name')
+      .orderBy('name', 'asc');
   }
 }
