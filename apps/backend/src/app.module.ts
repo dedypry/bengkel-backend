@@ -29,6 +29,7 @@ import 'dotenv/config';
 import { EmailModule } from 'utils/modules/email.module';
 import { BookingsModule } from './api/bookings/bookings.module';
 import { AiModule } from './api/ai/ai.module';
+import { ExpenseModule } from './api/expense/expense.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { AiModule } from './api/ai/ai.module';
     PermissionsModule,
     BookingsModule,
     AiModule,
+    ExpenseModule,
   ],
   controllers: [AppController],
   providers: [],
