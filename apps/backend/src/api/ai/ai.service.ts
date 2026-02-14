@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ServicesModel } from 'models/services.model';
-import { ProductsModel } from 'models/products.model';
+// import { ServicesModel } from 'models/services.model';
+// import { ProductsModel } from 'models/products.model';
 
 @Injectable()
 export class AiService {
@@ -56,77 +56,83 @@ Telepon: ${this.workshopProfile.phone}
       `.trim();
     }
 
-    if (!isAskingPrice) {
-      // === KELUHAN TEKNIS SAJA ===
-      const result = await this.model.generateContent(userPrompt);
-      return (
-        result.response.text() ||
-        'Keluhan kurang jelas. Sebutkan gejala motor/mobil secara spesifik.'
-      );
-    }
-
-    // === PENCARIAN DATABASE ===
-    const keyword = this.extractKeyword(userPrompt);
-
-    const [services, products] = await Promise.all([
-      ServicesModel.query()
-        .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
-        .orderByRaw(
-          `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
-          [keyword],
-        )
-        .limit(3),
-
-      ProductsModel.query()
-        .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
-        .orderByRaw(
-          `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
-          [keyword],
-        )
-        .limit(3),
-    ]);
-
-    const data = [...services, ...products];
-
-    if (data.length === 0) {
-      return `
-Bisa. Keluhan "${keyword}" biasanya perlu pemeriksaan langsung.
-
-Untuk estimasi biaya pasti, kendaraan perlu dicek di bengkel terlebih dahulu.
-`;
-    }
-
-    // === AI HANYA MERANGKUM DATA ===
-    const summaryPrompt = `
-    DATA LAYANAN BENGKEL:
-
-${JSON.stringify(
-  data.map((d: any) => ({
-    nama: d.name,
-    harga: d.price || d.purchase_price,
-  })),
-  null,
-  2,
-)}
-
-Instruksi WAJIB:
-1. Awali dengan 1 kalimat singkat menjelaskan kemungkinan penyebab keluhan.
-2. Gunakan bahasa mekanik bengkel, normal, profesional, tidak huruf besar semua.
-3. Tampilkan daftar layanan dan harga menggunakan bullet "•".
-4. Gabungkan layanan yang fungsinya sama (jangan duplikat).
-5. Jangan menambah, mengubah, atau mengira-ngira data di luar yang diberikan.
-6. Hitung total harga dari semua layanan yang ditampilkan.
-7. Hitung total estimasi pengerjaan HANYA dari field "estimasi_menit".
-8. Jika "estimasi_menit" tidak tersedia, tuliskan: "Estimasi pengerjaan: perlu pengecekan langsung".
-9. Tutup dengan ringkasan singkat berisi total harga dan estimasi waktu.
-`;
-
-    const result = await this.model.generateContent(summaryPrompt);
-
+    const result = await this.model.generateContent(userPrompt);
     return (
-      result.response.text()?.replace(/^\*+/gm, '•')?.trim() ||
-      'Data ditemukan, namun gagal merangkum harga.'
+      result.response.text() ||
+      'Keluhan kurang jelas. Sebutkan gejala motor/mobil secara spesifik.'
     );
+
+    //     if (!isAskingPrice) {
+    //       // === KELUHAN TEKNIS SAJA ===
+    //       const result = await this.model.generateContent(userPrompt);
+    //       return (
+    //         result.response.text() ||
+    //         'Keluhan kurang jelas. Sebutkan gejala motor/mobil secara spesifik.'
+    //       );
+    //     }
+
+    //     // === PENCARIAN DATABASE ===
+    //     const keyword = this.extractKeyword(userPrompt);
+
+    //     const [services, products] = await Promise.all([
+    //       ServicesModel.query()
+    //         .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
+    //         .orderByRaw(
+    //           `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
+    //           [keyword],
+    //         )
+    //         .limit(3),
+
+    //       ProductsModel.query()
+    //         .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
+    //         .orderByRaw(
+    //           `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
+    //           [keyword],
+    //         )
+    //         .limit(3),
+    //     ]);
+
+    //     const data = [...services, ...products];
+
+    //     if (data.length === 0) {
+    //       return `
+    // Bisa. Keluhan "${keyword}" biasanya perlu pemeriksaan langsung.
+
+    // Untuk estimasi biaya pasti, kendaraan perlu dicek di bengkel terlebih dahulu.
+    // `;
+    //     }
+
+    //     // === AI HANYA MERANGKUM DATA ===
+    //     const summaryPrompt = `
+    //     DATA LAYANAN BENGKEL:
+
+    // ${JSON.stringify(
+    //   data.map((d: any) => ({
+    //     nama: d.name,
+    //     harga: d.price || d.purchase_price,
+    //   })),
+    //   null,
+    //   2,
+    // )}
+
+    // Instruksi WAJIB:
+    // 1. Awali dengan 1 kalimat singkat menjelaskan kemungkinan penyebab keluhan.
+    // 2. Gunakan bahasa mekanik bengkel, normal, profesional, tidak huruf besar semua.
+    // 3. Tampilkan daftar layanan dan harga menggunakan bullet "•".
+    // 4. Gabungkan layanan yang fungsinya sama (jangan duplikat).
+    // 5. Jangan menambah, mengubah, atau mengira-ngira data di luar yang diberikan.
+    // 6. Hitung total harga dari semua layanan yang ditampilkan.
+    // 7. Hitung total estimasi pengerjaan HANYA dari field "estimasi_menit".
+    // 8. Jika "estimasi_menit" tidak tersedia, tuliskan: "Estimasi pengerjaan: perlu pengecekan langsung".
+    // 9. Tutup dengan ringkasan singkat berisi total harga dan estimasi waktu.
+    // `;
+
+    //     const result = await this.model.generateContent(summaryPrompt);
+
+    //     return (
+    //       result.response.text()?.replace(/^\*+/gm, '•')?.trim() ||
+    //       'Data ditemukan, namun gagal merangkum harga.'
+    //     );
   }
 
   private extractKeyword(text: string): string {

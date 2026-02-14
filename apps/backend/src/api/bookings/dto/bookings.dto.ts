@@ -58,3 +58,61 @@ export class CreateBookingDto {
   @JoiSchema(Joi.string().optional().allow('', null))
   complaint?: string;
 }
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class CreateBookingLandingDto {
+  @JoiSchema(Joi.string().required())
+  name!: string;
+
+  @JoiSchema(Joi.string().email().required())
+  email!: string;
+
+  @JoiSchema(Joi.string().required())
+  phone!: string;
+  @JoiSchema(Joi.string().required())
+  vehicle_type!: string;
+  @JoiSchema(Joi.string().required())
+  plate_number!: string;
+
+  @JoiSchema(
+    Joi.string().required().messages({
+      'string.empty': 'Silahkan pilih Cabang',
+      'any.required': 'Silahkan pilih Cabang',
+    }),
+  )
+  branch_id!: string;
+
+  @JoiSchema(
+    Joi.date()
+      .iso()
+      .min('now') // Validasi: Minimal hari ini (backend biasanya lebih fleksibel dibanding UI H+1)
+      .required()
+      .messages({
+        'date.base': 'Format tanggal tidak valid',
+        'date.min': 'Tanggal booking tidak boleh di masa lalu',
+        'any.required': 'Tanggal booking wajib diisi',
+      }),
+  )
+  booking_date!: string;
+
+  @JoiSchema(
+    Joi.string().required().messages({
+      'string.empty': 'Jam booking wajib diisi',
+      'any.required': 'Jam booking wajib diisi',
+    }),
+  )
+  booking_time!: string;
+
+  @JoiSchema(
+    Joi.string().required().messages({
+      'string.empty': 'Pilih jenis servis',
+      'any.required': 'Pilih jenis servis',
+    }),
+  )
+  service_type!: string;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  complaint?: string;
+}

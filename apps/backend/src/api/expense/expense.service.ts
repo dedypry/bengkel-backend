@@ -9,6 +9,7 @@ import { IQuery } from 'utils/interfaces/query';
 export class ExpenseService {
   async list(query: IQuery, auth: IAuth) {
     return await ExpensesModel.query()
+      .withGraphFetched('[category,updated]')
       .where('company_id', auth.company_id)
       .where((builder) => {
         if (query.q) {

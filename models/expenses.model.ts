@@ -1,5 +1,7 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import { BelongsToOne, Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { ExpenseCategoriesModel } from './expense-categories.model';
+import { UsersModel } from './users.model';
 
 @Table('expenses')
 export class ExpensesModel extends BaseModel {
@@ -16,4 +18,14 @@ export class ExpensesModel extends BaseModel {
   supplier_id?: number;
   updated_by?: number;
   // === FIELD END ===
+
+  @BelongsToOne(() => ExpenseCategoriesModel, {
+    from: 'category_id',
+  })
+  category?: ExpenseCategoriesModel;
+
+  @BelongsToOne(() => UsersModel, {
+    from: 'updated_by',
+  })
+  updated?: UsersModel;
 }
