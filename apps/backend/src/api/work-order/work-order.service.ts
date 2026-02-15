@@ -71,7 +71,12 @@ export class WorkOrderService {
         }
         if (query.date_to) {
           const end = dayjs(query.date_to).endOf('day').toISOString();
+
           builder.where('wo.created_at', '<=', end);
+        }
+
+        if (query.date && !query.date_from && !query.date_to) {
+          builder.whereRaw('DATE(wo.created_at) = ?', [query.date]);
         }
       })
       .orderByRaw(`CASE WHEN wo.status = 'closed' THEN 1 ELSE 0 END ASC`)

@@ -58,6 +58,10 @@ export class CustomersService {
             .orWhereILike('email', `%${query.q}%`)
             .orWhereILike('phone', `%${query.q}%`);
         }
+
+        if (query.status) {
+          builder.where('status', query.status);
+        }
       })
       .whereNull('deleted_at');
 

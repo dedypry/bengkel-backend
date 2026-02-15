@@ -1,22 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BookingsModel } from 'models/bookings.model';
-import { CreateBookingDto, CreateBookingLandingDto } from './dto/bookings.dto';
+import {
+  CreateBookingDto,
+  CreateBookingLandingDto,
+  QueryBooking,
+} from './dto/bookings.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
-import { IQuery } from 'utils/interfaces/query';
 import { fn } from 'objection';
 import { CustomersModel } from 'models/customers.model';
 import { VehiclesModel } from 'models/vehicles.model';
 
 @Injectable()
 export class BookingsService {
-  async list(query: IQuery, auth: IAuth) {
+  async list(query: QueryBooking, auth: IAuth) {
     return await BookingsModel.query()
       .withGraphFetched('[vehicle,customer]')
+      .joinRelated('[vehicle,customer]')
       .where((builder) => {
         if (auth.type === 'cs') {
           builder.where('customer_id', auth.id);
         } else {
           builder.where('branch_id', auth.company_id);
+        }
+
+        // search
+
+        if (query.q) {
+          builder
+            .whereILike('vehicle.plate_number', `%${query.q}%`)
+            .orWhereILike('customer.name', `%${query.q}%`);
+        }
+
+        // status
+        if (query.status && query.status !== 'all') {
+          builder.where('bookings.status', query.status?.toUpperCase());
+        }
+
+        if (query.date) {
+          builder.where('booking_date', query.date);
         }
       })
       .orderBy('id', 'desc')

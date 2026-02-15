@@ -120,4 +120,5 @@ export class CustomerQueryDto extends IQuery {
   noStats?: boolean;
   isVehicle?: boolean;
   noPagination?: boolean;
+  status?: string;
 }

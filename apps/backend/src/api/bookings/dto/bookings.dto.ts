@@ -1,5 +1,6 @@
 import * as Joi from 'joi';
 import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
+import { IQuery } from 'utils/interfaces/query';
 
 @JoiSchemaOptions({
   allowUnknown: false,
@@ -115,4 +116,9 @@ export class CreateBookingLandingDto {
 
   @JoiSchema(Joi.string().optional().allow('', null))
   complaint?: string;
+}
+
+export class QueryBooking extends IQuery {
+  status!: string;
+  date!: string;
 }

@@ -110,6 +110,7 @@ export class WoQuery extends IQuery {
   status?: string;
   customerId?: number;
   date_to?: string;
+  date?: string;
   date_from?: string;
   isHistory?: number;
   noAuth?: number;
