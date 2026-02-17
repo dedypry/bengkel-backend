@@ -94,7 +94,8 @@ export class CustomersService {
           );
         }
       })
-      .whereNull('customers.deleted_at');
+      .whereNull('customers.deleted_at')
+      .orderBy('id', 'ASC');
 
     if (query.noPagination) {
       return await queryData;
