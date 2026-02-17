@@ -5,9 +5,10 @@ import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
 import { sendWelcomeMessage } from 'utils/helpers/send-wa';
 import { CompaniesModel } from 'models/companies.model';
-import { fn } from 'objection';
+import { fn, raw } from 'objection';
 import dayjs from 'dayjs';
 import { ServicesModel } from 'models/services.model';
+import { VehiclesModel } from 'models/vehicles.model';
 @Injectable()
 export class CustomersService {
   async getStats() {
@@ -56,18 +57,57 @@ export class CustomersService {
           builder
             .whereILike('name', `%${query.q}%`)
             .orWhereILike('email', `%${query.q}%`)
-            .orWhereILike('phone', `%${query.q}%`);
+            .orWhereILike('phone', `%${query.q}%`)
+            .orWhereExists(
+              CustomersModel.relatedQuery('vehicles').where((v) => {
+                v.whereILike('plate_number', `%${query.q}%`)
+                  .orWhereILike('brand', `%${query.q}%`)
+                  .orWhereILike('model', `%${query.q}%`)
+                  .orWhereILike('engine_number', `%${query.q}%`)
+                  .orWhereILike('vin_number', `%${query.q}%`);
+              }),
+            );
         }
 
-        if (query.status) {
+        if (query.status && query.status != 'all') {
           builder.where('status', query.status);
         }
       })
-      .whereNull('deleted_at');
+      .where((builder) => {
+        if (query.brand || query.model) {
+          builder.whereExists(
+            CustomersModel.relatedQuery('vehicles').modify((vehicleBuilder) => {
+              if (query.brand) {
+                // Gunakan Ilike atau Lower agar lebih aman dengan data yang tadi kita buat lowercase
+                vehicleBuilder.whereILike(
+                  raw('LOWER(brand)'),
+                  query.brand?.toLowerCase(),
+                );
+              }
+              if (query.model) {
+                vehicleBuilder.whereILike(
+                  raw('LOWER(model)'),
+                  query.model?.toLowerCase(),
+                );
+              }
+            }),
+          );
+        }
+      })
+      .whereNull('customers.deleted_at');
 
     if (query.noPagination) {
       return await queryData;
     }
+
+    const vehicles = await VehiclesModel.query()
+      .select(
+        raw('LOWER(TRIM(brand)) as brand'), // Gunakan alias yang unik
+        raw('LOWER(TRIM(model)) as model'),
+      )
+      .whereNull('deleted_at')
+      .groupBy([raw('LOWER(TRIM(brand))'), raw('LOWER(TRIM(model))')])
+      .orderBy(raw('LOWER(TRIM(brand))'), 'asc'); // Order berdasarkan fungsi yang sama
 
     let stats = undefined as any;
 
@@ -76,6 +116,7 @@ export class CustomersService {
       stats = await this.getStats();
     }
 
+    stats['vehicles'] = vehicles;
     return {
       ...result,
       stats,

@@ -121,4 +121,6 @@ export class CustomerQueryDto extends IQuery {
   isVehicle?: boolean;
   noPagination?: boolean;
   status?: string;
+  brand?: string;
+  model?: string;
 }
