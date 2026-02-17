@@ -67,3 +67,86 @@ Salam hangat,
 
   sendWhatsAppMessage(to, message, file);
 };
+
+export async function sendWaByTemplate(
+  recipientNumber: string,
+  dataOrder: any,
+) {
+  const WHATSAPP_TOKEN =
+    'EAAL81eKI77EBQtUfZBpJkMFED5UWn8ssZBOfYollLIo8dG8pFvGkJgZCUkfcqZB0qZAg9ztPSwBdl8AkcYemeHKkfTcBY2MTxszyPtxvOfhrhWj9u0PNaq3hKY3cyUQSDRqiY5W7guaWr9oqoj4pTVm3eMBlQreS07wkOqTbpIX6tZBheHtJg8KRjxJZCZCJHvlDcwZDZD';
+  const PHONE_NUMBER_ID = '955300584335758';
+  const VERSION = 'v21.0'; // Gunakan versi terbaru
+
+  const url = `https://graph.facebook.com/${VERSION}/${PHONE_NUMBER_ID}/messages`;
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: recipientNumber,
+    type: 'template',
+    template: {
+      name: 'welcome',
+      language: { code: 'id' },
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            {
+              type: 'text',
+              parameter_name: 'vehicle_brand',
+              text: 'Toyota Avanza',
+            },
+            {
+              type: 'text',
+              parameter_name: 'plate_no',
+              text: 'B 1234 ABC',
+            },
+            {
+              type: 'text',
+              parameter_name: 'inv_no',
+              text: 'INV/2026/02/001',
+            },
+            {
+              type: 'text',
+              parameter_name: 'grand_total',
+              text: 'Rp 1.500.000',
+            },
+            {
+              type: 'text',
+              parameter_name: 'link',
+              text: 'https://pradanaautocare.id/invoice/abc123',
+            },
+            {
+              type: 'text',
+              parameter_name: 'bank_name',
+              text: 'BCA',
+            },
+            {
+              type: 'text',
+              parameter_name: 'bank_holder',
+              text: 'Pradana Autocare',
+            },
+            {
+              type: 'text',
+              parameter_name: 'bank_no',
+              text: '1234567890',
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error sending WA:', error.response?.data || error.message);
+    throw error;
+  }
+}

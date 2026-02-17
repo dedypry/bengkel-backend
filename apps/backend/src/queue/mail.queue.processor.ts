@@ -17,7 +17,6 @@ export class MailQueueProcessor {
     const { template, context, to, subject } = job.data;
     try {
       const html = await getHtmlContent('invoice', context);
-
       const buffer = await this.pdfService.generatePdf({
         htmlContent: html,
       });

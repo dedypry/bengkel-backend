@@ -35,8 +35,8 @@ const emailTemplateDir = join(process.cwd(), 'assets/templates/emails');
         port: 465,
         secure: true,
         auth: {
-          user: 'dpn.p3i@gmail.com',
-          pass: 'hilnzuetqqwdklez',
+          user: 'info@pradanaautocare.id',
+          pass: 'pldtbniihtawgcvs',
         },
       },
       defaults: {
