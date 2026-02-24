@@ -1,7 +1,8 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
   ChangePasswordDto,
+  UpdatePhotoProfileDto,
   UpdateProfileDto,
   UserCompanyDto,
 } from './dto/user.dto';
@@ -32,5 +33,9 @@ export class UserController {
   @Post('profile')
   changeProfile(@Body() body: UpdateProfileDto, @Auth() auth: IAuth) {
     return this.userService.updateProfile(body, auth);
+  }
+  @Patch('photo-profile')
+  changePhotoProfile(@Body() body: UpdatePhotoProfileDto, @Auth() auth: IAuth) {
+    return this.userService.updateCustomerPhotoProfile(body, auth);
   }
 }

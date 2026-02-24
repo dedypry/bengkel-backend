@@ -107,3 +107,8 @@ export class UpdateProfileDto {
   @JoiSchema(Joi.string().allow(null, '').optional())
   emergency_contact?: string;
 }
+
+export class UpdatePhotoProfileDto {
+  @JoiSchema(Joi.any().optional())
+  photo?: any;
+}

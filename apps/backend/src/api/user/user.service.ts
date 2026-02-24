@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   ChangePasswordDto,
+  UpdatePhotoProfileDto,
   UpdateProfileDto,
   UserCompanyDto,
 } from './dto/user.dto';
@@ -13,6 +14,7 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { CompaniesModel } from 'models/companies.model';
 import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { ProfilesModel } from 'models/profiles.model';
+import { CustomersModel } from 'models/customers.model';
 
 @Injectable()
 export class UserService {
@@ -78,5 +80,22 @@ export class UserService {
     }
 
     return 'data berhasil di ubah';
+  }
+
+  async updateCustomerPhotoProfile(body: UpdatePhotoProfileDto, auth: IAuth) {
+    const user = await CustomersModel.query().findById(auth.id);
+
+    console.log('USR', user);
+
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+
+    await ProfilesModel.query()
+      .update({
+        photo_url: body.photo,
+      })
+      .where('user_id', auth.id)
+      .where('model', 'customers');
+
+    return 'Update berhasil';
   }
 }
