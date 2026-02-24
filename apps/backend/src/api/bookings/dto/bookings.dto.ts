@@ -88,11 +88,11 @@ export class CreateBookingLandingDto {
   @JoiSchema(
     Joi.date()
       .iso()
-      .min('now') // Validasi: Minimal hari ini (backend biasanya lebih fleksibel dibanding UI H+1)
+      // .min('now') // Validasi: Minimal hari ini (backend biasanya lebih fleksibel dibanding UI H+1)
       .required()
       .messages({
         'date.base': 'Format tanggal tidak valid',
-        'date.min': 'Tanggal booking tidak boleh di masa lalu',
+        // 'date.min': 'Tanggal booking tidak boleh di masa lalu',
         'any.required': 'Tanggal booking wajib diisi',
       }),
   )
