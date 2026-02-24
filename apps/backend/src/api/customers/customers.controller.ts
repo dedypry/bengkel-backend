@@ -68,7 +68,8 @@ export class CustomersController {
         phone: customer.phone,
         email: customer.email,
         customer_type: customer.customer_type,
-        vehilce_type: `${vehicle.brand} ${vehicle.model}`,
+        brand: vehicle.brand,
+        model: vehicle.model,
         plate_number: vehicle.plate_number,
         vin_number: vehicle.vin_number, // Nomor Rangka
         engine_number: vehicle.engine_number, // Nomor Mesin
@@ -83,7 +84,8 @@ export class CustomersController {
         { header: 'Telp', key: 'phone', width: 15 },
         { header: 'Email', key: 'email', width: 25 },
         { header: 'Type Pelanggan', key: 'customer_type', width: 15 },
-        { header: 'Type Mobil', key: 'vehilce_type', width: 21 },
+        { header: 'Brand', key: 'brand', width: 21 },
+        { header: 'Model', key: 'model', width: 21 },
         { header: 'No. Polisi', key: 'plate_number', width: 15 },
         { header: 'No. Rangka', key: 'vin_number', width: 20 },
         { header: 'No. Mesin', key: 'engine_number', width: 20 },
