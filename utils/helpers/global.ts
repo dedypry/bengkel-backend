@@ -1,4 +1,9 @@
 import { Row } from 'exceljs';
+import axios from 'axios';
+import sharp from 'sharp';
+
+export const logo_default =
+  'https://brazam.s3.ap-southeast-2.amazonaws.com/6a832b17-b6f4-4ce5-9e0f-7414fa8d7959.webp';
 
 export function randomString(length: number): string {
   const chars =
@@ -96,3 +101,24 @@ export const formatNumber = (value: number | string): string => {
 
   return new Intl.NumberFormat('id-ID').format(numberValue);
 };
+
+export async function imageUrlToBase64(url: string): Promise<string> {
+  try {
+    const response = await axios.get<ArrayBuffer>(url, {
+      responseType: 'arraybuffer',
+    });
+
+    const buffer = Buffer.from(response.data);
+
+    // convert WEBP → PNG (supaya pdfmake bisa baca)
+    const converted = await sharp(buffer).png().toBuffer();
+
+    const base64 = converted.toString('base64');
+
+    return `data:image/png;base64,${base64}`;
+  } catch (error: any) {
+    throw new Error(
+      `Failed to convert image to base64: ${error?.message || error}`,
+    );
+  }
+}

@@ -5,6 +5,7 @@ const WorkOrderItemSchema = Joi.object({
   id: Joi.number().required(),
   qty: Joi.number().min(1).required(),
   price: Joi.number().optional(),
+  supplier_id: Joi.number().optional().allow('', null),
 });
 export interface ICustomer {
   id: number;
@@ -33,6 +34,7 @@ export interface IWorkOrderItem {
   id: number;
   qty: number;
   price: number;
+  supplier_id?: number;
 }
 
 @JoiSchemaOptions({
@@ -76,6 +78,9 @@ export class WorkOrderRequestDto {
 
   @JoiSchema(Joi.number().required())
   current_km!: number;
+
+  @JoiSchema(Joi.number().required())
+  next_km!: number;
 
   @JoiSchema(Joi.string().allow('', null))
   complaints!: string;

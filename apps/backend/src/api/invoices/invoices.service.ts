@@ -19,8 +19,6 @@ export class InvoicesService {
 
     if (!wo) throw new NotFoundException();
 
-    console.log('WO', wo);
-
     return wo;
   }
 }

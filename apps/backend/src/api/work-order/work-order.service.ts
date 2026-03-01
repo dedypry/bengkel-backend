@@ -116,11 +116,19 @@ export class WorkOrderService {
   async detail(id: number, auth: IAuth) {
     const result = await WorkOrdersModel.query()
       .withGraphFetched(
-        '[services,mechanics.profile,spareparts,vehicle,customer,payment,company]',
+        '[services(supplier),mechanics.profile,spareparts(supplier),vehicle,customer,payment,company]',
       )
       .findOne({
         id,
         company_id: auth.company_id,
+      })
+      .modifiers({
+        supplier: (builder) => {
+          builder
+            .alias('sr')
+            .select('sr.*', 's.name as supplier_name')
+            .leftJoin('suppliers as s', 's.id', 'sr.supplier_id');
+        },
       });
 
     if (!result) throw new NotFoundException();
@@ -230,6 +238,7 @@ export class WorkOrderService {
 
       const woPayload = {
         current_km: body.current_km,
+        next_km: body.next_km,
         priority: body.priority,
         company_id: auth.company_id,
         customer_id: customer.id,
@@ -468,7 +477,8 @@ export class WorkOrderService {
 
     const sparepartsData = sparepart.map((item: any) => {
       const find = body.sparepart.find((e) => e.id === item.id);
-      const totalPrice = (find?.qty || 0) * (item?.sell_price || 0);
+      const totalPrice =
+        (find?.qty || 0) * (find?.price || item?.sell_price || 0);
       sparepartTotal += totalPrice;
       const qty = Number(find?.qty || 0);
 
@@ -477,26 +487,41 @@ export class WorkOrderService {
           `Stok untuk produk ${item.name} tidak mencukupi.`,
         );
       }
+
+      const data = {
+        ...item,
+        sell_price: find.price || item?.sell_price,
+        supplier_id: find?.supplier_id,
+      };
+
       return {
-        data: item,
+        data,
         type: 'sparepart',
         qty: find?.qty,
-        price: item.sell_price,
+        price: data.sell_price,
         total_price: totalPrice,
+        supplier_id: find?.supplier_id,
       };
     });
 
     const payloadItem = [
       ...service.map((item: any) => {
         const find = body.services.find((e) => e.id === item.id);
-        const totalPrice = (find?.qty || 0) * (item?.price || 0);
+        const totalPrice = (find?.qty || 0) * (find.price || item?.price || 0);
         serviceTotal += totalPrice;
+
+        const data = {
+          ...item,
+          price: find.price || item?.price,
+          supplier_id: find?.supplier_id,
+        };
         return {
-          data: item,
+          data,
           type: 'service',
           qty: find?.qty,
-          price: item.price,
+          price: data.price,
           total_price: totalPrice,
+          supplier_id: find?.supplier_id,
         };
       }),
       ...sparepartsData,

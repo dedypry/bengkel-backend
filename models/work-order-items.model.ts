@@ -19,6 +19,7 @@ export class WorkOrderItemsModel extends BaseModel {
   work_order_id?: number;
   updated_by?: number;
   type?: string;
+  supplier_id?: number;
   // === FIELD END ===
 
   @Modifier()

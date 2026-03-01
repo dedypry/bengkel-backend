@@ -13,15 +13,20 @@ import { fn } from 'objection';
 @Injectable()
 export class SuppliersService {
   async list(query: IQuery, auth: IAuth) {
-    return await SuppliersModel.query()
+    let supp: any = SuppliersModel.query()
       .where('company_id', auth.company_id)
       .where((builder) => {
         if (query.q) {
           builder.whereILike('name', `%${query.q}%`);
         }
       })
-      .orderBy('created_at', 'DESC')
-      .page(query.page, query.pageSize);
+      .orderBy('created_at', 'DESC');
+
+    if (query.page) {
+      supp = supp.page(query.page, query.pageSize);
+    }
+
+    return await supp;
   }
 
   async create(body: CreateSupplierDto, auth: IAuth) {

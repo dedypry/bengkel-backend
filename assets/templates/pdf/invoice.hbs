@@ -1,0 +1,179 @@
+<table style='font-size: 11px; '
+  data-pdfmake='{"layout":"NoBorder","widths":["auto",5,"auto","*","auto",5,"auto"]}'>
+     <tr>
+        <td>PEMILIK</td>
+        <td>:</td>
+        <td>{{customer.name}}</td>
+        <td></td>
+        <td>NO. POLISI</td>
+        <td>:</td>
+        <td>{{vehicle.plate_number}}</td>
+        
+        
+    </tr>
+    <tr>
+        
+        <td>NO. TELP/HP</td>
+        <td>:</td>
+        <td>{{customer.phone}}</td>
+         <td></td>
+        <td>NO. RANGKA/MESIN</td>
+        <td>:</td>
+        <td >{{vehicle.engine_number}}</td>
+        {{!-- <td></td>
+        <td>KM</td>
+        <td>:</td>
+        <td>{{IDR current_km}}</td> --}}
+    </tr>
+   
+    <tr>
+        <td>ALAMAT</td>
+        <td>:</td>
+        <td>{{{customer.profile.address}}}</td>
+        <td></td>
+        <td>TIPE / WARNA / TAHUN</td>
+        <td>:</td>
+        <td>{{vehicle.brand}} / {{vehicle.model}} / {{vehicle.year}} </td>
+        {{!-- <td></td>
+        <td>NO ANTRI</td>
+        <td>:</td>
+        <td>0</td> --}}
+    </tr>
+    <tr>
+        <td>Mekanik</td>
+        <td>:</td>
+        <td>{{{mech mechanics}}}</td>
+        <td></td>
+        <td>KM </td>
+        <td>:</td>
+        <td>{{IDR current_km}}</td>
+    </tr>
+    <tr>
+        <td>KELUHAN</td>
+        <td>:</td>
+        <td>{{{complaints}}}</td>
+        <td></td>
+        <td>KM Selanjutnya</td>
+        <td>:</td>
+        <td>{{IDR next_km}}</td>
+    </tr>
+</table>
+
+<table
+  style='font-size: 11px;'
+  data-pdfmake='{"widths":[20,"auto","*",40,40,50,50]}'
+>
+  <tr>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>No</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>KODE JASA</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}' colspan="2">NAMA JASA</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>HARGA</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>DISC %</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>JUMLAH</td>
+  </tr>
+   {{#each services}}
+    <tr>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.code}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2">{{this.data.name}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.total_price}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>0</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.total_price}}</td>
+    </tr>
+  {{/each}}
+  
+
+  <tr style="font-size: 12px; font-weight: 500;">
+    <td colspan="4" data-pdfmake='{"border":[false, false, false, false]}'></td>
+    <td 
+      style='text-align: right;' 
+      colspan="2"
+      data-pdfmake='{"border":[false, true, false, false]}'>
+      JASA
+    </td>
+    
+    <td 
+      style='text-align: right;' 
+      data-pdfmake='{"border":[false, true, false, false]}'>
+      {{IDR service_total}}
+    </td>
+  </tr>
+  <tr>
+    <td colspan="7" data-pdfmake='{"border":[false, false, false, false]}'></td>
+  </tr>
+
+  <tr>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>No</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>KODE PART</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>NAMA PART</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>QTY</td>
+    <td  data-pdfmake='{"border":[false, true, false, true]}'>SATUAN</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>HARGA</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>JUMLAH</td>
+  </tr>
+
+  {{#each spareparts}}
+    <tr>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.code}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.name}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{this.qty}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.unit}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.total_price}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.total_price}}</td>
+    </tr>
+  {{/each}}
+
+  <tr style="font-size: 12px; font-weight: 500;">
+    <td colspan="4" rowspan="5" style="font-size: 10px;"  data-pdfmake='{"border":[false, false, false, false]}'>
+      <div style="font-weight: bold; font-size: 12px;">Rekomendasi Servis Mendatang :</div>
+        {{{ next_sugestion }}}
+    </td>
+    <td colspan="2" style='text-align: right;' data-pdfmake='{"border":[false, true, false, false]}'> PART</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, false]}'>{{IDR sparepart_total}}</td>
+  </tr>
+  <tr>
+    
+    <td colspan="2"  style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>SUB TOTAL</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR sub_total}}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>DISC</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR discount_amount}}</td>
+  </tr>
+  <tr>
+    <td colspan="2"  style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>PAJAK {{IDR ppn_percent}}%</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR ppn_amount}}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>GRANT TOTAL</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR grand_total}}</td>
+  </tr>
+</table>
+
+
+<table style='font-size: 12px;'
+  data-pdfmake='{"widths":[100,"*",100]}'>
+    <tr>
+        <td data-pdfmake='{"border":[false, true, false, false]}' colspan="3"> </td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Pemilik / Pembawa</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">PIC Service</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3"> </td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3"> </td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3"> </td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, true]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}'></td>
+    </tr>
+</table>

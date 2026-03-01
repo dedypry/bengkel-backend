@@ -8,5 +8,7 @@ export class SettingsModel extends BaseModel {
   key?: string;
   value?: string;
   updated_by?: number;
+  header_title?: string;
+  tag?: string;
   // === FIELD END ===
 }

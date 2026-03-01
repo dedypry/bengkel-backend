@@ -7,9 +7,10 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import type { Response } from 'express';
 import { PdfService } from 'utils/services/pdf.service';
-import { getHtmlContent } from 'utils/helpers/html-contect';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
+import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
+import GeneratePDF from 'utils/services/pdf-make.service';
 
 @UseGuards(AuthGuard)
 @Controller('invoices')
@@ -28,14 +29,18 @@ export class InvoicesController {
     @Res() res: Response,
   ) {
     const result = await this.invoicesService.payment(id, auth);
+    const html = await renderHtml({ location: 'invoice', data: result });
 
-    const html = await getHtmlContent('invoice', result);
-
-    await this.pdfService.downloadPdf({
-      htmlContent: html,
-      res,
-      name: 'pdf of',
+    console.log(result);
+    const content = await layoutPDF({
+      header: 'Invoice',
+      content: [html],
+      companyId: result.company_id,
+      invNo: result.trx_no,
+      date: result.created_at,
     });
+
+    return GeneratePDF.make(res).download(content);
   }
 
   @Post(':id/send')
