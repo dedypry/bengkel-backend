@@ -5,6 +5,7 @@ import { WorkOrdersModel } from 'models/work-orders.model';
 import { raw } from 'objection';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { IQuery } from 'utils/interfaces/query';
+import { CreateVendorTrxDto } from './dto/vendor-transaction.dto';
 
 @Injectable()
 export class VendorTransactionService {
@@ -42,5 +43,9 @@ export class VendorTransactionService {
       wo,
       items,
     };
+  }
+
+  async createTrx(body: CreateVendorTrxDto, auth:) {
+    return body;
   }
 }

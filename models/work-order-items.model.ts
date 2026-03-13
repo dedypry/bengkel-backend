@@ -21,6 +21,12 @@ export class WorkOrderItemsModel extends BaseModel {
   updated_by?: number;
   type?: string;
   supplier_id?: number;
+  purchase_price?: number;
+  disc_percentage?: number;
+  disc_value?: number;
+  tax_percentage?: number;
+  total_payment?: number;
+  vendor_transaction_id?: number;
   // === FIELD END ===
 
   @Modifier()
