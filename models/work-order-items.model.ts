@@ -6,6 +6,7 @@ import {
 import { BaseModel } from './base.model';
 import { raw, type AnyQueryBuilder } from 'objection';
 import { WorkOrdersModel } from './work-orders.model';
+import { SuppliersModel } from './suppliers.model';
 
 @Table('work_order_items')
 export class WorkOrderItemsModel extends BaseModel {
@@ -35,4 +36,9 @@ export class WorkOrderItemsModel extends BaseModel {
     from: 'work_order_id',
   })
   work_order: WorkOrdersModel;
+
+  @BelongsToOne(() => SuppliersModel, {
+    from: 'supplier_id',
+  })
+  supplier: SuppliersModel;
 }

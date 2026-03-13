@@ -30,6 +30,7 @@ import { EmailModule } from 'utils/modules/email.module';
 import { BookingsModule } from './api/bookings/bookings.module';
 import { AiModule } from './api/ai/ai.module';
 import { ExpenseModule } from './api/expense/expense.module';
+import { VendorTransactionModule } from './api/vendor-transaction/vendor-transaction.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { ExpenseModule } from './api/expense/expense.module';
     BookingsModule,
     AiModule,
     ExpenseModule,
+    VendorTransactionModule,
   ],
   controllers: [AppController],
   providers: [],
