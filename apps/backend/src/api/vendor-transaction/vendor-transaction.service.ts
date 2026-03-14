@@ -88,7 +88,7 @@ export class VendorTransactionService {
 
   async detailPayment(id: number) {
     const result = await VendorTransactionModel.query()
-      .withGraphFetched('[items(item), supplier]')
+      .withGraphFetched('[items(item), supplier,created_by,signature_by]')
       .findById(id)
       .modifiers({
         item: (query) =>
@@ -120,6 +120,7 @@ export class VendorTransactionService {
         company_id: auth.company_id,
         notes: body.notes,
         payment_method_data: body.paymentMethodData,
+        created_id: auth.id,
       };
 
       if (!body.id) {

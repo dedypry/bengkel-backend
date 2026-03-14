@@ -40,6 +40,7 @@ export async function layoutPDF({
   companyId,
   showHeader = true,
   noDefaultPageMargin = false,
+  header,
 }: LayoutPDFOptions): Promise<TDocumentDefinitions> {
   // Base configuration
   const options: TDocumentDefinitions = {
@@ -51,7 +52,7 @@ export async function layoutPDF({
       font: 'Poppins',
       lineHeight: 1,
     },
-    pageMargins: [40, 90, 40, 30],
+    pageMargins: [40, 70, 40, 30],
   };
 
   let company: CompaniesModel | null = null;
@@ -107,7 +108,7 @@ export async function layoutPDF({
               width: '*',
               stack: [
                 {
-                  text: `INVOICE`,
+                  text: header || `INVOICE`,
                   alignment: 'right',
                   fontSize: 10,
                   bold: true,

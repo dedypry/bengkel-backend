@@ -6,6 +6,7 @@ import {
 import { BaseModel } from './base.model';
 import { WorkOrderItemsModel } from './work-order-items.model';
 import { SuppliersModel } from './suppliers.model';
+import { UsersModel } from './users.model';
 
 @Table('vendor_transaction')
 export class VendorTransactionModel extends BaseModel {
@@ -28,6 +29,7 @@ export class VendorTransactionModel extends BaseModel {
   date?: string;
   notes?: string;
   payment_method_data?: any;
+  created_id?: number;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {
@@ -39,4 +41,14 @@ export class VendorTransactionModel extends BaseModel {
     from: 'supplier_id',
   })
   supplier: SuppliersModel;
+
+  @BelongsToOne(() => UsersModel, {
+    from: 'created_id',
+  })
+  created_by: UsersModel;
+
+  @BelongsToOne(() => UsersModel, {
+    from: 'signature_id',
+  })
+  signature_by: UsersModel;
 }
