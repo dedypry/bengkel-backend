@@ -25,6 +25,9 @@ export class VendorTransactionModel extends BaseModel {
   status?: string;
   company_id?: number;
   supplier_id?: number;
+  date?: string;
+  notes?: string;
+  payment_method_data?: any;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

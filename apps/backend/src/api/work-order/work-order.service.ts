@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   ChangeSugestionDto,
+  ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
@@ -112,6 +113,32 @@ export class WorkOrderService {
         completed: Number(stats?.completed || 0),
       },
     };
+  }
+
+  async listPayment(query: ListPaymentQueryDto, auth: IAuth) {
+    return await WorkOrderItemsModel.query()
+      .alias('woi')
+      .select('woi.*', 'work_order.trx_no')
+      .where('type', 'service')
+      .where('work_order.company_id', auth.company_id)
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereRaw(`data->>'name' ILIKE ?`, [`%${query.q}%`])
+            .orWhereRaw(`data->>'code' ILIKE ?`, [`%${query.q}%`])
+            .orWhereILike('work_order.trx_no', `%${query.q}%`);
+        }
+
+        if (query.supplier_id) {
+          builder
+            .where('supplier_id', query.supplier_id)
+            .orWhereNull('supplier_id');
+        } else {
+          builder.whereNull('supplier_id');
+        }
+      })
+      .whereNull('vendor_transaction_id')
+      .leftJoinRelated('[work_order]');
   }
 
   async detail(id: number, auth: IAuth) {

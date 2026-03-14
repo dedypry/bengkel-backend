@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Injectable } from '@nestjs/common';
 import { SuppliersModel } from 'models/suppliers.model';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
@@ -70,9 +71,11 @@ export class VendorTransactionService {
 
   async detail(id: number) {
     const purchase_no = await this.getNumber();
-    console.log(purchase_no);
     const supplier = await SuppliersModel.query().findById(id);
     const items = await WorkOrderItemsModel.query()
+      .alias('wi')
+      .select('wi.*', 'work_order.trx_no')
+      .innerJoinRelated('[work_order]')
       .where('supplier_id', id)
       .whereNull('vendor_transaction_id');
 
@@ -83,14 +86,28 @@ export class VendorTransactionService {
     };
   }
 
+  async detailPayment(id: number) {
+    const result = await VendorTransactionModel.query()
+      .withGraphFetched('[items(item), supplier]')
+      .findById(id)
+      .modifiers({
+        item: (query) =>
+          query
+            .alias('wi')
+            .select('wi.*', 'work_order.trx_no')
+            .joinRelated('work_order'),
+      });
+
+    return result;
+  }
+
   async createTrx(body: CreateVendorTrxDto, auth: IAuth) {
     return await VendorTransactionModel.transaction(async (trx) => {
-      const poNo = await this.getNumber();
       const trxPayload: any = {
         supplier_id: body.supplierId,
-        purchase_no: poNo,
         invoice_no: body.invoiceNo,
         payment_type: body.paymentType,
+        date: body.date,
         payment_method: body.paymentMethod,
         due_days: body.dueDays,
         due_date: body.dueDate,
@@ -101,23 +118,78 @@ export class VendorTransactionService {
         subtotal: body.subTotal,
         total: body.total,
         company_id: auth.company_id,
+        notes: body.notes,
+        payment_method_data: body.paymentMethodData,
       };
 
-      const vendorTrx =
-        await VendorTransactionModel.query(trx).insert(trxPayload);
+      if (!body.id) {
+        const poNo = await this.getNumber();
+        trxPayload.purchase_no = poNo;
+      }
 
-      const itemPayload = body.items.map((item) => ({
-        id: item.id,
-        vendor_transaction_id: vendorTrx.id,
-        purchase_price: item.purchasePrice,
-        disc_percentage: item.discPercentage,
-        disc_value: item.discValue,
-        tax_percentage: item.taxPercentage,
-      }));
+      const vendorTrx = await VendorTransactionModel.query(trx)
+        .upsertGraph(
+          {
+            ...(body.id && {
+              id: body.id,
+            }),
+            ...trxPayload,
+          },
+          {
+            insertMissing: true,
+          },
+        )
+        .returning('id')
+        .first();
 
-      await WorkOrderItemsModel.query(trx).upsertGraph(itemPayload);
+      await WorkOrderItemsModel.query(trx)
+        .where('vendor_transaction_id', vendorTrx.id)
+        .patch({
+          vendor_transaction_id: null,
+          purchase_price: 0,
+          disc_percentage: 0,
+          disc_value: 0,
+          tax_percentage: 0,
+          total_payment: 0,
+        });
+
+      const itemPayload: any[] = body.items
+        .filter((e) => e.select)
+        .map((item) => ({
+          id: item.id,
+          vendor_transaction_id: vendorTrx.id,
+          purchase_price: item.purchasePrice,
+          disc_percentage: item.discPercentage,
+          disc_value: item.discValue,
+          tax_percentage: item.taxPercentage,
+          total_payment: item.total,
+          supplier_id: body.supplierId,
+        }));
+
+      await WorkOrderItemsModel.query(trx).upsertGraph(itemPayload, {
+        noDelete: true,
+        noInsert: true,
+      });
 
       return 'data berhasil disimpan';
     });
+  }
+  async destroy(id: number) {
+    await WorkOrderItemsModel.transaction(async (trx) => {
+      await WorkOrderItemsModel.query(trx)
+        .where('vendor_transaction_id', id)
+        .patch({
+          vendor_transaction_id: null,
+          purchase_price: 0,
+          disc_percentage: 0,
+          disc_value: 0,
+          tax_percentage: 0,
+          total_payment: 0,
+        });
+
+      await VendorTransactionModel.query(trx).deleteById(id);
+    });
+
+    return 'Data Berhasil di hapus';
   }
 }

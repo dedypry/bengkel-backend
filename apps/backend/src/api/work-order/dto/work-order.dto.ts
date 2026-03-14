@@ -168,3 +168,8 @@ export class ChangeSugestionDto {
   @JoiSchema(Joi.string().required())
   next_sugestion!: string;
 }
+
+export class ListPaymentQueryDto {
+  q?: string;
+  supplier_id?: number;
+}

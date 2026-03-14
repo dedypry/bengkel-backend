@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -31,10 +32,19 @@ export class VendorTransactionController {
   listPayment(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
     return this.vendorTransactionService.listPayment(query, auth);
   }
+  @Get('payment/:id')
+  detailPayment(@Param('id') id: number) {
+    return this.vendorTransactionService.detailPayment(id);
+  }
 
   @Get(':id')
   detail(@Param('id') id: number) {
     return this.vendorTransactionService.detail(id);
+  }
+
+  @Delete(':id')
+  destroy(@Param('id') id: number) {
+    return this.vendorTransactionService.destroy(id);
   }
 
   @Post()

@@ -11,6 +11,7 @@ import {
 import { WorkOrderService } from './work-order.service';
 import {
   ChangeSugestionDto,
+  ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
   UpdateStatusWoDto,
@@ -32,6 +33,12 @@ export class WorkOrderController {
   list(@Query(new PaginationPipe()) query: WoQuery, @Auth() auth: IAuth) {
     return this.workOrderService.list(query, auth);
   }
+
+  @Get('service/payment')
+  listPayment(@Query() query: ListPaymentQueryDto, @Auth() auth: IAuth) {
+    return this.workOrderService.listPayment(query, auth);
+  }
+
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.workOrderService.detail(id, auth);

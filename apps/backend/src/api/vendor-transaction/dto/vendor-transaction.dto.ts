@@ -34,6 +34,9 @@ export class VendorTrxItemDto {
 }
 
 export class CreateVendorTrxDto {
+  @JoiSchema(Joi.any().optional())
+  id?: string;
+
   @JoiSchema(Joi.number().required())
   supplierId: string;
 
@@ -98,4 +101,10 @@ export class CreateVendorTrxDto {
 
   @JoiSchema(Joi.number().required())
   total: number;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  notes?: number;
+
+  @JoiSchema(Joi.any().optional().allow(null, ''))
+  paymentMethodData?: any;
 }
