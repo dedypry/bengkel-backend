@@ -18,7 +18,7 @@ import { CreateCategoryDto } from './dto/category.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
-import { CreateServiceDto } from './dto/service.dto';
+import { CreateServiceDto, UpdateServiceSettingsDTO } from './dto/service.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelJsService } from 'utils/services/exceljs.service';
 
@@ -39,6 +39,17 @@ export class ServicesController {
   listCategories() {
     return this.servicesService.listCategory();
   }
+
+  @Get('settings')
+  getSetting(@Auth() auth: IAuth) {
+    return this.servicesService.setting(auth);
+  }
+
+  @Post('settings')
+  updateSetting(@Body() body: UpdateServiceSettingsDTO) {
+    return this.servicesService.updateSetting(body);
+  }
+
   @Post('categories')
   createCategories(@Body() body: CreateCategoryDto, @Auth() auth: IAuth) {
     return this.servicesService.createCategory(body, auth);
@@ -70,7 +81,6 @@ export class ServicesController {
 
   @Post()
   async createService(@Body() body: CreateServiceDto, @Auth() auth: IAuth) {
-    console.log('MASUK', body, auth);
     await this.servicesService.createService(body, auth);
 
     return 'Service berhasil di buat';

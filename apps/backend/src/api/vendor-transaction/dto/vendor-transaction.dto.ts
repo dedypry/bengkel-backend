@@ -28,9 +28,15 @@ export class VendorTrxItemDto {
 
   @JoiSchema(Joi.number().required())
   total: number;
+
+  @JoiSchema(Joi.number().optional())
+  taxPercentage: number;
 }
 
 export class CreateVendorTrxDto {
+  @JoiSchema(Joi.number().required())
+  supplierId: string;
+
   @JoiSchema(Joi.string().required())
   purchaseNo: string;
 
@@ -64,6 +70,7 @@ export class CreateVendorTrxDto {
           discPercentage: Joi.number().optional(),
           discValue: Joi.number().optional(),
           total: Joi.number().required(),
+          taxPercentage: Joi.number().required(),
         }),
       )
       .min(1)
@@ -73,6 +80,9 @@ export class CreateVendorTrxDto {
 
   @JoiSchema(Joi.string().allow('').optional())
   signature: string;
+
+  @JoiSchema(Joi.number().optional())
+  signatureId: string;
 
   @JoiSchema(Joi.number().required())
   subTotal: number;

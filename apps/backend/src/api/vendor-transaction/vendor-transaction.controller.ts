@@ -27,6 +27,11 @@ export class VendorTransactionController {
     return this.vendorTransactionService.list(query, auth);
   }
 
+  @Get('payment')
+  listPayment(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
+    return this.vendorTransactionService.listPayment(query, auth);
+  }
+
   @Get(':id')
   detail(@Param('id') id: number) {
     return this.vendorTransactionService.detail(id);

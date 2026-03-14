@@ -1,5 +1,11 @@
-import { Table } from 'utils/decorators/objections.decorator';
+import {
+  BelongsToOne,
+  HasMany,
+  Table,
+} from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
+import { WorkOrderItemsModel } from './work-order-items.model';
+import { SuppliersModel } from './suppliers.model';
 
 @Table('vendor_transaction')
 export class VendorTransactionModel extends BaseModel {
@@ -18,5 +24,16 @@ export class VendorTransactionModel extends BaseModel {
   total?: number;
   status?: string;
   company_id?: number;
+  supplier_id?: number;
   // === FIELD END ===
+
+  @HasMany(() => WorkOrderItemsModel, {
+    to: 'vendor_transaction_id',
+  })
+  items: WorkOrderItemsModel[];
+
+  @BelongsToOne(() => SuppliersModel, {
+    from: 'supplier_id',
+  })
+  supplier: SuppliersModel;
 }

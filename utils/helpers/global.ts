@@ -1,6 +1,7 @@
 import { Row } from 'exceljs';
 import axios from 'axios';
 import sharp from 'sharp';
+import dayjs from 'dayjs';
 
 export const logo_default =
   'https://brazam.s3.ap-southeast-2.amazonaws.com/6a832b17-b6f4-4ce5-9e0f-7414fa8d7959.webp';
@@ -121,4 +122,17 @@ export async function imageUrlToBase64(url: string): Promise<string> {
       `Failed to convert image to base64: ${error?.message || error}`,
     );
   }
+}
+
+export function generateNo(prefix: string, str: string = '') {
+  const date = dayjs().format('YYYYMMDD');
+  const match = str.match(/\d+$/);
+
+  let nextNumber = 1;
+  if (match) {
+    nextNumber = parseInt(match[0], 10) + 1;
+  }
+
+  const paddedNumber = String(nextNumber).padStart(4, '0');
+  return `${prefix}${date}.${paddedNumber}`;
 }

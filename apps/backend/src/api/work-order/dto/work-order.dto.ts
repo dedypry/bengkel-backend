@@ -98,6 +98,9 @@ export class WorkOrderRequestDto {
 
   @JoiSchema(Joi.array().items(WorkOrderItemSchema))
   sparepart!: IWorkOrderItem[];
+
+  @JoiSchema(Joi.array())
+  mechanic_ids: number[];
 }
 
 @JoiSchemaOptions({

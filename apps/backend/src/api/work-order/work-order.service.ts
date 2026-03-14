@@ -19,7 +19,7 @@ import { VehiclesModel } from 'models/vehicles.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
 import { ServicesModel } from 'models/services.model';
 import { ProductsModel } from 'models/products.model';
-import { calculateTotalEstimation } from 'utils/helpers/global';
+import { calculateTotalEstimation, generateNo } from 'utils/helpers/global';
 import { fn, raw } from 'objection';
 import { CompaniesModel } from 'models/companies.model';
 import dayjs from 'dayjs';
@@ -27,6 +27,7 @@ import { PromosModel } from 'models/promos.model';
 import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { BookingsModel } from 'models/bookings.model';
+import { SettingsModel } from 'models/settings.model';
 
 @Injectable()
 export class WorkOrderService {
@@ -262,6 +263,9 @@ export class WorkOrderService {
         items: payloadItem,
         complaints: body.complaints,
         booking_id: body.booking_id,
+        ...(body.mechanic_ids.length > 0 && {
+          mechanics: body.mechanic_ids.map((id) => ({ id })),
+        }),
       };
 
       const wo = await WorkOrdersModel.query(trx).upsertGraphAndFetch(
@@ -272,6 +276,7 @@ export class WorkOrderService {
           ...woPayload,
         },
         {
+          relate: true,
           unrelate: true,
         },
       );
@@ -284,21 +289,18 @@ export class WorkOrderService {
   }
 
   async generateTrxNo(trx: any, auth: IAuth) {
-    const lastOrder = await WorkOrdersModel.query(trx)
-      .select('trx_no')
-      .where('trx_no', 'like', 'TRX%')
+    const setting = await SettingsModel.query().findOne(
+      'key',
+      'service_reg_prefix',
+    );
+    const prefix = setting?.value || 'PKB.';
+
+    const data: any = await WorkOrdersModel.query(trx)
+      .select(raw('max(trx_no) as max_no'))
       .where('company_id', auth.company_id)
-      .orderBy('id', 'desc')
       .first();
 
-    let nextNumber = 1;
-
-    if (lastOrder && lastOrder.trx_no) {
-      const lastNumber = parseInt(lastOrder.trx_no.replace('TRX', ''), 10);
-      nextNumber = lastNumber + 1;
-    }
-    const formattedNumber = nextNumber.toString().padStart(4, '0');
-    return `TRX${formattedNumber}`;
+    return generateNo(prefix, data?.max_no);
   }
 
   async updateProgres(id: number, body: UpdateStatusWoDto, auth: IAuth) {
@@ -491,7 +493,7 @@ export class WorkOrderService {
       const data = {
         ...item,
         sell_price: find.price || item?.sell_price,
-        supplier_id: find?.supplier_id,
+        supplier_id: find?.supplier_id > 0 ? find?.supplier_id : undefined,
       };
 
       return {
@@ -500,7 +502,7 @@ export class WorkOrderService {
         qty: find?.qty,
         price: data.sell_price,
         total_price: totalPrice,
-        supplier_id: find?.supplier_id,
+        supplier_id: data?.supplier_id,
       };
     });
 
@@ -513,7 +515,7 @@ export class WorkOrderService {
         const data = {
           ...item,
           price: find.price || item?.price,
-          supplier_id: find?.supplier_id,
+          supplier_id: find?.supplier_id > 0 ? find?.supplier_id : undefined,
         };
         return {
           data,
@@ -521,7 +523,7 @@ export class WorkOrderService {
           qty: find?.qty,
           price: data.price,
           total_price: totalPrice,
-          supplier_id: find?.supplier_id,
+          supplier_id: data.supplier_id,
         };
       }),
       ...sparepartsData,
