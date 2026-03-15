@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
+import { SettingsModel } from 'models/settings.model';
 import { UsersModel } from 'models/users.model';
 import { raw } from 'objection';
 import { IAuth } from 'utils/interfaces/IAuth';
@@ -8,6 +9,13 @@ import { IQuery } from 'utils/interfaces/query';
 @Injectable()
 export class MechanicsService {
   async list(query: IQuery, auth: IAuth) {
+    const config = await SettingsModel.query()
+      .where('key', 'mechanic_roles')
+      .where('company_id', auth.company_id)
+      .first();
+
+    const roles = config?.value ? config.value.split(',') : ['mechanic'];
+
     return await UsersModel.query()
       .alias('users')
       .joinRelated('roles')
@@ -20,7 +28,7 @@ export class MechanicsService {
           .count()
           .as('total_work'),
       )
-      .where('roles.slug', 'mechanic')
+      .whereIn('roles.slug', roles)
       .where('users.company_id', auth.company_id)
       .where((build) => {
         if (query.q) {

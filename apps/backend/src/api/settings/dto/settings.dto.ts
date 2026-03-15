@@ -56,4 +56,7 @@ export class UpdateServiceSettingsDTO {
 
   @JoiSchema(Joi.number().integer().optional())
   default_advisor_id: number;
+
+  @JoiSchema(Joi.array().optional())
+  mechanic_roles: string[];
 }
