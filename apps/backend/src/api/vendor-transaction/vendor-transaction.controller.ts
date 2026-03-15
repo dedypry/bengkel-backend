@@ -32,6 +32,11 @@ export class VendorTransactionController {
   list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
     return this.vendorTransactionService.list(query, auth);
   }
+  @Get('purchase-no')
+  async purchaseNo() {
+    const purchase_no = await this.vendorTransactionService.getNumber();
+    return { purchase_no };
+  }
 
   @Get('payment')
   listPayment(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
