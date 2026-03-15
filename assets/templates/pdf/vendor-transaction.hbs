@@ -7,7 +7,7 @@
     <tr>
         <td>Alamat</td>
         <td>:</td>
-        <td>{{ne supplier.address}}</td>
+        <td>{{supplier.address}}</td>
     </tr>
     <tr>
         <td>Telepon</td>
@@ -67,8 +67,8 @@
         <td data-pdfmake='{"border":[false, false, false, false]}' colspan="8"> </td>
     </tr>
     <tr>
-        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: center;">{{ne created_by.name}}</td>
-        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: center;">{{ne signature_by.name}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: center;">{{created_by.name}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: center;">{{#if signature_by}} {{signature_by.name}} {{/if}} </td>
         <td data-pdfmake='{"border":[false, false, false, false]}' colspan="4" style="text-align: right;"></td>
     </tr>
 </table>
