@@ -144,7 +144,7 @@ export class WorkOrderService {
   async detail(id: number, auth: IAuth) {
     const result = await WorkOrdersModel.query()
       .withGraphFetched(
-        '[services(supplier),mechanics.profile,spareparts(supplier),vehicle,customer,payment,company]',
+        '[services(supplier),mechanics.profile,spareparts(supplier),vehicle,customer,payment,company,pic,sa]',
       )
       .findOne({
         id,
@@ -267,6 +267,8 @@ export class WorkOrderService {
       const woPayload = {
         current_km: body.current_km,
         next_km: body.next_km,
+        pic_id: body.pic_id,
+        sa_id: body.sa_id,
         priority: body.priority,
         company_id: auth.company_id,
         customer_id: customer.id,

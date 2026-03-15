@@ -25,6 +25,7 @@ interface LayoutPDFOptions {
 }
 
 hb.registerHelper('IDR', formatNumber);
+hb.registerHelper('upper', (val?: string) => val?.toUpperCase());
 hb.registerHelper('addOne', (index: number) => index + 1);
 hb.registerHelper('mech', (val: any[]) => {
   return val.map((e) => e.name).join(', ');

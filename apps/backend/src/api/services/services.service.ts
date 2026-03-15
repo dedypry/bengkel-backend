@@ -4,11 +4,10 @@ import { ServicesModel } from 'models/services.model';
 import { IQuery } from 'utils/interfaces/query';
 import { CreateCategoryDto } from './dto/category.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
-import { CreateServiceDto, UpdateServiceSettingsDTO } from './dto/service.dto';
+import { CreateServiceDto } from './dto/service.dto';
 import { Row } from 'exceljs';
 import { getRow } from 'utils/helpers/global';
 import { fn } from 'objection';
-import { SettingsModel } from 'models/settings.model';
 
 @Injectable()
 export class ServicesService {
@@ -106,35 +105,5 @@ export class ServicesService {
     });
 
     return 'Data berhasil dihapus';
-  }
-
-  async setting(auth: IAuth) {
-    const settings = await SettingsModel.query()
-      .whereIn('tag', ['service', 'sales', 'operation_default', 'srs', 'notes'])
-      .where((builder) => {
-        builder.where('company_id', auth.company_id).orWhereNull('company_id');
-      });
-
-    const result = {};
-
-    for (const item of settings) {
-      result[item.key] = item.value;
-    }
-
-    return result;
-  }
-
-  async updateSetting(body: UpdateServiceSettingsDTO) {
-    await Promise.all(
-      Object.entries(body).map(([key, val]) => {
-        return SettingsModel.query()
-          .where('key', key)
-          .patch({
-            value: val === null ? null : String(val),
-          });
-      }),
-    );
-
-    return 'data berhasil di perbaharui';
   }
 }

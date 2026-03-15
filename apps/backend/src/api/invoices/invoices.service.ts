@@ -7,7 +7,7 @@ export class InvoicesService {
   async payment(id: number, auth: IAuth) {
     const wo = await WorkOrdersModel.query()
       .withGraphFetched(
-        '[items,services,spareparts,vehicle,customer.profile,mechanics,company]',
+        '[items,services,spareparts,vehicle,customer.profile,mechanics,company,pic]',
       )
       .where('id', id)
       .where((builder) => {

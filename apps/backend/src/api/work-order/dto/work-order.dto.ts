@@ -82,6 +82,12 @@ export class WorkOrderRequestDto {
   @JoiSchema(Joi.number().required())
   next_km!: number;
 
+  @JoiSchema(Joi.number().optional().allow(null))
+  pic_id!: number;
+
+  @JoiSchema(Joi.number().optional().allow(null))
+  sa_id!: number;
+
   @JoiSchema(Joi.string().allow('', null))
   complaints!: string;
 

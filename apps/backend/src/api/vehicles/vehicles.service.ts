@@ -6,7 +6,7 @@ import { IQuery } from 'utils/interfaces/query';
 export class VehiclesService {
   async list(query: IQuery) {
     return await VehiclesModel.query()
-      .withGraphFetched('[customers]')
+      .withGraphFetched('[customers.profile]')
       .where((builder) => {
         if (query.q) {
           builder

@@ -91,6 +91,16 @@ export class WorkOrdersModel extends BaseModel {
   })
   updated?: UsersModel;
 
+  @BelongsToOne(() => UsersModel, {
+    from: 'sa_id',
+  })
+  sa?: UsersModel;
+
+  @BelongsToOne(() => UsersModel, {
+    from: 'pic_id',
+  })
+  pic?: UsersModel;
+
   @HasOne(() => PaymentsModel, {
     to: 'work_order_id',
   })

@@ -18,7 +18,7 @@ import { CreateCategoryDto } from './dto/category.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
-import { CreateServiceDto, UpdateServiceSettingsDTO } from './dto/service.dto';
+import { CreateServiceDto } from './dto/service.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelJsService } from 'utils/services/exceljs.service';
 
@@ -38,16 +38,6 @@ export class ServicesController {
   @Get('categories')
   listCategories() {
     return this.servicesService.listCategory();
-  }
-
-  @Get('settings')
-  getSetting(@Auth() auth: IAuth) {
-    return this.servicesService.setting(auth);
-  }
-
-  @Post('settings')
-  updateSetting(@Body() body: UpdateServiceSettingsDTO) {
-    return this.servicesService.updateSetting(body);
   }
 
   @Post('categories')

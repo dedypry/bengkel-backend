@@ -60,7 +60,7 @@
 </table>
 
 <table
-  style='font-size: 11px;'
+  style='font-size: 11px; margin-top: -20px;'
   data-pdfmake='{"widths":[20,"auto","*",40,40,50,50]}'
 >
   <tr>
@@ -155,9 +155,6 @@
 <table style='font-size: 12px;'
   data-pdfmake='{"widths":[100,"*",100]}'>
     <tr>
-        <td data-pdfmake='{"border":[false, true, false, false]}' colspan="3"> </td>
-    </tr>
-    <tr>
         <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Pemilik / Pembawa</td>
         <td data-pdfmake='{"border":[false, false, false, false]}'></td>
         <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">PIC Service</td>
@@ -172,8 +169,8 @@
         <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3"> </td>
     </tr>
     <tr>
-        <td data-pdfmake='{"border":[false, false, false, true]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;">{{upper customer.name}}</td>
         <td data-pdfmake='{"border":[false, false, false, false]}'></td>
-        <td data-pdfmake='{"border":[false, false, false, true]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;">{{upper pic.name}}</td>
     </tr>
 </table>
