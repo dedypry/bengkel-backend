@@ -13,7 +13,7 @@ export class EmployeeDto {
   @JoiSchema(Joi.string().email().required())
   email: string;
 
-  @JoiSchema(Joi.string().required())
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   phone: string;
 
   @JoiSchema(Joi.array().min(1))
@@ -22,36 +22,40 @@ export class EmployeeDto {
   @JoiSchema(Joi.string().required())
   department: string;
 
-  @JoiSchema(Joi.string().required())
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   join_date: string; // ISO Date String
 
   @JoiSchema(
-    Joi.string().valid('Permanent', 'Contract', 'Probation').required(),
+    Joi.string().valid('permanent', 'contract', 'probation').required(),
   )
-  status: 'Permanent' | 'Contract' | 'Probation';
+  status: 'permanent' | 'contract' | 'probation';
   photo: IUserPhoto;
 
-  @JoiSchema(Joi.number().required())
+  @JoiSchema(Joi.number().optional().allow(null, ''))
   province_id: number;
 
-  @JoiSchema(Joi.number().required())
+  @JoiSchema(Joi.number().optional().allow(null, ''))
   city_id: number;
 
-  @JoiSchema(Joi.number().required())
+  @JoiSchema(Joi.number().optional().allow(null, ''))
   district_id: number;
 
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   address: string;
 
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   emergency_contact?: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   emergency_name?: string;
 
-  @JoiSchema(Joi.string().required())
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   gender: string;
 
-  @JoiSchema(Joi.string().required())
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   birth_date: string;
 
-  @JoiSchema(Joi.string().required())
+  @JoiSchema(Joi.string().optional().allow(null, ''))
   place_birth: string;
 }
 

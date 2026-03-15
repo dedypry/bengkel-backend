@@ -18,6 +18,15 @@ export class EmployeesService {
     const user = await UsersModel.query()
       .withGraphFetched('[profile,roles]')
       .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('name', `%${query.q}%`)
+            .orWhereILike('nik', `%${query.q}%`)
+            .orWhereILike('email', `%${query.q}%`)
+            .orWhereILike('department', `%${query.q}%`);
+        }
+      })
       .whereNot('type', 'owner')
       .orderBy('created_at', 'desc')
       .page(query.page, query.pageSize);
