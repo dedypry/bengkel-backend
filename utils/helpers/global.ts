@@ -124,9 +124,9 @@ export async function imageUrlToBase64(url: string): Promise<string> {
   }
 }
 
-export function generateNo(prefix: string, str: string = '') {
+export function generateNo(prefix: string, str: string) {
   const date = dayjs().format('YYYYMMDD');
-  const match = str.match(/\d+$/);
+  const match = (str || '000').match(/\d+$/);
 
   let nextNumber = 1;
   if (match) {
