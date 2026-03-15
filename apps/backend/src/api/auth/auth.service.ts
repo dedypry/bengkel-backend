@@ -29,7 +29,10 @@ export class AuthService {
   ) {}
 
   async login(body: AuthDto) {
-    const user = await UsersModel.query().findOne('email', body.email);
+    const user = await UsersModel.query()
+      .where('email', body.email)
+      .orWhere('nik', body.email)
+      .first();
 
     if (!user) throw new NotFoundException();
 
