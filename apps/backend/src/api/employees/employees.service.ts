@@ -81,6 +81,10 @@ export class EmployeesService {
 
       await UsersModel.relatedQuery('roles').for(data.id).unrelate();
       await UsersModel.relatedQuery('roles').for(data.id).relate(data.role_ids);
+      await UsersModel.relatedQuery('companies').for(data.id).unrelate();
+      await UsersModel.relatedQuery('companies')
+        .for(data.id)
+        .relate(auth.company_id);
     } else {
       const [{ count }]: any = await UsersModel.query()
         .where('company_id', auth.company_id)
