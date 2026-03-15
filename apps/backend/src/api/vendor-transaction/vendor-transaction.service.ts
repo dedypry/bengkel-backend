@@ -64,6 +64,7 @@ export class VendorTransactionService {
 
     const trx: any = await VendorTransactionModel.query()
       .select(raw('max(purchase_no) as max_no'))
+      .where('purchase_no', 'like', `${prefix}%`)
       .first();
 
     return generateNo(prefix, trx?.max_no);

@@ -8,10 +8,12 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { PromosModel } from 'models/promos.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
 import { PaymentsModel } from 'models/payments.model';
-import { fn } from 'objection';
+import { fn, raw } from 'objection';
 import { ProductsModel } from 'models/products.model';
 import { OrdersModel } from 'models/orders.model';
 import { IQuery } from 'utils/interfaces/query';
+import { SettingsModel } from 'models/settings.model';
+import { generateNo } from 'utils/helpers/global';
 
 @Injectable()
 export class PaymentsService {
@@ -147,30 +149,53 @@ export class PaymentsService {
     return 'Pembayaran Berhasil';
   }
 
+  async generateTrxNo(companyId: number) {
+    const setting = await SettingsModel.query()
+      .where('company_id', companyId)
+      .where('key', 'sales_order_prefix')
+      .first();
+
+    const prefix = setting?.value || 'SO.';
+
+    const trx: any = await OrdersModel.query()
+      .select(raw('max(trx_no) as max_no'))
+      .where('trx_no', 'like', `${prefix}%`)
+      .first();
+
+    console.log(trx);
+    return generateNo(prefix, trx?.max_no);
+  }
+
   async createPaymentProduct(body: CreatePayment, auth: IAuth) {
     const result = await OrdersModel.transaction(async (trx) => {
+      const trxNo = await this.generateTrxNo(auth.company_id);
       const products = await ProductsModel.query()
         .whereIn('id', body.products?.map((item) => item.id) || [])
         .where('company_id', auth.company_id);
 
       let grand_total = 0;
-      const items = products.map((e) => {
+
+      const items = [];
+
+      for (const e of products) {
         const find = body.products?.find((fn) => fn.id === e.id);
         const qty = Number(find?.qty || 0);
 
         const total_price = qty * Number(e.sell_price);
         grand_total += total_price;
 
-        return {
+        await e.$query(trx).patch({
+          stock: e.stock - qty,
+        });
+
+        items.push({
           data: e,
           qty,
           product_id: e.id,
           price: e.sell_price,
           total_price,
-        };
-      });
-
-      const trxNo = await this.generateTrxNo(trx, auth);
+        });
+      }
 
       const order = await OrdersModel.query(trx).insertGraph({
         trx_no: trxNo,
@@ -182,7 +207,7 @@ export class PaymentsService {
 
       const payment = await PaymentsModel.query(trx).insert({
         order_id: order.id,
-        payment_no: `PAY-${Date.now()}`,
+        payment_no: trxNo,
         amount: grand_total,
         method: body.paymentMethod,
         payment_date: fn.now(),
@@ -200,24 +225,6 @@ export class PaymentsService {
       data: result,
       message: 'berhasil disimpan',
     };
-  }
-
-  async generateTrxNo(trx: any, auth: IAuth) {
-    const lastOrder = await OrdersModel.query(trx)
-      .select('trx_no')
-      .where('trx_no', 'like', 'TRX%')
-      .where('company_id', auth.company_id)
-      .orderBy('id', 'desc')
-      .first();
-
-    let nextNumber = 1;
-
-    if (lastOrder && lastOrder.trx_no) {
-      const lastNumber = parseInt(lastOrder.trx_no.replace('TRX', ''), 10);
-      nextNumber = lastNumber + 1;
-    }
-    const formattedNumber = nextNumber.toString().padStart(4, '0');
-    return `TRX${formattedNumber}`;
   }
 
   async paymentDetail(id: number, auth: IAuth) {
