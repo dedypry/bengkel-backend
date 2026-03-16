@@ -11,6 +11,9 @@ export class OrderItemsModel extends BaseModel {
   qty?: number;
   price?: number;
   total_price?: number;
+  tax?: number;
+  disc_percentage?: number;
+  disc_value?: number;
   // === FIELD END ===
 
   @BelongsToOne(() => OrdersModel, {

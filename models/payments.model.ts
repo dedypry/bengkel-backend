@@ -20,6 +20,7 @@ export class PaymentsModel extends BaseModel {
   received_amount?: number;
   order_id?: number;
   company_id?: number;
+  type?: string;
   // === FIELD END ===
 
   @BelongsToOne(() => UsersModel, {

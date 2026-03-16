@@ -1,6 +1,11 @@
-import { HasMany, Table } from 'utils/decorators/objections.decorator';
+import {
+  BelongsToOne,
+  HasMany,
+  Table,
+} from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 import { OrderItemsModel } from './order-items.model';
+import { CustomersModel } from './customers.model';
 
 @Table('orders')
 export class OrdersModel extends BaseModel {
@@ -10,10 +15,21 @@ export class OrdersModel extends BaseModel {
   grand_total?: number;
   company_id?: number;
   updated_id?: number;
+  customer_id?: number;
+  po_no?: string;
+  other_fee?: number;
+  subtotal?: number;
+  tax?: number;
+  discount?: number;
   // === FIELD END ===
 
   @HasMany(() => OrderItemsModel, {
     to: 'order_id',
   })
   items?: OrderItemsModel[];
+
+  @BelongsToOne(() => CustomersModel, {
+    from: 'customer_id',
+  })
+  customer: CustomersModel;
 }

@@ -23,6 +23,24 @@ export class CreatePayment {
   @JoiSchema(Joi.number().optional().allow('', null))
   receivedAmount?: number;
 
+  @JoiSchema(Joi.number().optional().allow('', null))
+  tax?: number;
+
+  @JoiSchema(Joi.number().optional().allow('', null))
+  subTotal?: number;
+
+  @JoiSchema(Joi.number().optional().allow('', null))
+  otherFee?: number;
+
+  @JoiSchema(Joi.number().optional().allow('', null))
+  total?: number;
+
+  @JoiSchema(Joi.number().optional().allow('', null))
+  customerId?: number;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  poNo?: string;
+
   @JoiSchema(Joi.string().optional().allow('', null))
   proofImage?: string;
 
@@ -33,5 +51,10 @@ export class CreatePayment {
   products?: {
     id: number;
     qty: number;
+    price: number;
+    total_price: number;
+    tax: number;
+    disc_percentage: number;
+    disc_value: number;
   }[];
 }

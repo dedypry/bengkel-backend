@@ -173,33 +173,31 @@ export class PaymentsService {
         .whereIn('id', body.products?.map((item) => item.id) || [])
         .where('company_id', auth.company_id);
 
-      let grand_total = 0;
-
       const items = [];
 
       for (const e of products) {
         const find = body.products?.find((fn) => fn.id === e.id);
-        const qty = Number(find?.qty || 0);
-
-        const total_price = qty * Number(e.sell_price);
-        grand_total += total_price;
 
         await e.$query(trx).patch({
-          stock: e.stock - qty,
+          stock: e.stock - find.qty,
         });
 
         items.push({
           data: e,
-          qty,
           product_id: e.id,
-          price: e.sell_price,
-          total_price,
+          ...find,
+          id: undefined,
         });
       }
 
       const order = await OrdersModel.query(trx).insertGraph({
         trx_no: trxNo,
-        grand_total,
+        discount: body.discount,
+        subtotal: body.subTotal,
+        other_fee: body.otherFee,
+        po_no: body.poNo,
+        customer_id: body.customerId,
+        grand_total: body.total,
         company_id: auth.company_id,
         updated_id: auth.id,
         items,
@@ -208,7 +206,7 @@ export class PaymentsService {
       const payment = await PaymentsModel.query(trx).insert({
         order_id: order.id,
         payment_no: trxNo,
-        amount: grand_total,
+        amount: body.total,
         method: body.paymentMethod,
         payment_date: fn.now(),
         reference_no: trxNo,
@@ -230,7 +228,7 @@ export class PaymentsService {
   async paymentDetail(id: number, auth: IAuth) {
     const result = await PaymentsModel.query()
       .withGraphFetched(
-        '[order.items,work_order.[services,spareparts],cashier,company]',
+        '[order.[items,customer],work_order.[services,spareparts],cashier,company]',
       )
       .findOne({
         id: id,

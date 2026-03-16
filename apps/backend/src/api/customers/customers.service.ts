@@ -9,6 +9,7 @@ import { fn, raw } from 'objection';
 import dayjs from 'dayjs';
 import { ServicesModel } from 'models/services.model';
 import { VehiclesModel } from 'models/vehicles.model';
+import { IQuery } from 'utils/interfaces/query';
 @Injectable()
 export class CustomersService {
   async getStats() {
@@ -44,6 +45,18 @@ export class CustomersService {
       growth: Math.round(growth),
       label: `${growth >= 0 ? 'Meningkat' : 'Menurun'} ${Math.abs(Math.round(growth))}% dibandingkan bulan lalu`,
     };
+  }
+  async listNoPagination(query: IQuery) {
+    return await CustomersModel.query()
+      .withGraphFetched('[profile]')
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('name', `%${query.q}%`)
+            .orWhereILike('email', `%${query.q}%`)
+            .orWhereILike('nik', `%${query.q}%`);
+        }
+      });
   }
   async listCustomer(query: CustomerQueryDto) {
     const queryData = CustomersModel.query()
