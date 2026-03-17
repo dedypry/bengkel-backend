@@ -21,6 +21,9 @@ export class OrdersModel extends BaseModel {
   subtotal?: number;
   tax?: number;
   discount?: number;
+  signature_id?: number;
+  notes?: string;
+  dic_percentage?: number;
   // === FIELD END ===
 
   @HasMany(() => OrderItemsModel, {

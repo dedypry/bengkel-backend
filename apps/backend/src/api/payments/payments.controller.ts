@@ -13,12 +13,13 @@ import { AuthGuard } from 'utils/guards/auth.guard';
 import { CreatePayment } from './dto/payments.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
-import { getHtmlContent } from 'utils/helpers/html-contect';
 import { PdfService } from 'utils/services/pdf.service';
 import type { Response } from 'express';
 import { IQuery } from 'utils/interfaces/query';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
-
+import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
+import GeneratePDF from 'utils/services/pdf-make.service';
+import terbilang from '@gratcy/angka-terbilang-indonesia';
 @UseGuards(AuthGuard)
 @Controller('payments')
 export class PaymentsController {
@@ -52,13 +53,26 @@ export class PaymentsController {
     @Res() res: Response,
   ) {
     const detail = await this.paymentsService.paymentDetail(id, auth);
-    const html = await getHtmlContent('struk', detail);
 
-    await this.pdfService.downloadPdf({
-      htmlContent: html,
-      res,
-      name: 'struk',
-      width: '80mm',
+    const html = await renderHtml({
+      location: 'so',
+      data: {
+        ...detail,
+        terbilang: terbilang(Number(detail.order.grand_total), {
+          dec: '',
+          lang: 'id',
+        }),
+        totalQty: detail.order.items.reduce((sum, a) => sum + Number(a.qty), 0),
+      },
     });
+
+    const content = await layoutPDF({
+      header: 'Order Penjualan',
+      content: [html],
+      companyId: auth.company_id,
+      invNo: detail.payment_no,
+      date: detail.created_at,
+    });
+    return GeneratePDF.make(res).download(content);
   }
 }

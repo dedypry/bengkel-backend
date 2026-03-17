@@ -1,0 +1,100 @@
+<table
+  style='font-size: 11px;'
+  data-pdfmake='{"layout":"NoBorder","widths":["auto",5,"auto","*","auto",5,"auto"]}'
+>
+  <tr>
+    <td>Kepada</td>
+    <td>:</td>
+    <td> {{#if order.customer}} {{order.customer.name}} {{/if}}</td>
+    <td></td>
+    <td>No. PO</td>
+    <td>:</td>
+    <td>{{order.po_no}}</td>
+  </tr>
+  <tr>
+    <td>Alamat</td>
+    <td>:</td>
+    <td>{{#if order.customer}} {{order.customer.profile.address}} {{/if}}</td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td>Telepon</td>
+    <td>:</td>
+    <td>{{#if order.customer}} {{order.customer.phone}} {{/if}}</td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td>Sales</td>
+    <td>:</td>
+    <td>{{cashier.name}}</td>
+    <td colspan="4"></td>
+  </tr>
+</table>
+
+<table style='font-size: 11px; margin-top: -20px;' data-pdfmake='{"widths":[20,"auto","*",20,30,40,25,40,20]}'>
+    <tr>
+        <td data-pdfmake='{"border":[false, true, false, true]}'>No</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}'>Kode</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}'>Nama</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: center;'>Qty</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: center;'>Satuan</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: right;'>Harga</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: right;'>Disc %</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: right;'>Jumlah</td>
+        <td data-pdfmake='{"border":[false, true, false, true]}' style='text-align: right;'>Pjk %</td>
+    </tr>
+    {{#each order.items}}
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.code}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.name}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: center;'>{{IDR this.qty}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: center;'>{{this.data.unit}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: right;'>{{IDR this.price}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: right;'>{{IDR this.disc_percentage}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: right;'>{{IDR this.total_price}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style='text-align: right;'>{{IDR this.tax}}</td>
+    </tr>
+    {{/each}}
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, true]}' colspan="9"></td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" style="text-align: right;">Total Qty</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">{{IDR totalQty}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" style="text-align: right;">Sub Total :</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: right;">{{IDR order.subtotal}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="7" style="text-align: right;">Disc Final :</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: right;">{{IDR order.discoun}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="4" style="font-style: italic;">Terbilang :</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" style="text-align: right;">Pajak :</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: right;">{{IDR order.tax}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="4" style="font-style: italic;">{{terbilang}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" style="text-align: right;">Total :</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2" style="text-align: right;">{{IDR order.grand_total}}</td>
+    </tr>
+
+</table>
+
+<table  style='font-size: 11px;' data-pdfmake='{"widths":[100,"*",100,"*",100]}'>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Disiapkan Oleh</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Dipesan Oleh</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Bagian Penjualan</td>
+    </tr>
+    <tr style="margin-top: 70px;">
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;">{{cashier.name}}</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;"></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;"></td>
+    </tr>
+</table>

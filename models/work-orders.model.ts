@@ -45,6 +45,9 @@ export class WorkOrdersModel extends BaseModel {
   next_km?: number;
   pic_id?: number;
   sa_id?: number;
+  other_fee?: number;
+  disc_percentage?: number;
+  disc_value?: number;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

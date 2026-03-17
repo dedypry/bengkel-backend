@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePayment } from './dto/payments.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { PromosModel } from 'models/promos.model';
@@ -14,6 +10,7 @@ import { OrdersModel } from 'models/orders.model';
 import { IQuery } from 'utils/interfaces/query';
 import { SettingsModel } from 'models/settings.model';
 import { generateNo } from 'utils/helpers/global';
+import { WorkOrderItemsModel } from 'models/work-order-items.model';
 
 @Injectable()
 export class PaymentsService {
@@ -38,9 +35,9 @@ export class PaymentsService {
     await PromosModel.transaction(async (trx) => {
       let promo = null as PromosModel | null | undefined;
       const now = new Date().toISOString();
-      if (body.promoCode) {
+      if (body.promo_code) {
         promo = await PromosModel.query(trx)
-          .where('code', body.promoCode)
+          .where('code', body.promo_code)
           .andWhere('company_id', auth.company_id)
           .andWhere('is_active', true)
           .andWhere('start_date', '<=', now)
@@ -64,84 +61,158 @@ export class PaymentsService {
 
       if (!wo) throw new NotFoundException('WO');
 
-      let newGrandTotal = wo.grand_total;
-
-      let payloadWo: any = {
+      const payloadWo: any = {
         updated_by: auth.id,
         status: 'closed',
         progress: 'finish',
+        other_fee: body.other_fee,
+        disc_percentage: body.disc_percentage,
+        disc_value: body.disc_value,
+        ppn_amount: body.tax,
+        grand_total: body.total,
+        sub_total: body.sub_total,
       };
 
-      if (promo) {
-        const subtotal = Number(wo.sub_total);
-        let calculatedDiscount = 0;
+      // if (promo) {
+      //   const subtotal = Number(wo.sub_total);
+      //   let calculatedDiscount = 0;
 
-        if (subtotal < Number(promo.min_purchase)) {
-          throw new BadRequestException(
-            `Minimal pembelian untuk promo ini adalah Rp ${Number(promo.min_purchase).toLocaleString()}`,
-          );
-        }
+      //   if (subtotal < Number(promo.min_purchase)) {
+      //     throw new BadRequestException(
+      //       `Minimal pembelian untuk promo ini adalah Rp ${Number(promo.min_purchase).toLocaleString()}`,
+      //     );
+      //   }
 
-        if (promo.type === 'percentage') {
-          const discountAmount = (subtotal * Number(promo.value)) / 100;
-          const maxDiscount = Number(promo.max_discount);
-          calculatedDiscount =
-            maxDiscount > 0
-              ? Math.min(discountAmount, maxDiscount)
-              : discountAmount;
-        } else {
-          calculatedDiscount = Number(promo.value);
-        }
+      //   if (promo.type === 'percentage') {
+      //     const discountAmount = (subtotal * Number(promo.value)) / 100;
+      //     const maxDiscount = Number(promo.max_discount);
+      //     calculatedDiscount =
+      //       maxDiscount > 0
+      //         ? Math.min(discountAmount, maxDiscount)
+      //         : discountAmount;
+      //   } else {
+      //     calculatedDiscount = Number(promo.value);
+      //   }
 
-        const ppnPercent = Number(wo.ppn_percent);
-        const netAfterDiscount = subtotal - calculatedDiscount;
-        const newPpnAmount = (netAfterDiscount * ppnPercent) / 100;
-        newGrandTotal = netAfterDiscount + newPpnAmount;
+      //   const ppnPercent = Number(wo.ppn_percent);
+      //   const netAfterDiscount = subtotal - calculatedDiscount;
+      //   const newPpnAmount = (netAfterDiscount * ppnPercent) / 100;
+      //   newGrandTotal = netAfterDiscount + newPpnAmount;
 
-        let currentPromoData = Array.isArray(wo.promo_data)
-          ? wo.promo_data
-          : [];
+      //   let currentPromoData = Array.isArray(wo.promo_data)
+      //     ? wo.promo_data
+      //     : [];
 
-        const findIndex = currentPromoData.findIndex(
-          (item) => item.id === promo.id,
-        );
+      //   const findIndex = currentPromoData.findIndex(
+      //     (item) => item.id === promo.id,
+      //   );
 
-        const newPromo = {
-          ...promo,
-          price: calculatedDiscount,
-        };
+      //   const newPromo = {
+      //     ...promo,
+      //     price: calculatedDiscount,
+      //   };
 
-        if (findIndex >= 0) {
-          currentPromoData[findIndex] = newPromo;
-        } else {
-          currentPromoData = [...currentPromoData, newPromo];
-        }
+      //   if (findIndex >= 0) {
+      //     currentPromoData[findIndex] = newPromo;
+      //   } else {
+      //     currentPromoData = [...currentPromoData, newPromo];
+      //   }
 
-        payloadWo = {
-          ...payloadWo,
-          promo_amount: calculatedDiscount,
-          promo_data: JSON.stringify(currentPromoData),
-          ppn_amount: newPpnAmount,
-          grand_total: newGrandTotal,
-        };
+      //   payloadWo = {
+      //     ...payloadWo,
+      //     promo_amount: calculatedDiscount,
+      //     promo_data: JSON.stringify(currentPromoData),
+      //     ppn_amount: newPpnAmount,
+      //     grand_total: newGrandTotal,
+      //   };
 
-        await promo
-          .$query(trx)
-          .patch({ used_count: Number(promo.used_count || 0) + 1 });
-      }
+      //   await promo
+      //     .$query(trx)
+      //     .patch({ used_count: Number(promo.used_count || 0) + 1 });
+      // }
 
       await wo.$query(trx).patch(payloadWo);
+
+      const itemsData = await WorkOrderItemsModel.query(trx).where(
+        'work_order_id',
+        wo.id,
+      );
+
+      const itemids = body.products.map((e) => e.id);
+
+      const deleteItems = itemsData.filter((e) => !itemids.includes(e.id));
+
+      if (deleteItems.length) {
+        for (const delItem of deleteItems) {
+          if (delItem.type === 'sparepart') {
+            const product = await ProductsModel.query(trx).findById(
+              delItem.data.id,
+            );
+
+            await product.$query(trx).patch({
+              stock: product.stock + delItem.qty,
+            });
+          }
+
+          await delItem.$query(trx).delete();
+        }
+      }
+
+      for (const item of body.products) {
+        const woItem = itemsData.find((e) => e.id === item.id);
+        const product = await ProductsModel.query(trx).findById(
+          item.product_id,
+        );
+        if (woItem) {
+          if (woItem.type === 'sparepart') {
+            await product.$query(trx).patch({
+              stock: product.stock + woItem.qty - item.qty,
+            });
+          }
+
+          await woItem.$query(trx).patch({
+            qty: item.qty,
+            price: item.price,
+            total_price: item.total_price,
+            disc_percentage: item.disc_percentage,
+            disc_value: item.disc_value,
+            total_payment: item.total_price,
+            tax_percentage: item.tax,
+            purchase_price: item.price,
+          });
+        } else {
+          await product.$query(trx).patch({
+            stock: product.stock - item.qty,
+          });
+
+          await WorkOrderItemsModel.query(trx).insert({
+            data: product,
+            qty: item.qty,
+            price: item.price,
+            total_price: item.total_price,
+            disc_percentage: item.disc_percentage,
+            disc_value: item.disc_value,
+            total_payment: item.total_price,
+            tax_percentage: item.tax,
+            purchase_price: item.price,
+            work_order_id: wo.id,
+            status: 'finish',
+            updated_by: auth.id,
+            type: body.type,
+          });
+        }
+      }
 
       const payment = await PaymentsModel.query(trx).insert({
         work_order_id: wo?.id,
         payment_no: `PAY-${Date.now()}`,
-        amount: newGrandTotal,
-        method: body.paymentMethod,
+        amount: body.total,
+        method: body.payment_method,
         payment_date: fn.now(),
         reference_no: wo.trx_no,
         updated_by: auth.id,
-        received_amount: body.receivedAmount,
-        proof_image: body.proofImage,
+        received_amount: body.received_amount,
+        proof_image: body.proof_image,
         company_id: auth.company_id,
       } as any);
       return payment;
@@ -192,11 +263,15 @@ export class PaymentsService {
 
       const order = await OrdersModel.query(trx).insertGraph({
         trx_no: trxNo,
-        discount: body.discount,
-        subtotal: body.subTotal,
-        other_fee: body.otherFee,
-        po_no: body.poNo,
-        customer_id: body.customerId,
+        discount: body.disc_value,
+        dic_percentage: body.disc_percentage,
+        signature_id: body.signature_id,
+        notes: body.notes,
+        tax: body.tax,
+        subtotal: body.sub_total,
+        other_fee: body.other_fee,
+        po_no: body.po_no,
+        customer_id: body.customer_id,
         grand_total: body.total,
         company_id: auth.company_id,
         updated_id: auth.id,
@@ -207,12 +282,12 @@ export class PaymentsService {
         order_id: order.id,
         payment_no: trxNo,
         amount: body.total,
-        method: body.paymentMethod,
+        method: body.payment_method,
         payment_date: fn.now(),
         reference_no: trxNo,
         updated_by: auth.id,
-        received_amount: body.receivedAmount,
-        proof_image: body.proofImage,
+        received_amount: body.received_amount,
+        proof_image: body.proof_image,
         company_id: auth.company_id,
       } as any);
 
@@ -228,7 +303,7 @@ export class PaymentsService {
   async paymentDetail(id: number, auth: IAuth) {
     const result = await PaymentsModel.query()
       .withGraphFetched(
-        '[order.[items,customer],work_order.[services,spareparts],cashier,company]',
+        '[order.[items,customer.profile],work_order.[services,spareparts],cashier,company]',
       )
       .findOne({
         id: id,
