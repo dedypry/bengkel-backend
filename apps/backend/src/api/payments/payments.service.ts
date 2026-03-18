@@ -71,6 +71,8 @@ export class PaymentsService {
         ppn_amount: body.tax,
         grand_total: body.total,
         sub_total: body.sub_total,
+        sparepart_total: 0,
+        service_total: 0,
       };
 
       // if (promo) {
@@ -131,8 +133,6 @@ export class PaymentsService {
       //     .patch({ used_count: Number(promo.used_count || 0) + 1 });
       // }
 
-      await wo.$query(trx).patch(payloadWo);
-
       const itemsData = await WorkOrderItemsModel.query(trx).where(
         'work_order_id',
         wo.id,
@@ -163,6 +163,13 @@ export class PaymentsService {
         const product = await ProductsModel.query(trx).findById(
           item.product_id,
         );
+
+        if (woItem.type === 'sparepart') {
+          payloadWo.sparepart_total += item.total_price;
+        } else {
+          payloadWo.service_total += item.total_price;
+        }
+
         if (woItem) {
           if (woItem.type === 'sparepart') {
             await product.$query(trx).patch({
@@ -203,6 +210,7 @@ export class PaymentsService {
         }
       }
 
+      await wo.$query(trx).patch(payloadWo);
       const payment = await PaymentsModel.query(trx).insert({
         work_order_id: wo?.id,
         payment_no: `PAY-${Date.now()}`,
@@ -233,7 +241,6 @@ export class PaymentsService {
       .where('trx_no', 'like', `${prefix}%`)
       .first();
 
-    console.log(trx);
     return generateNo(prefix, trx?.max_no);
   }
 

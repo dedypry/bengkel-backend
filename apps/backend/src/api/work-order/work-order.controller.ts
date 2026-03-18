@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -65,6 +66,11 @@ export class WorkOrderController {
     @Auth() auth: IAuth,
   ) {
     return this.workOrderService.updateServiceWo(id, body, auth);
+  }
+
+  @Delete('item/:id')
+  deleteService(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.workOrderService.deleteItem(id, auth);
   }
 
   @Patch(':id')

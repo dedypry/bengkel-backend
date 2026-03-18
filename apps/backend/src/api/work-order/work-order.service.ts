@@ -1,9 +1,4 @@
-import {
-  Body,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Body, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ChangeSugestionDto,
   ListPaymentQueryDto,
@@ -30,15 +25,21 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { BookingsModel } from 'models/bookings.model';
 import { SettingsModel } from 'models/settings.model';
 
+interface ICreateOrUpdateWoItem {
+  woId: number;
+  type: string;
+  data: any[];
+  items: WorkOrderItemsModel[];
+  auth: IAuth;
+  trx: any;
+}
 @Injectable()
 export class WorkOrderService {
   async list(query: WoQuery, auth: IAuth) {
     const data = await WorkOrdersModel.query()
       .alias('wo')
       .joinRelated('[vehicle, customer]')
-      .withGraphFetched(
-        '[services(srBuild),mechanics.profile,vehicle,customer.profile]',
-      )
+      .withGraphFetched('[services,mechanics.profile,vehicle,customer.profile]')
       .where((builder) => {
         if (query.q) {
           builder
@@ -203,11 +204,7 @@ export class WorkOrderService {
 
       const company = await CompaniesModel.query().findById(auth.company_id);
 
-      const { serviceTotal, sparepartTotal, payloadItem } =
-        await this.getServiceList(body as any, trx);
-
-      const subTotal = sparepartTotal + serviceTotal;
-      let promoBirtDate = 0;
+      // let promoBirtDate = 0;
       const promoData: PromosModel[] = [];
 
       const birthDate = customer?.profile?.birth_date;
@@ -225,17 +222,6 @@ export class WorkOrderService {
           const discountValue = Number(company.total_discount_birth_day || 0);
           const maxDiscount = Number(company.max_discount_birth_day || 0);
 
-          if (type === 'percentage') {
-            const totalP = (subTotal * discountValue) / 100;
-            if (maxDiscount > 0) {
-              promoBirtDate = Math.min(totalP, maxDiscount);
-            } else {
-              promoBirtDate = totalP;
-            }
-          } else {
-            promoBirtDate = discountValue;
-          }
-
           promoData.push({
             code: 'BIRTHDAY',
             name: 'PROMO ULANG TAHUN',
@@ -251,24 +237,16 @@ export class WorkOrderService {
             used_count: 0,
             quota: 0,
             min_purchase: 0,
-            price: promoBirtDate,
+            price: 0,
           } as any);
         }
       }
 
-      const dpp = Math.max(0, subTotal - promoBirtDate);
-
-      const ppnAmount = company?.is_ppn
-        ? (dpp * Number(company.ppn || 0)) / 100
-        : 0;
-
-      const grandTotal = dpp + ppnAmount;
-
       const woPayload = {
         current_km: body.current_km,
         next_km: body.next_km,
-        pic_id: body.pic_id,
-        sa_id: body.sa_id,
+        pic_id: body.pic_id || null,
+        sa_id: body.sa_id || null,
         priority: body.priority,
         company_id: auth.company_id,
         customer_id: customer.id,
@@ -279,17 +257,7 @@ export class WorkOrderService {
         ...(!body.id && {
           trx_no: await this.generateTrxNo(trx, auth),
         }),
-        sparepart_total: sparepartTotal,
-        service_total: serviceTotal,
-        sub_total: subTotal,
-        grand_total: grandTotal,
-        ...(company?.is_ppn && {
-          ppn_amount: ppnAmount,
-          ppn_percent: company?.ppn,
-        }),
-        promo_amount: promoBirtDate,
         promo_data: JSON.stringify(promoData),
-        items: payloadItem,
         complaints: body.complaints,
         booking_id: body.booking_id,
         ...(body.mechanic_ids.length > 0 && {
@@ -297,18 +265,47 @@ export class WorkOrderService {
         }),
       };
 
-      const wo = await WorkOrdersModel.query(trx).upsertGraphAndFetch(
-        {
-          ...(body.id && {
-            id: body.id,
-          }),
-          ...woPayload,
-        },
-        {
-          relate: true,
-          unrelate: true,
-        },
-      );
+      if (body.id) {
+        woPayload['id'] = body.id;
+      }
+
+      const wo = await WorkOrdersModel.query(trx).upsertGraph(woPayload, {
+        relate: true,
+        unrelate: true,
+      });
+
+      await this.createOrUpdateWoItem({
+        woId: wo.id,
+        type: 'service',
+        auth,
+        data: body.services,
+        trx,
+        items: [],
+      });
+
+      await this.createOrUpdateWoItem({
+        woId: wo.id,
+        type: 'sparepart',
+        auth,
+        data: body.sparepart,
+        trx,
+        items: [],
+      });
+
+      const summary = await this.getSummary(wo, trx);
+
+      const price = summary.sub_total;
+      let calculatedPercentage = 0;
+
+      if (price > 0) {
+        calculatedPercentage = (Number(wo.disc_value) / price) * 100;
+      }
+
+      await wo.$query(trx).patch({
+        ...summary,
+        disc_percentage: calculatedPercentage,
+      });
+
       return wo;
     });
     return {
@@ -438,50 +435,20 @@ export class WorkOrderService {
     body: WorkOrderUpdateServiceDto,
     auth: IAuth,
   ) {
-    const wo = await WorkOrdersModel.query()
-      .withGraphFetched('[spareparts]')
-      .findOne({
-        id: id,
-        company_id: auth.company_id,
-      });
+    const wo = await WorkOrdersModel.query().findOne({
+      id: id,
+      company_id: auth.company_id,
+    });
 
     if (!wo) throw new NotFoundException();
 
     const result = await WorkOrdersModel.transaction(async (trx) => {
-      if (wo?.spareparts && wo.spareparts.length > 0) {
-        await Promise.all(
-          wo?.spareparts.map((e) =>
-            ProductsModel.query(trx)
-              .findById(e.data.id)
-              .increment('stock', e.qty),
-          ),
-        );
-      }
+      const summary = await this.getServiceList(wo, body, auth, trx);
 
-      await WorkOrderItemsModel.query(trx)
-        .where('work_order_id', wo.id)
-        .delete();
-
-      const { grandTotal, sparepartTotal, serviceTotal, payloadItem } =
-        await this.getServiceList(body as any, trx);
-
-      const subTotal = grandTotal - Number(wo.promo_amount || 0);
-
-      const total = subTotal - Number(wo.ppn_amount || 0);
-      const woData = await WorkOrdersModel.query(trx).upsertGraph(
-        {
-          id: wo.id,
-          sparepart_total: sparepartTotal,
-          service_total: serviceTotal,
-          sub_total: subTotal,
-          grand_total: total,
-          items: payloadItem,
-          updated_by: auth.id,
-        } as any,
-        {
-          unrelate: true,
-        },
-      );
+      const woData = await wo.$query(trx).patch({
+        ...summary,
+        updated_by: auth.id,
+      });
 
       return woData;
     });
@@ -491,88 +458,112 @@ export class WorkOrderService {
       data: result,
     };
   }
-  async getServiceList(body: WorkOrderUpdateServiceDto, trx?: any) {
-    const [service, sparepart] = await Promise.all([
-      ServicesModel.query(trx).whereIn(
-        'id',
-        body.services.map((e) => e.id),
-      ),
-      ProductsModel.query(trx).whereIn(
-        'id',
-        body.sparepart.map((e) => e.id),
-      ),
-    ]);
+  async getServiceList(
+    wo: WorkOrdersModel,
+    body: WorkOrderUpdateServiceDto,
+    auth: IAuth,
+    trx?: any,
+  ) {
+    if (body.services.length > 0) {
+      await WorkOrderItemsModel.query(trx)
+        .where('type', 'service')
+        .where('work_order_id', wo.id)
+        .whereRaw(
+          `(data->>'id')::int NOT IN (${body.services.map(() => '?').join(',')})`,
+          body.services.map((e) => e.id),
+        )
+        .delete();
+    }
 
-    let serviceTotal = 0;
-    let sparepartTotal = 0;
+    if (body.sparepart.length > 0) {
+      await WorkOrderItemsModel.query(trx)
+        .where('type', 'sparepart')
+        .where('work_order_id', wo.id)
+        .whereRaw(
+          `(data->>'id')::int NOT IN (${body.sparepart.map(() => '?').join(',')})`,
+          body.sparepart.map((e) => e.id),
+        )
+        .delete();
+    }
 
-    const sparepartsData = sparepart.map((item: any) => {
-      const find = body.sparepart.find((e) => e.id === item.id);
-      const totalPrice =
-        (find?.qty || 0) * (find?.price || item?.sell_price || 0);
-      sparepartTotal += totalPrice;
-      const qty = Number(find?.qty || 0);
+    const items = await WorkOrderItemsModel.query(trx).where(
+      'work_order_id',
+      wo.id,
+    );
 
-      if (Number(item.stock) < qty) {
-        throw new ForbiddenException(
-          `Stok untuk produk ${item.name} tidak mencukupi.`,
-        );
-      }
-
-      const data = {
-        ...item,
-        sell_price: find.price || item?.sell_price,
-        supplier_id: find?.supplier_id > 0 ? find?.supplier_id : undefined,
-      };
-
-      return {
-        data,
-        type: 'sparepart',
-        qty: find?.qty,
-        price: data.sell_price,
-        total_price: totalPrice,
-        supplier_id: data?.supplier_id,
-      };
+    await this.createOrUpdateWoItem({
+      woId: wo.id,
+      type: 'service',
+      auth,
+      data: body.services,
+      trx,
+      items,
     });
 
-    const payloadItem = [
-      ...service.map((item: any) => {
-        const find = body.services.find((e) => e.id === item.id);
-        const totalPrice = (find?.qty || 0) * (find.price || item?.price || 0);
-        serviceTotal += totalPrice;
+    await this.createOrUpdateWoItem({
+      woId: wo.id,
+      type: 'sparepart',
+      auth,
+      data: body.sparepart,
+      trx,
+      items,
+    });
 
-        const data = {
-          ...item,
-          price: find.price || item?.price,
-          supplier_id: find?.supplier_id > 0 ? find?.supplier_id : undefined,
-        };
-        return {
-          data,
-          type: 'service',
-          qty: find?.qty,
-          price: data.price,
-          total_price: totalPrice,
-          supplier_id: data.supplier_id,
-        };
-      }),
-      ...sparepartsData,
-    ];
+    return await this.getSummary(wo, trx);
+  }
 
-    if (sparepartsData.length > 0) {
-      await Promise.all(
-        sparepartsData.map((s: any) =>
-          ProductsModel.query(trx)
-            .findById(s.data.id)
-            .decrement('stock', s.qty),
-        ),
-      );
+  async createOrUpdateWoItem(prop: ICreateOrUpdateWoItem) {
+    for (const item of prop.data) {
+      const data = prop.items
+        .filter((e) => e.type === prop.type)
+        .find((e) => e.data.id === item.id);
+
+      const payload: any = {
+        price: item.price,
+        qty: item.qty,
+        supplier_id: item.supplier_id || null,
+        total_price:
+          Number(item.price) * (item.qty || 0) - Number(data?.disc_value ?? 0),
+        updated_by: prop.auth.id,
+      };
+
+      if (data) {
+        if (prop.type === 'sparepart') {
+          const product = await ProductsModel.query(prop.trx).findById(item.id);
+          const diff = Number(item.qty) - Number(data.qty);
+
+          if (diff > 0) {
+            await product.$query(prop.trx).increment('stock', diff);
+          } else if (diff < 0) {
+            await product.$query(prop.trx).decrement('stock', Math.abs(diff));
+          }
+        }
+        await data.$query(prop.trx).patch(payload);
+      } else {
+        const newPayload = {
+          ...payload,
+          disc_percentage: 0,
+          disc_value: 0,
+          tax_percentage: 0,
+          total_payment: 0,
+          type: prop.type,
+          updated_by: prop.auth.id,
+          work_order_id: prop.woId,
+        };
+        if (prop.type === 'sparepart') {
+          const product = await ProductsModel.query(prop.trx).findById(item.id);
+
+          await product.$query(prop.trx).decrement('stock', item.qty);
+          newPayload['data'] = product;
+        } else {
+          newPayload['data'] = await ServicesModel.query(prop.trx).findById(
+            item.id,
+          );
+        }
+
+        await WorkOrderItemsModel.query(prop.trx).insert(newPayload);
+      }
     }
-    return {
-      serviceTotal,
-      sparepartTotal,
-      payloadItem,
-      grandTotal: serviceTotal + sparepartTotal,
-    };
   }
 
   async sugestion(id: number, body: ChangeSugestionDto, auth: IAuth) {
@@ -588,5 +579,147 @@ export class WorkOrderService {
     });
 
     return 'Saran Selanjutnya berhasil disimpan';
+  }
+
+  async getSummary(wo: WorkOrdersModel, trx?: any) {
+    const summary = await WorkOrderItemsModel.query(trx)
+      .select(
+        'type',
+        raw('SUM(total_price)::FLOAT as subtotal'),
+        raw('SUM(total_price * (tax_percentage / 100))::FLOAT').as('tax'),
+      )
+      .where('work_order_id', wo.id)
+      .groupBy('type');
+
+    const result: any = {};
+
+    summary.forEach((item: any) => {
+      result[item.type] = {
+        subtotal: item.subtotal !== isNaN ? item.subtotal : 0,
+        tax: item.tax !== isNaN ? item.tax : 0,
+      };
+    });
+
+    const service = result?.service?.subtotal || 0;
+    const sparepart = result?.sparepart?.subtotal || 0;
+    const taxService = result?.service?.tax || 0;
+    const taxSparepart = result?.sparepart?.tax || 0;
+    const subtotal = service + sparepart;
+    const tax = taxService + taxSparepart;
+
+    let parsedPromo: any[] = [];
+
+    if (
+      wo.promo_data &&
+      typeof wo.promo_data === 'string' &&
+      wo.promo_data.trim() !== ''
+    ) {
+      try {
+        parsedPromo = JSON.parse(wo.promo_data);
+      } catch (e) {
+        console.error('Failed to parse promo_data JSON:', e);
+        parsedPromo = [];
+      }
+    }
+    const resPayload = {
+      service_total: service,
+      sparepart_total: sparepart,
+      ppn_amount: tax,
+      sub_total: subtotal,
+      disc_value: Number(wo.disc_value ?? 0),
+      disc_percentage: Number(wo.disc_percentage ?? 0),
+      promo_data: parsedPromo,
+      grand_total: 0,
+    };
+
+    const promos = resPayload.promo_data;
+    if (promos.length > 0) {
+      const promoIndex = promos.findIndex((e: any) => e.code === 'BIRTHDAY');
+
+      let disc_value = 0;
+      let disc_percentage = 0;
+      if (promoIndex !== -1) {
+        const find = promos[promoIndex];
+        if (find.type === 'percentage') {
+          const totalP = (subtotal * find.value) / 100;
+
+          if (find.max_discount > 0) {
+            disc_value = Math.min(totalP, find.max_discount);
+          } else {
+            disc_value = totalP;
+          }
+        } else {
+          disc_value = find.value;
+        }
+
+        const totalDisc = Math.round(resPayload.disc_value + disc_value);
+        if (subtotal > 0) {
+          disc_percentage = (totalDisc / subtotal) * 100;
+        }
+
+        resPayload.promo_data[promoIndex] = {
+          ...find,
+          disc_value: disc_value,
+          promo_amount: disc_value,
+          disc_percentage,
+        };
+
+        resPayload.disc_value = totalDisc;
+        resPayload.disc_percentage = disc_percentage;
+      }
+    }
+
+    resPayload.promo_data = JSON.stringify(resPayload.promo_data) as any;
+
+    if (resPayload.disc_value > 0) {
+      const items = await WorkOrderItemsModel.query(trx).where(
+        'work_order_id',
+        wo.id,
+      );
+
+      const discRatio = subtotal > 0 ? resPayload.disc_value / subtotal : 0;
+      let totalTax = 0;
+
+      items.forEach((item) => {
+        const qty = Number(item.qty ?? 0);
+        const price = Number(item.price ?? 0);
+        const disc = Number(item.disc_value ?? 0);
+        const itemAmount = price * qty - disc;
+
+        const taxRate = Number(item.tax_percentage ?? 0) / 100;
+
+        if (taxRate > 0) {
+          const itemAllocatedDisc = itemAmount * discRatio;
+          const itemNetForTax = itemAmount - itemAllocatedDisc;
+
+          totalTax += itemNetForTax * taxRate;
+        }
+      });
+      resPayload.ppn_amount = totalTax;
+    }
+
+    resPayload.grand_total =
+      subtotal - resPayload.disc_value + tax + Number(wo.other_fee ?? 0);
+
+    return resPayload;
+  }
+
+  async deleteItem(id: number, auth: IAuth) {
+    await WorkOrderItemsModel.transaction(async (trx) => {
+      const item = await WorkOrderItemsModel.query(trx).findById(id);
+      if (item) {
+        await item.$query(trx).delete();
+        const wo = await WorkOrdersModel.query().findById(item.work_order_id);
+
+        const summary = await this.getSummary(wo, trx);
+
+        await wo.$query(trx).patch({
+          ...summary,
+          updated_by: auth.id,
+        });
+      }
+    });
+
+    return 'data berhasil di hapus';
   }
 }

@@ -29,6 +29,7 @@ export class InvoicesController {
     @Res() res: Response,
   ) {
     const result = await this.invoicesService.payment(id, auth);
+    // return res.json(result);
     const html = await renderHtml({ location: 'invoice', data: result });
 
     const content = await layoutPDF({
