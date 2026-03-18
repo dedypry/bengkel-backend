@@ -94,6 +94,9 @@ export class CreateVendorTrxDto {
   finalDiscValue: number;
 
   @JoiSchema(Joi.number().default(0))
+  finalDiscPercentage: number;
+
+  @JoiSchema(Joi.number().default(0))
   tax: number;
 
   @JoiSchema(Joi.number().default(0))

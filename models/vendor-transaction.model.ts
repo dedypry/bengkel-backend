@@ -30,6 +30,7 @@ export class VendorTransactionModel extends BaseModel {
   notes?: string;
   payment_method_data?: any;
   created_id?: number;
+  disc_percentage?: number;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

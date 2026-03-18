@@ -122,6 +122,7 @@ export class VendorTransactionService {
         notes: body.notes,
         payment_method_data: body.paymentMethodData,
         created_id: auth.id,
+        disc_percentage: body.finalDiscPercentage,
       };
 
       if (!body.id) {
