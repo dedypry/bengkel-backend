@@ -24,6 +24,7 @@ import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { BookingsModel } from 'models/bookings.model';
 import { SettingsModel } from 'models/settings.model';
+import { VehicleMasterModel } from 'models/vehicle-master.model';
 
 interface ICreateOrUpdateWoItem {
   woId: number;
@@ -183,6 +184,24 @@ export class WorkOrderService {
           birth_date: body?.customer?.birth_date,
         },
       } as any;
+
+      if (body.vehicle.model && body.vehicle.brand) {
+        const type = body.vehicle.model.toUpperCase();
+        const merk = body.vehicle.brand.toUpperCase();
+
+        const vehicle = await VehicleMasterModel.query(trx)
+          .where('type', type)
+          .where('merk', merk)
+          .first();
+
+        if (!vehicle) {
+          await VehicleMasterModel.query(trx).insert({
+            merk,
+            type,
+            cc: body.vehicle.engine_capacity,
+          });
+        }
+      }
 
       if (body.booking_id) {
         await BookingsModel.query(trx).findById(body.booking_id).update({
