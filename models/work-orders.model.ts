@@ -48,6 +48,7 @@ export class WorkOrdersModel extends BaseModel {
   other_fee?: number;
   disc_percentage?: number;
   disc_value?: number;
+  cancel_note?: string;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

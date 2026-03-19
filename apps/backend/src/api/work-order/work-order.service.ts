@@ -1,5 +1,6 @@
 import { Body, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CancelDto,
   ChangeSugestionDto,
   ListPaymentQueryDto,
   MechanicRatting,
@@ -435,17 +436,33 @@ export class WorkOrderService {
     return 'Berhasil kasih ratting';
   }
 
-  async cancelWo(id: number, auth: IAuth) {
-    const wo = await WorkOrdersModel.query().findOne({
-      id,
-      company_id: auth.company_id,
-    });
+  async cancelWo(id: number, body: CancelDto, auth: IAuth) {
+    await WorkOrdersModel.transaction(async (trx) => {
+      const wo = await WorkOrdersModel.query(trx).findOne({
+        id,
+        company_id: auth.company_id,
+      });
 
-    if (!wo) throw new NotFoundException();
+      if (!wo) throw new NotFoundException();
 
-    await wo.$query().patch({
-      status: 'cancel',
-      progress: 'cancel',
+      const spareparts = await WorkOrderItemsModel.query(trx)
+        .where('work_order_id', wo.id)
+        .where('type', 'sparepart');
+
+      for (const item of spareparts) {
+        const product = await ProductsModel.query(trx).findById(item.data.id);
+
+        if (product) {
+          await product.$query(trx).increment('stock', item.qty);
+        }
+      }
+
+      await wo.$query(trx).patch({
+        status: 'cancel',
+        progress: 'cancel',
+        cancel_note: body.cancelNote,
+        updated_by: auth.id,
+      });
     });
   }
 

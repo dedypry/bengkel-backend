@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { WorkOrderService } from './work-order.service';
 import {
+  CancelDto,
   ChangeSugestionDto,
   ListPaymentQueryDto,
   MechanicRatting,
@@ -84,8 +85,12 @@ export class WorkOrderController {
     return 'Status Berhasil diubah';
   }
   @Patch('cancel/:id')
-  async cancelWo(@Param('id') id: number, @Auth() auth: IAuth) {
-    await this.workOrderService.cancelWo(id, auth);
+  async cancelWo(
+    @Param('id') id: number,
+    @Body() body: CancelDto,
+    @Auth() auth: IAuth,
+  ) {
+    await this.workOrderService.cancelWo(id, body, auth);
 
     return 'Work Order Berhasil dibatalkan';
   }

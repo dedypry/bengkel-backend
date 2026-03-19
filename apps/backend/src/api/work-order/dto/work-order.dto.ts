@@ -179,3 +179,7 @@ export class ListPaymentQueryDto {
   q?: string;
   supplier_id?: number;
 }
+
+export class CancelDto {
+  cancelNote?: string;
+}
