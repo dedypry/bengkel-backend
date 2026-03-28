@@ -211,9 +211,8 @@ export class PaymentsService {
       }
 
       await wo.$query(trx).patch(payloadWo);
-      const payment = await PaymentsModel.query(trx).insert({
+      const payloadPayment: any = {
         work_order_id: wo?.id,
-        payment_no: `PAY-${Date.now()}`,
         amount: body.total,
         method: body.payment_method,
         payment_date: fn.now(),
@@ -222,8 +221,19 @@ export class PaymentsService {
         received_amount: body.received_amount,
         proof_image: body.proof_image,
         company_id: auth.company_id,
-      } as any);
-      return payment;
+      };
+      const dataPayment = await PaymentsModel.query(trx).findOne(
+        'work_order_id',
+        wo.id,
+      );
+
+      if (!dataPayment) {
+        payloadPayment['payment_no'] = `PAY-${Date.now()}`;
+        await PaymentsModel.query(trx).insert(payloadPayment);
+      } else {
+        await dataPayment.$query(trx).patch(payloadPayment);
+      }
+      return true;
     });
     return 'Pembayaran Berhasil';
   }

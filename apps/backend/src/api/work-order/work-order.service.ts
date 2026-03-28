@@ -484,6 +484,10 @@ export class WorkOrderService {
       const woData = await wo.$query(trx).patch({
         ...summary,
         updated_by: auth.id,
+        ...(wo.status === 'closed' && {
+          status: 'queue',
+          progress: 'ready',
+        }),
       });
 
       return woData;
