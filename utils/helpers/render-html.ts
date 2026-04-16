@@ -62,7 +62,9 @@ export async function layoutPDF({
 
   let company: CompaniesModel | null = null;
   if (companyId) {
-    company = await CompaniesModel.query().findById(companyId);
+    company = await CompaniesModel.query()
+      .withGraphFetched('address')
+      .findById(companyId);
   }
 
   if (showHeader) {
