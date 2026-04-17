@@ -29,6 +29,7 @@ export class PaymentsService {
             .orWhereILike('cashier.name', `%${query.q}%`);
         }
       })
+      .orderBy('id', 'DESC')
       .page(query.page, query.pageSize);
   }
   async createPayment(body: CreatePayment, auth: IAuth) {

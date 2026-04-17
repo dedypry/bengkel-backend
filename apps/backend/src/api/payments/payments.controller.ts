@@ -13,7 +13,6 @@ import { AuthGuard } from 'utils/guards/auth.guard';
 import { CreatePayment } from './dto/payments.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
-import { PdfService } from 'utils/services/pdf.service';
 import type { Response } from 'express';
 import { IQuery } from 'utils/interfaces/query';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
@@ -23,10 +22,7 @@ import terbilang from '@gratcy/angka-terbilang-indonesia';
 @UseGuards(AuthGuard)
 @Controller('payments')
 export class PaymentsController {
-  constructor(
-    private readonly paymentsService: PaymentsService,
-    private readonly pdfService: PdfService,
-  ) {}
+  constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get()
   list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {

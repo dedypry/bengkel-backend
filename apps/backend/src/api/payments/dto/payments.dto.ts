@@ -1,6 +1,18 @@
 import * as Joi from 'joi';
 import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
 
+function NumVal(value: any) {
+  if (
+    Number.isNaN(value) ||
+    value === null ||
+    value === '' ||
+    value === 'NaN'
+  ) {
+    return 0;
+  }
+  return Number(value);
+}
+
 @JoiSchemaOptions({
   allowUnknown: false,
 })
@@ -8,10 +20,10 @@ export class CreatePayment {
   @JoiSchema(Joi.number().optional())
   woId: number;
 
-  @JoiSchema(Joi.number().optional().allow('', null))
+  @JoiSchema(Joi.any().optional().custom(NumVal).allow('', null))
   disc_percentage: number;
 
-  @JoiSchema(Joi.number().optional().allow('', null))
+  @JoiSchema(Joi.number().optional().default(0).allow('', null))
   disc_value: number;
 
   @JoiSchema(Joi.number().optional().allow('', null))
@@ -32,7 +44,7 @@ export class CreatePayment {
   @JoiSchema(Joi.number().optional().allow('', null))
   received_amount?: number;
 
-  @JoiSchema(Joi.number().optional().allow('', null))
+  @JoiSchema(Joi.number().optional().default(0).allow('', null))
   tax?: number;
 
   @JoiSchema(Joi.number().optional().allow('', null))
