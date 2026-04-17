@@ -9,6 +9,7 @@ import {
   VerifyCodeDto,
   SendForgotEmailDto,
   ResetPasswordDto,
+  RegisterDto,
 } from './dto/auth.dto';
 import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -62,6 +63,36 @@ export class AuthService {
     };
   }
 
+  async register(body: RegisterDto) {
+    const find = await CustomersModel.query()
+      .where('email', body.email)
+      .where('phone', body.phone)
+      .first();
+
+    if (find) throw new BadRequestException('Email/phone sudah ada disystem');
+
+    const user = await CustomersModel.query().insert({
+      name: body.fullName,
+      email: body.email,
+      phone: body.phone,
+      password: hashPassword(body.password),
+    });
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      type: 'cs',
+    };
+    const token = await this.jwtService.signAsync(payload);
+
+    return {
+      access_token: token,
+      user: payload,
+    };
+  }
+
   async profile(auth: IAuth) {
     if (auth.type === 'cs') {
       return await CustomersModel.query()
@@ -105,13 +136,6 @@ export class AuthService {
     };
 
     const token = await this.jwtService.signAsync(payload);
-
-    await PersonalAccessTokenModel.query().insert({
-      exp_at: dayjs().add(1, 'y').toISOString(),
-      token,
-      name: 'bearer',
-      user_id: user.id,
-    });
 
     return {
       access_token: token,

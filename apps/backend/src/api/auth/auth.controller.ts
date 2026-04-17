@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   AuthDto,
+  RegisterDto,
   ResetPasswordDto,
   SendForgotEmailDto,
   VerifyCodeDto,
@@ -24,6 +25,11 @@ export class AuthController {
   @Post('login/customer')
   loginCustomer(@Body() body: AuthDto) {
     return this.authService.loginCustomer(body);
+  }
+
+  @Post('register')
+  registerCustomer(@Body() body: RegisterDto) {
+    return this.authService.register(body);
   }
 
   @Post('forgot-password')

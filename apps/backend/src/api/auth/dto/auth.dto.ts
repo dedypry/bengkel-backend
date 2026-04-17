@@ -8,6 +8,17 @@ export class AuthDto {
   password: string;
 }
 
+export class RegisterDto {
+  @JoiSchema(Joi.string().required())
+  fullName: string;
+  @JoiSchema(Joi.string().required())
+  email: string;
+  @JoiSchema(Joi.string().required())
+  phone: string;
+  @JoiSchema(Joi.string().required())
+  password: string;
+}
+
 export class VerifyCodeDto {
   @JoiSchema(Joi.string().required())
   phone: string;
