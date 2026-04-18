@@ -3,7 +3,6 @@ import { CreateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
-import { sendWelcomeMessage } from 'utils/helpers/send-wa';
 import { CompaniesModel } from 'models/companies.model';
 import { fn, raw } from 'objection';
 import dayjs from 'dayjs';
@@ -137,7 +136,7 @@ export class CustomersService {
     };
   }
   async createCustomer(body: CreateCustomerDto, auth: IAuth) {
-    if (!body?.id) {
+    if (!body?.id && body.vehicles.length) {
       body.vehicles = body.vehicles.map((item) => ({
         ...item,
         company_id: auth.company_id,
@@ -168,17 +167,17 @@ export class CustomersService {
       );
     });
 
-    const company = await CompaniesModel.query().findById(auth.company_id);
+    // const company = await CompaniesModel.query().findById(auth.company_id);
 
-    if (!body?.id) {
-      sendWelcomeMessage({
-        customerName: body.name,
-        vehicleName: `${body.vehicles[0].brand} - ${body.vehicles[0].model}`,
-        plateNumber: body.vehicles[0].plate_number,
-        workshopName: company?.name || '',
-        to: phone,
-      });
-    }
+    // if (!body?.id) {
+    //   sendWelcomeMessage({
+    //     customerName: body.name,
+    //     vehicleName: `${body.vehicles[0].brand} - ${body.vehicles[0].model}`,
+    //     plateNumber: body.vehicles[0].plate_number,
+    //     workshopName: company?.name || '',
+    //     to: phone,
+    //   });
+    // }
     return true;
   }
 

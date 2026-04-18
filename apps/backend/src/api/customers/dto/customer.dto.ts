@@ -98,7 +98,6 @@ export class CreateCustomerDto {
           brand: Joi.string().required(),
           model: Joi.string().required(),
           year: Joi.string().allow('', null),
-          // Nested object untuk Spesifikasi
           engine_capacity: Joi.string().allow('', null),
           transmission_type: Joi.string()
             .valid('MT', 'AT', 'CVT')
@@ -110,8 +109,8 @@ export class CreateCustomerDto {
           color: Joi.string().allow('', null),
         }),
       )
-      .min(1)
-      .required(),
+      .default([])
+      .optional(),
   )
   vehicles!: VehicleDto[];
 }
