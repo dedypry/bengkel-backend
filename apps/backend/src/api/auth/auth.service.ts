@@ -10,6 +10,7 @@ import {
   SendForgotEmailDto,
   ResetPasswordDto,
   RegisterDto,
+  AuthCustomerDto,
 } from './dto/auth.dto';
 import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -31,8 +32,8 @@ export class AuthService {
 
   async login(body: AuthDto) {
     const user = await UsersModel.query()
-      .where('email', body.email)
-      .orWhere('nik', body.email)
+      .where('email', body.username)
+      .orWhere('nik', body.username)
       .first();
 
     if (!user) throw new NotFoundException();
@@ -116,7 +117,7 @@ export class AuthService {
     return result;
   }
 
-  async loginCustomer(body: AuthDto) {
+  async loginCustomer(body: AuthCustomerDto) {
     const user = await CustomersModel.query()
       .where('email', body.email)
       .orWhere('phone', formatPhoneNumber(body.email))

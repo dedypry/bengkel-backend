@@ -3,6 +3,12 @@ import { JoiSchema } from 'nestjs-joi';
 
 export class AuthDto {
   @JoiSchema(Joi.string().required())
+  username: string;
+  @JoiSchema(Joi.string().required())
+  password: string;
+}
+export class AuthCustomerDto {
+  @JoiSchema(Joi.string().required())
   email: string;
   @JoiSchema(Joi.string().required())
   password: string;
