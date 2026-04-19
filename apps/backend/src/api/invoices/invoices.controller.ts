@@ -1,6 +1,14 @@
 import 'dotenv/config';
 
-import { Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
@@ -11,6 +19,8 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
 import GeneratePDF from 'utils/services/pdf-make.service';
+import { QueryParamInvoice } from './dto/invoice.dto';
+import { calculateTotalEstimation } from 'utils/helpers/global';
 
 @UseGuards(AuthGuard)
 @Controller('invoices')
@@ -27,13 +37,39 @@ export class InvoicesController {
     @Param('id') id: number,
     @Auth() auth: IAuth,
     @Res() res: Response,
+    @Query() query: QueryParamInvoice,
   ) {
     const result = await this.invoicesService.payment(id, auth);
 
-    const html = await renderHtml({ location: 'invoice', data: result });
+    const estimated = calculateTotalEstimation(
+      result.services.map((e) => ({
+        estimated: e.data.estimated_duration,
+        type: e.data.estimated_type?.toLowerCase(),
+      })),
+    );
+    const data_mechanics = result.mechanics.map((e) => e.name).join(', ');
+    console.log(result.mechanics);
+
+    const data = {
+      location: 'invoice',
+      header: 'INVOICE',
+    };
+
+    if (query.type === 'estimation') {
+      data.location = 'wo-estimation';
+      data.header = 'ESTIMASI BIAYA SERVICE';
+    } else if (query.type === 'wo') {
+      data.location = 'wo-invoice';
+      data.header = 'PERINTAH KERJA BENGKEL';
+    }
+
+    const html = await renderHtml({
+      location: data.location,
+      data: { ...result, estimated, data_mechanics },
+    });
 
     const content = await layoutPDF({
-      header: 'Invoice',
+      header: data.header,
       content: [html],
       companyId: result.company_id,
       invNo: result.trx_no,

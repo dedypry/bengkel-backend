@@ -1,0 +1,156 @@
+<table style='font-size: 11px;'
+  data-pdfmake='{"layout":"NoBorder","widths":["auto",5,"auto","*","auto",5,"auto"]}'>
+     <tr>
+        <td>PEMILIK</td>
+        <td>:</td>
+        <td>{{customer.name}}</td>
+        <td></td>
+        <td>NO. POLISI</td>
+        <td>:</td>
+        <td>{{vehicle.plate_number}}</td>
+        
+        
+    </tr>
+    <tr>
+        
+        <td>NO. TELP/HP</td>
+        <td>:</td>
+        <td>{{customer.phone}}</td>
+         <td></td>
+        <td>NO. RANGKA/MESIN</td>
+        <td>:</td>
+        <td >{{vehicle.engine_number}}</td>
+        {{!-- <td></td>
+        <td>KM</td>
+        <td>:</td>
+        <td>{{IDR current_km}}</td> --}}
+    </tr>
+   
+    <tr>
+        <td>ALAMAT</td>
+        <td>:</td>
+        <td>{{{ne customer.profile.address}}}</td>
+        <td></td>
+        <td>TIPE / WARNA / TAHUN</td>
+        <td>:</td>
+        <td>{{vehicle.brand}} / {{vehicle.model}} / {{vehicle.year}} </td>
+        {{!-- <td></td>
+        <td>NO ANTRI</td>
+        <td>:</td>
+        <td>0</td> --}}
+    </tr>
+    <tr>
+        <td>Mekanik</td>
+        <td>:</td>
+        <td>{{{mech mechanics}}}</td>
+        <td></td>
+        <td>KM </td>
+        <td>:</td>
+        <td>{{IDR current_km}}</td>
+    </tr>
+    <tr>
+        <td>KELUHAN</td>
+        <td>:</td>
+        <td>{{{complaints}}}</td>
+        <td></td>
+        <td>KM Selanjutnya</td>
+        <td>:</td>
+        <td>{{IDR next_km}}</td>
+    </tr>
+</table>
+
+<table style='font-size: 11px; margin-top: -30px;'
+  data-pdfmake='{"layout":"NoBorder","widths":["*","*"]}'>
+  <tr>
+    <td>
+        <table style='font-size: 11px;'
+        data-pdfmake='{"widths":[30,"*",50]}'>
+            <tr style="font-weight: bold;">
+                <td data-pdfmake='{"border":[true, true, false, true]}'>No</td>
+                <td data-pdfmake='{"border":[false, true, false, true]}'>Nama Jasa</td>
+                <td data-pdfmake='{"border":[false, true, true, true]}'>Waktu</td>
+            </tr>
+            {{#each services}}
+                <tr>
+                    <td data-pdfmake='{"border":[true, false, false, false]}'>{{addOne @index}}</td>
+                    <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.name}}</td>
+                    <td data-pdfmake='{"border":[false, false, true, false]}'>{{IDR this.data.estimated_duration}} {{est this.data.estimated_type}} </td>
+                </tr>
+            {{/each}}
+            <tr>
+                <td colspan="3" data-pdfmake='{"border":[true, false, true, true]}'></td>
+            </tr>
+        </table>
+    </td>
+    <td></td>
+  </tr>
+
+  <tr>
+    <td>
+        <table style='font-size: 11px; margin-top: -30px;'
+        data-pdfmake='{"widths":[30,"*",50]}'>
+            <tr>
+                <td data-pdfmake='{"border":[true, true, false, true]}'>No</td>
+                <td data-pdfmake='{"border":[false, true, false, true]}'>Nama Jasa</td>
+                <td data-pdfmake='{"border":[false, true, true, true]}'>Waktu</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="margin-top: 100px;" data-pdfmake='{"border":[true, false, true, true]}'></td>
+            </tr>
+        </table>
+        <table style='font-size: 11px;'
+        data-pdfmake='{"widths":["*"]}'>
+            <tr>
+                <td data-pdfmake='{"border":[false, false, false, false]}'>
+                   <span style="font-size: 12px; margin-bottom:-10px">Catatan : </span><br/>
+                    SYARAT DAN KETENTUAN : <br/>
+                    <ul style="margin-top: -25px;">
+                        <li>
+                            PKB ini merupakan SURAT KUASA dari Pelanggan kepada BENGKEL:
+                            <ol type="a">
+                                <li>Mengerjakan pekerjaan seperti yang tertulis pada PKB ini</li>
+                                <li>Ijin mencoba kendaraan di luar BENGKEL</li>
+                            </ol>
+                        </li>
+                    </ul>
+                    Distribusi: Asli => Frondesk, Copy => Pelanggan
+                </td>
+            </tr>
+        </table>
+    </td>
+    <td>
+        <table style='font-size: 11px; margin-top: -30px'
+        data-pdfmake='{"widths":["*",30,50]}'>
+            <tr>
+                <td data-pdfmake='{"border":[true, true, false, true]}'>Tambah Part</td>
+                <td data-pdfmake='{"border":[false, true, false, true]}'>Qty</td>
+                <td data-pdfmake='{"border":[false, true, true, true]}'>Satuan</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="margin-top: 100px;" data-pdfmake='{"border":[true, false, true, true]}'></td>
+            </tr>
+            <tr>
+                <td colspan="3" style="margin-top: 5px; text-align: center;" data-pdfmake='{"border":[false, false, false, false]}'>
+                    Estimasi Waktu Kerja : {{estimated}}
+                </td>
+            </tr>
+        </table>
+        <table style='font-size: 11px; margin-top:40px'
+        data-pdfmake='{"widths":[100,"*",100]}'>
+            <tr>
+                <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Pemilik/Pembawa</td>
+                <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+                <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;">Service Advisor</td>
+            </tr>
+            <tr>
+                <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" style="margin-top: 50px;"></td>
+            </tr>
+            <tr>
+                <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;">{{upper customer.name}}</td>
+                <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+                <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;">{{#if pic}} {{upper pic.name}} {{/if}}</td>
+            </tr>
+        </table>
+    </td>
+  </tr>
+</table>

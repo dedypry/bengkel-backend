@@ -35,6 +35,16 @@ hb.registerHelper('mech', (val: any[]) => {
   return val.map((e) => e.name).join(', ');
 });
 
+hb.registerHelper('est', (val: 'hours' | 'day' | 'month') => {
+  if (val === 'hours') {
+    return 'JAM';
+  } else if (val === 'day') {
+    return 'Hari';
+  } else {
+    return 'Bulan';
+  }
+});
+
 export async function layoutPDF({
   pageSize = 'A4',
   invNo,
@@ -57,7 +67,7 @@ export async function layoutPDF({
       font: 'Poppins',
       lineHeight: 1,
     },
-    pageMargins: [40, 70, 40, 30],
+    pageMargins: [40, 100, 40, 50],
   };
 
   let company: CompaniesModel | null = null;
@@ -69,7 +79,7 @@ export async function layoutPDF({
 
   if (showHeader) {
     options.header = {
-      margin: [30, 10, 30, 0],
+      margin: [30, 30, 30, 0],
       stack: [
         {
           columns: [
