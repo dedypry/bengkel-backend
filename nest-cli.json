@@ -18,15 +18,6 @@
       "compilerOptions": {
         "tsConfigPath": "apps/backend/tsconfig.app.json"
       }
-    },
-    "whatsapp": {
-      "type": "application",
-      "root": "apps/whatsapp",
-      "entryFile": "main",
-      "sourceRoot": "apps/whatsapp/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/whatsapp/tsconfig.app.json"
-      }
     }
   }
 }
