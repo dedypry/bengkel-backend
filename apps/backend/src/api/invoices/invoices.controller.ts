@@ -14,7 +14,6 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import type { Response } from 'express';
-import { PdfService } from 'utils/services/pdf.service';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
@@ -27,7 +26,6 @@ import { calculateTotalEstimation } from 'utils/helpers/global';
 export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
-    private readonly pdfService: PdfService,
     @InjectQueue('MAIL-QUEUE') private readonly queue: Queue,
     // private readonly waService: WhatsappService,
   ) {}

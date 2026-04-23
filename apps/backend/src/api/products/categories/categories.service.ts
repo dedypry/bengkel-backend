@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductCategoriesModel } from 'models/product-categories.model';
 import { IAuth } from 'utils/interfaces/IAuth';

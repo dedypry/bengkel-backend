@@ -25,14 +25,14 @@ export class ProductsService {
       .where((builder) => {
         if (query.q) {
           builder
-            .whereILike('name', `%${query.q}%`)
-            .orWhereILike('code', `%${query.q}%`);
+            .whereILike('products.name', `%${query.q}%`)
+            .orWhereILike('products.code', `%${query.q}%`);
         }
         if (query.categoryId) {
           builder.where('category_id', query.categoryId);
         }
       })
-      .where('company_id', auth.company_id)
+      .where('products.company_id', auth.company_id)
       .orderByRaw('CAST(stock AS NUMERIC) ASC');
 
     if (isDownload) {
@@ -41,25 +41,39 @@ export class ProductsService {
 
     queryData = queryData.page(query.page, query.pageSize);
 
-    const result = await queryData;
+    const catIds = await ProductsModel.query()
+      .select('category_id')
+      .where('products.company_id', auth.company_id)
+      .groupBy('category_id');
 
-    const stats = await ProductsModel.query()
-      .where('company_id', auth.company_id)
-      .first()
-      .select([
-        ProductsModel.raw(
-          'COUNT(CASE WHEN stock <= min_stock THEN 1 END)::INTEGER as low_stock_count',
-        ),
-        ProductsModel.raw(
-          'SUM(stock * purchase_price)::BIGINT as total_inventory_value',
-        ),
-        ProductsModel.raw(
-          'SUM(stock * sell_price)::BIGINT as total_potential_revenue',
-        ),
-      ]);
+    const [result, stats, categories] = await Promise.all([
+      queryData,
+      ProductsModel.query()
+        .where('company_id', auth.company_id)
+        .first()
+        .select([
+          ProductsModel.raw(
+            'COUNT(CASE WHEN stock <= min_stock THEN 1 END)::INTEGER as low_stock_count',
+          ),
+          ProductsModel.raw(
+            'SUM(stock * purchase_price)::BIGINT as total_inventory_value',
+          ),
+          ProductsModel.raw(
+            'SUM(stock * sell_price)::BIGINT as total_potential_revenue',
+          ),
+        ]),
+      ProductCategoriesModel.query().whereIn(
+        'id',
+        catIds.map((e) => e.category_id),
+      ),
+    ]);
+
     return {
       ...result,
-      stats,
+      stats: {
+        ...stats,
+        categories,
+      },
     };
   }
 

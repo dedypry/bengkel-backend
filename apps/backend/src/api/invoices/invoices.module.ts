@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { InvoicesController } from './invoices.controller';
-import { PdfService } from 'utils/services/pdf.service';
 import { BullModule } from '@nestjs/bull';
 import { MailQueueProcessor } from '../../queue/mail.queue.processor';
 // import { WhatsappService } from 'utils/services/wa.service';
@@ -13,6 +12,6 @@ import { MailQueueProcessor } from '../../queue/mail.queue.processor';
     }),
   ],
   controllers: [InvoicesController],
-  providers: [InvoicesService, PdfService, MailQueueProcessor],
+  providers: [InvoicesService, MailQueueProcessor],
 })
 export class InvoicesModule {}
