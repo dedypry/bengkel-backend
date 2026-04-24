@@ -31,13 +31,13 @@ export class CreateProductDto {
   @JoiSchema(Joi.number().precision(2).min(0).required())
   sell_price!: number;
 
-  @JoiSchema(Joi.number().integer().min(0).required())
+  @JoiSchema(Joi.number().min(0).required())
   stock!: number;
 
-  @JoiSchema(Joi.number().integer().min(0).required())
+  @JoiSchema(Joi.number().min(0).required())
   min_stock!: number;
 
-  @JoiSchema(Joi.number().integer().required())
+  @JoiSchema(Joi.number().required())
   uom_id!: number;
 
   @JoiSchema(Joi.string().allow('', null).optional())
