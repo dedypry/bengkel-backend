@@ -104,6 +104,7 @@ export const formatNumber = (value: number | string): string => {
 };
 
 export async function imageUrlToBase64(url: string): Promise<string> {
+  console.log('URL', url);
   try {
     const response = await axios.get<ArrayBuffer>(url, {
       responseType: 'arraybuffer',
@@ -111,16 +112,14 @@ export async function imageUrlToBase64(url: string): Promise<string> {
 
     const buffer = Buffer.from(response.data);
 
-    // convert WEBP → PNG (supaya pdfmake bisa baca)
     const converted = await sharp(buffer).png().toBuffer();
 
     const base64 = converted.toString('base64');
 
     return `data:image/png;base64,${base64}`;
   } catch (error: any) {
-    throw new Error(
-      `Failed to convert image to base64: ${error?.message || error}`,
-    );
+    console.log('ERROR', error);
+    return null;
   }
 }
 

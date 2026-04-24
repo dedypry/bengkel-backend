@@ -1,14 +1,11 @@
 import 'dotenv/config';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID as uuidv4 } from 'node:crypto';
 import sharp from 'sharp';
 import path from 'path';
 import { ImagesModel } from 'models/images.model';
+import fs from 'fs';
 
 @Injectable()
 export class UploadService {
@@ -27,6 +24,11 @@ export class UploadService {
     let uploadBuffer: Buffer = file.buffer;
     let fileName: string;
     let contentType: string = file.mimetype;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
     try {
       if (isImage) {
@@ -47,26 +49,29 @@ export class UploadService {
         fileName = `${uuidv4()}${fileExt}`;
       }
 
-      const command = new PutObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileName, // Nama file di S3
-        Body: uploadBuffer,
-        ContentType: contentType,
-      });
-      await this.s3Client.send(command);
+      const filePath = path.join(uploadDir, fileName);
+      fs.writeFileSync(filePath, uploadBuffer);
+      // const command = new PutObjectCommand({
+      //   Bucket: this.bucketName,
+      //   Key: fileName, // Nama file di S3
+      //   Body: uploadBuffer,
+      //   ContentType: contentType,
+      // });
+      // await this.s3Client.send(command);
 
       const payload = {
         filename: fileName,
         original_name: file.originalname,
-        mime_type: 'image/webp',
+        mime_type: contentType || 'image/webp',
         size: uploadBuffer.length,
-        path: `https://${this.bucketName}.s3.${process.env.S3_REGION}.amazonaws.com/${fileName}`,
+        // path: `https://${this.bucketName}.s3.${process.env.S3_REGION}.amazonaws.com/${fileName}`,
+        path: `${process.env.APP_URL}/uploads/${fileName}`,
       };
 
       const image = await ImagesModel.query().insert(payload);
       return image;
     } catch (error) {
-      console.error('S3 Upload Error:', error);
+      console.error('LOCAL Upload Error:', error);
       throw new InternalServerErrorException('Gagal mengunggah file ke S3');
     }
   }
