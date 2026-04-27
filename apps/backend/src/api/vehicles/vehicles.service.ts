@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { VehiclesModel } from 'models/vehicles.model';
+import { WorkOrdersModel } from 'models/work-orders.model';
 import { IQuery } from 'utils/interfaces/query';
 
 @Injectable()
@@ -21,5 +22,18 @@ export class VehiclesService {
       })
       .orderBy('created_at', 'desc')
       .page(query.page, query.pageSize);
+  }
+
+  async getHistoryByPlateNo(plateNo: string) {
+    return await WorkOrdersModel.query()
+      .leftJoinRelated('[vehicle]')
+      .withGraphFetched('[services,spareparts]')
+      .where('vehicle.plate_number', plateNo);
+  }
+
+  async detailByPlate(plateNo: string) {
+    return await VehiclesModel.query()
+      .withGraphFetched('[customers.profile]')
+      .findOne('plate_number', plateNo);
   }
 }

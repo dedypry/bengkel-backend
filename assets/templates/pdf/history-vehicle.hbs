@@ -1,0 +1,98 @@
+<table style='font-size: 11px;'
+  data-pdfmake='{"layout":"NoBorder","widths":["auto",5,"auto","*","auto",5,"auto"]}'>
+     <tr>
+        <td>PEMILIK</td>
+        <td>:</td>
+        <td>{{customer.name}}</td>
+        <td></td>
+        <td>NO. POLISI</td>
+        <td>:</td>
+        <td>{{vehicle.plate_number}}</td>
+        
+        
+    </tr>
+    <tr>
+        
+        <td>NO. TELP/HP</td>
+        <td>:</td>
+        <td>{{customer.phone}}</td>
+         <td></td>
+        <td>NO. RANGKA/MESIN</td>
+        <td>:</td>
+        <td >{{vehicle.engine_number}}</td>
+        {{!-- <td></td>
+        <td>KM</td>
+        <td>:</td>
+        <td>{{IDR current_km}}</td> --}}
+    </tr>
+   
+    <tr>
+        <td>ALAMAT</td>
+        <td>:</td>
+        <td>{{{ne customer.profile.address}}}</td>
+        <td></td>
+        <td>TIPE / WARNA / TAHUN</td>
+        <td>:</td>
+        <td>{{vehicle.brand}} / {{vehicle.model}} / {{vehicle.year}} </td>
+        {{!-- <td></td>
+        <td>NO ANTRI</td>
+        <td>:</td>
+        <td>0</td> --}}
+    </tr>
+</table>
+<table style='font-size: 11px;'
+  data-pdfmake='{"widths":["auto","*","*",50,100]}'>
+  <tr>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>Tanggal</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>No Service</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>Keluhan</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>KM</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>KM Selanjutnya</td>
+  </tr>
+
+  {{#each histories}}
+  <tr>
+    <td data-pdfmake='{"border":[false, false, false, false]}'>{{DATE this.created_at}}</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.trx_no}}</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.complaints}}</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.current_km}}</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.next_km}}</td>
+  </tr>
+  <tr>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">No</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Kode Jasa</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Nama Jasa</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">QTY</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Satuan</td>
+  </tr>
+    {{#each this.services}}
+        <tr>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.code}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.name}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.qty}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>JOB</td>
+        </tr>
+    {{/each}}
+
+  <tr>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">No</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Kode Part</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Nama Part</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">QTY</td>
+    <td data-pdfmake='{"border":[false, false, false, false]}' style="font-weight: bold; font-style: italic;">Satuan</td>
+  </tr>
+  {{#each this.spareparts}}
+        <tr>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.code}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.name}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.qty}}</td>
+            <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.data.unit}}</td>
+        </tr>
+    {{/each}}
+  {{/each}}
+  <tr>
+    <td colspan="5"data-pdfmake='{"border":[false, true, false, false]}' ></td>
+  </tr>
+  </table>

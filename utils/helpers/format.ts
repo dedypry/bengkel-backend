@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export const formatPhoneNumber = (phone: string): string => {
   // 1. Hapus semua karakter yang bukan angka (termasuk tanda +)
   let cleaned = phone.replace(/\D/g, '');
@@ -15,3 +17,8 @@ export const formatPhoneNumber = (phone: string): string => {
 
   return cleaned;
 };
+
+export function formatDate(val?: string) {
+  if (!val) return dayjs().format('MM DDD YYYY');
+  return dayjs(val).format('DD MMM YYYY');
+}

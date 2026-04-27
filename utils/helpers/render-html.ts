@@ -8,6 +8,7 @@ import htmlToPdfMake from 'html-to-pdfmake';
 import { JSDOM } from 'jsdom';
 import { formatNumber, imageUrlToBase64, logo_default } from './global';
 import dayjs from 'dayjs';
+import { formatDate } from './format';
 const { window } = new JSDOM();
 // Define the shape of the function parameters
 interface LayoutPDFOptions {
@@ -25,6 +26,7 @@ interface LayoutPDFOptions {
 }
 
 hb.registerHelper('IDR', formatNumber);
+hb.registerHelper('DATE', formatDate);
 hb.registerHelper('upper', (val?: string) => val?.toUpperCase());
 hb.registerHelper('ne', (val?: string) => {
   if (!val) return '';
