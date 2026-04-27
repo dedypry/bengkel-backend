@@ -6,29 +6,26 @@ import { IAuth } from 'utils/interfaces/IAuth';
 @Injectable()
 export class VehicleMasterService {
   async list(query: IQueryVehicles) {
-    let dataQuery: any = VehicleMasterModel.query()
-      .where((builder) => {
-        if (query.q) {
-          builder
-            .whereILike('merk', `%${query.q}%`)
-            .orWhereILike('type', `%${query.q}%`);
-        }
+    let dataQuery: any = VehicleMasterModel.query().where((builder) => {
+      if (query.q) {
+        builder
+          .whereILike('merk', `%${query.q}%`)
+          .orWhereILike('type', `%${query.q}%`);
+      }
 
-        if (query.merk) {
-          builder.where('type', query.merk);
-        }
-      })
-      .orderBy('merk', 'asc');
-
+      if (query.merk) {
+        builder.where('type', query.merk);
+      }
+    });
     if (query.page) {
       dataQuery = dataQuery.page(query.page - 1, query.pageSize || 10);
     }
 
     if (query.page) {
-      return await dataQuery;
+      return await dataQuery.orderBy('created_at', 'desc');
     }
 
-    const results = await dataQuery;
+    const results = await dataQuery.orderBy('merk', 'asc');
 
     const grouped = results.reduce((acc: any, current) => {
       // Kita ambil 'type' sebagai parent
