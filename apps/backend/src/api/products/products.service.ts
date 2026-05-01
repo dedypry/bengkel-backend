@@ -41,6 +41,10 @@ export class ProductsService {
 
     queryData = queryData.page(query.page, query.pageSize);
 
+    if (query.noStats === 1) {
+      return await queryData;
+    }
+
     const catIds = await ProductsModel.query()
       .select('category_id')
       .where('products.company_id', auth.company_id)
@@ -250,5 +254,16 @@ export class ProductsService {
     }));
 
     return result;
+  }
+
+  async getByIds(ids: any, auth: IAuth) {
+    return await ProductsModel.query()
+      .withGraphFetched('[category.parent,uom,images]')
+      .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (ids != 'all') {
+          builder.whereIn('id', ids);
+        }
+      });
   }
 }

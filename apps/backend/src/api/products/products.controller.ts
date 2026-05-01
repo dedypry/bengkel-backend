@@ -44,6 +44,17 @@ export class ProductsController {
     return this.productsService.list(query, auth);
   }
 
+  @Get('get-by-ids')
+  getByIds(@Query() query: { ids: string }, @Auth() auth: IAuth) {
+    const ids =
+      query.ids === 'all'
+        ? 'all'
+        : query.ids.split(',').map((id) => Number(id));
+
+    console.log({ ids });
+    return this.productsService.getByIds(ids, auth);
+  }
+
   @Get('top-part')
   topPart(@Auth() auth: IAuth) {
     return this.productsService.topParts(auth);

@@ -52,6 +52,8 @@ export class CreateProductDto {
 
 export class ProductQueryDto extends IQuery {
   categoryId?: number;
+
+  noStats?: number;
 }
 
 @JoiSchemaOptions({

@@ -32,6 +32,7 @@ import { AiModule } from './api/ai/ai.module';
 import { ExpenseModule } from './api/expense/expense.module';
 import { VendorTransactionModule } from './api/vendor-transaction/vendor-transaction.module';
 import { VehicleMasterModule } from './api/vehicle-master/vehicle-master.module';
+import { PoModule } from './api/po/po.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { VehicleMasterModule } from './api/vehicle-master/vehicle-master.module'
     ExpenseModule,
     VendorTransactionModule,
     VehicleMasterModule,
+    PoModule,
   ],
   controllers: [AppController],
   providers: [],
