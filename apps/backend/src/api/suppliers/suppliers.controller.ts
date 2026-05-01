@@ -34,6 +34,11 @@ export class SuppliersController {
     return this.suppliersService.list(query, auth);
   }
 
+  @Get('all')
+  listAll(@Query() query: IQuery, @Auth() auth: IAuth) {
+    return this.suppliersService.list(query, auth);
+  }
+
   @Post()
   create(@Body() body: CreateSupplierDto, @Auth() auth: IAuth) {
     return this.suppliersService.create(body, auth);
