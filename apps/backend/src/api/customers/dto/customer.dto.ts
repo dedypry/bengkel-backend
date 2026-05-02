@@ -116,9 +116,9 @@ export class CreateCustomerDto {
 }
 
 export class CustomerQueryDto extends IQuery {
-  noStats?: boolean;
-  isVehicle?: boolean;
-  noPagination?: boolean;
+  noStats?: 0 | 1;
+  isVehicle?: 0 | 1;
+  noPagination?: 0 | 1;
   status?: string;
   brand?: string;
   model?: string;

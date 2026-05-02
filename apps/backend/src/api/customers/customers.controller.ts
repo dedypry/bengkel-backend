@@ -40,11 +40,11 @@ export class CustomersController {
     @Query(new PaginationPipe()) query: CustomerQueryDto,
     @Res() res: Response,
   ) {
-    query.noPagination = true;
+    query.noPagination = 1;
+    query.isVehicle = 1;
     const result: any = await this.customersService.listCustomer(query);
 
     const formattedData = (result || []).flatMap((customer: CustomersModel) => {
-      // Jika customer tidak punya kendaraan, tampilkan 1 baris dengan kolom kendaraan kosong
       if (!customer.vehicles || customer.vehicles.length === 0) {
         return [
           {
@@ -60,8 +60,6 @@ export class CustomersController {
           },
         ];
       }
-
-      // Jika punya kendaraan, buat baris untuk setiap kendaraan
       return customer.vehicles.map((vehicle: VehiclesModel) => ({
         created_at: dayjs(vehicle.created_at).format('DD MMM YYYY'),
         name: customer.name,

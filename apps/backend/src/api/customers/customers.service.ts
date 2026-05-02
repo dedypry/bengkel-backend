@@ -63,7 +63,9 @@ export class CustomersService {
         'customers.*',
         CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
       ])
-      .withGraphFetched(`[profile, ${query.isVehicle ? 'vehicles' : ''} ]`)
+      .withGraphFetched(
+        `[profile, ${query.isVehicle === 1 ? 'vehicles' : ''} ]`,
+      )
       .where((builder) => {
         if (query.q) {
           builder
@@ -90,7 +92,6 @@ export class CustomersService {
           builder.whereExists(
             CustomersModel.relatedQuery('vehicles').modify((vehicleBuilder) => {
               if (query.brand) {
-                // Gunakan Ilike atau Lower agar lebih aman dengan data yang tadi kita buat lowercase
                 vehicleBuilder.whereILike(
                   raw('LOWER(brand)'),
                   query.brand?.toLowerCase(),
