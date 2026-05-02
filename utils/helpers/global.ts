@@ -131,7 +131,6 @@ export function generateNo(prefix: string, str: string) {
   if (match) {
     nextNumber = parseInt(match[0], 10) + 1;
   }
-
   const paddedNumber = String(nextNumber).padStart(4, '0');
   return `${prefix}${date}.${paddedNumber}`;
 }

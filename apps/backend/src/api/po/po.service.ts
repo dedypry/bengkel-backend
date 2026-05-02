@@ -38,7 +38,8 @@ export class PoService {
 
     const data: any = await PoModel.query(trx)
       .select(raw('MAX(po_no) as last_po_no'))
-      .where('company_id', auth.company_id);
+      .where('company_id', auth.company_id)
+      .first();
 
     return generateNo(prefix, data.last_po_no);
   }
