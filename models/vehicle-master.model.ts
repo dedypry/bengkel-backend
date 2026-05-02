@@ -8,5 +8,6 @@ export class VehicleMasterModel extends BaseModel {
   merk?: string;
   cc?: string;
   status?: string;
+  updated_id?: number;
   // === FIELD END ===
 }
