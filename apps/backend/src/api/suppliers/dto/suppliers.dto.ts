@@ -13,12 +13,8 @@ export class CreateSupplierDto {
   )
   name: string;
 
-  @JoiSchema(
-    Joi.string().required().messages({
-      'any.required': 'Kode supplier wajib diisi',
-    }),
-  )
-  code: string;
+  @JoiSchema(Joi.string().allow('', null).empty(''))
+  code: string | null;
 
   @JoiSchema(
     Joi.string().email().allow('', null).messages({
@@ -55,22 +51,14 @@ export class CreateSupplierDto {
   @JoiSchema(Joi.boolean().default(true))
   is_active: boolean;
 
-  @JoiSchema(
-    Joi.number().integer().positive().required().messages({
-      'any.required': 'Provinsi wajib dipilih',
-    }),
-  )
+  @JoiSchema(Joi.number().allow('', null))
   province_id: number;
 
-  @JoiSchema(
-    Joi.number().integer().positive().required().messages({
-      'any.required': 'Kota/Kabupaten wajib dipilih',
-    }),
-  )
+  @JoiSchema(Joi.number().allow('', null))
   city_id: number;
 
   @JoiSchema(
-    Joi.number().integer().positive().required().messages({
+    Joi.number().allow('', null).messages({
       'any.required': 'Kecamatan wajib dipilih',
     }),
   )

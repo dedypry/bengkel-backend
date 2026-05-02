@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Row } from 'exceljs';
 import { CityModel } from 'models/city.model';
 import { ProvinceModel } from 'models/province.model';
-import { getRow } from 'utils/helpers/global';
+import { generateNo, getRow } from 'utils/helpers/global';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { supplierData } from './data';
 import { SuppliersModel } from 'models/suppliers.model';
 import { IQuery } from 'utils/interfaces/query';
 import { CreateSupplierDto } from './dto/suppliers.dto';
-import { fn } from 'objection';
+import { fn, raw } from 'objection';
 
 @Injectable()
 export class SuppliersService {
@@ -26,7 +26,19 @@ export class SuppliersService {
     return await supp;
   }
 
+  async generateCode(auth: IAuth) {
+    const supp: any = await SuppliersModel.query()
+      .select(raw('MAX(code) as code'))
+      .where('company_id', auth.company_id)
+      .first();
+
+    return generateNo('SUP-', supp?.code, true);
+  }
   async create(body: CreateSupplierDto, auth: IAuth) {
+    if (!body.code) {
+      body.code = await this.generateCode(auth);
+    }
+
     const payload = {
       ...body,
       company_id: auth.company_id,

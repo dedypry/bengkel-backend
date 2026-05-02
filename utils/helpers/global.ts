@@ -123,7 +123,7 @@ export async function imageUrlToBase64(url: string): Promise<string> {
   }
 }
 
-export function generateNo(prefix: string, str: string) {
+export function generateNo(prefix: string, str: string, noDate?: boolean) {
   const date = dayjs().format('YYYYMMDD');
   const match = (str || '000').match(/\d+$/);
 
@@ -132,5 +132,8 @@ export function generateNo(prefix: string, str: string) {
     nextNumber = parseInt(match[0], 10) + 1;
   }
   const paddedNumber = String(nextNumber).padStart(4, '0');
+  if (noDate) {
+    return `${prefix}${paddedNumber}`;
+  }
   return `${prefix}${date}.${paddedNumber}`;
 }
