@@ -9,7 +9,7 @@ import { SuppliersModel } from './suppliers.model';
 import { WarehousesModel } from './warehouses.model';
 import { UsersModel } from './users.model';
 
-@Table('po', { softDelete: true })
+@Table('po')
 export class PoModel extends BaseModel {
   // === FIELD START ===
   company_id?: number;

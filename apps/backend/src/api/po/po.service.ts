@@ -19,6 +19,7 @@ export class PoService {
             .orWhereILike('notes', `%${query.q}%`);
         }
       })
+      .whereNull('deleted_at')
       .orderBy('id', 'desc')
       .page(query.page, query.pageSize);
   }
@@ -53,12 +54,12 @@ export class PoService {
         other_fee: body.other_fee,
         disc_percentage: body.disc_percentage,
         disc_value: body.disc_value,
-        requested_date: body.requested_date,
+        requested_date: body.requested_date || null,
         tax: body.tax,
         total: body.total,
         company_id: auth.company_id,
         warehouse_id: body.warehouseId,
-        date: body.date,
+        date: body.date || null,
         supplier_id: body.supplierId,
         term_credit: body.term_credit,
         notes: body.notes,
