@@ -7,7 +7,7 @@ import { BaseModel } from './base.model';
 import { AddressModel } from './address.model';
 import { UsersModel } from './users.model';
 
-@Table('companies', { hide: ['created_at', 'updated_at'] })
+@Table('companies', { hide: ['created_at', 'updated_at'], softDelete: true })
 export class CompaniesModel extends BaseModel {
   // === FIELD START ===
   name!: string;
