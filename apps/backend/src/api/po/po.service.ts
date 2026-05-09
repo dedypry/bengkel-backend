@@ -9,22 +9,25 @@ import { generateNo } from 'utils/helpers/global';
 export class PoService {
   async list(query: PoQuery, auth: IAuth) {
     return await PoModel.query()
+      .alias('po')
       .withGraphFetched('[supplier,warehouse]')
-      .where('company_id', auth.company_id)
+      .leftJoinRelated('[supplier]')
+      .where('po.company_id', auth.company_id)
       .where((builder) => {
         if (query.q) {
           builder
             .whereILike('po_no', `%${query.q}%`)
-            .orWhereILike('notes', `%${query.q}%`)
-            .orWhereILike('invoice_no', `%${query.q}%`);
+            .orWhereILike('po.notes', `%${query.q}%`)
+            .orWhereILike('po.invoice_no', `%${query.q}%`)
+            .orWhereILike('supplier.name', `%${query.q}%`);
         }
 
         if (query.date) {
-          builder.whereRaw('DATE(date) = ?', [query.date]);
+          builder.whereRaw('DATE(po.date) = ?', [query.date]);
         }
       })
-      .whereNull('deleted_at')
-      .orderBy('id', 'desc')
+      .whereNull('po.deleted_at')
+      .orderBy('po.id', 'desc')
       .page(query.page, query.pageSize);
   }
 
