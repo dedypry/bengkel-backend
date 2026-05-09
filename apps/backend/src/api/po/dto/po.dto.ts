@@ -1,5 +1,6 @@
 import { JoiSchema } from 'nestjs-joi';
 import * as Joi from 'joi';
+import { IQuery } from 'utils/interfaces/query';
 
 export class CreatePoDto {
   @JoiSchema(Joi.number().optional().allow(null, ''))
@@ -100,4 +101,9 @@ export class CreatePoItemDto {
   disc_value: number;
   ppn_percentage: number;
   total: number;
+}
+
+export class PoQuery extends IQuery {
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  date?: string;
 }

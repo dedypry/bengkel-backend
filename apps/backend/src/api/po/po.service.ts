@@ -1,14 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePoDto } from './dto/po.dto';
+import { CreatePoDto, PoQuery } from './dto/po.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { PoModel } from 'models/po.model';
 import { fn, raw } from 'objection';
 import { generateNo } from 'utils/helpers/global';
-import { IQuery } from 'utils/interfaces/query';
 
 @Injectable()
 export class PoService {
-  async list(query: IQuery, auth: IAuth) {
+  async list(query: PoQuery, auth: IAuth) {
     return await PoModel.query()
       .withGraphFetched('[supplier,warehouse]')
       .where('company_id', auth.company_id)
@@ -18,6 +17,10 @@ export class PoService {
             .whereILike('po_no', `%${query.q}%`)
             .orWhereILike('notes', `%${query.q}%`)
             .orWhereILike('invoice_no', `%${query.q}%`);
+        }
+
+        if (query.date) {
+          builder.whereRaw('DATE(date) = ?', [query.date]);
         }
       })
       .whereNull('deleted_at')

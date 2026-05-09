@@ -12,10 +12,9 @@ import {
 import { PoService } from './po.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
-import { CreatePoDto } from './dto/po.dto';
+import { CreatePoDto, PoQuery } from './dto/po.dto';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
-import { IQuery } from 'utils/interfaces/query';
 import type { Response } from 'express';
 import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
 import GeneratePDF from 'utils/services/pdf-make.service';
@@ -27,7 +26,7 @@ export class PoController {
   constructor(private readonly poService: PoService) {}
 
   @Get()
-  list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
+  list(@Query(new PaginationPipe()) query: PoQuery, @Auth() auth: IAuth) {
     return this.poService.list(query, auth);
   }
 
