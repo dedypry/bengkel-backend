@@ -16,7 +16,8 @@ export class PoService {
         if (query.q) {
           builder
             .whereILike('po_no', `%${query.q}%`)
-            .orWhereILike('notes', `%${query.q}%`);
+            .orWhereILike('notes', `%${query.q}%`)
+            .orWhereILike('invoice_no', `%${query.q}%`);
         }
       })
       .whereNull('deleted_at')
