@@ -106,4 +106,13 @@ export class CreatePoItemDto {
 export class PoQuery extends IQuery {
   @JoiSchema(Joi.string().optional().allow(null, ''))
   date?: string;
+
+  @JoiSchema(Joi.number().optional().allow(null, ''))
+  supplier_id?: number;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  date_from?: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  date_to?: string;
 }

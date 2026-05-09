@@ -4,11 +4,12 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { PoModel } from 'models/po.model';
 import { fn, raw } from 'objection';
 import { generateNo } from 'utils/helpers/global';
+import { SuppliersModel } from 'models/suppliers.model';
 
 @Injectable()
 export class PoService {
   async list(query: PoQuery, auth: IAuth) {
-    return await PoModel.query()
+    const data = await PoModel.query()
       .alias('po')
       .withGraphFetched('[supplier,warehouse]')
       .leftJoinRelated('[supplier]')
@@ -25,10 +26,38 @@ export class PoService {
         if (query.date) {
           builder.whereRaw('DATE(po.date) = ?', [query.date]);
         }
+        if (query.supplier_id) {
+          builder.where('po.supplier_id', query.supplier_id);
+        }
+
+        if (query.date_from) {
+          builder.whereRaw('DATE(po.date) >= ?', [query.date_from]);
+        }
+        if (query.date_to) {
+          builder.whereRaw('DATE(po.date) <= ?', [query.date_to]);
+        }
       })
       .whereNull('po.deleted_at')
       .orderBy('po.id', 'desc')
       .page(query.page, query.pageSize);
+
+    const supplierId = await PoModel.query()
+      .select('supplier_id')
+      .where('company_id', auth.company_id)
+      .whereNull('deleted_at')
+      .groupBy('supplier_id');
+
+    const suppliers = await SuppliersModel.query()
+      .whereIn(
+        'id',
+        supplierId.map((e) => e.supplier_id),
+      )
+      .select('id', 'name');
+
+    return {
+      ...data,
+      stats: { suppliers },
+    };
   }
 
   async detail(id: number, auth: IAuth) {
