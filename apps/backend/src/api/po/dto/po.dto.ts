@@ -6,16 +6,22 @@ export class CreatePoDto {
   id?: number;
 
   @JoiSchema(Joi.number().required())
-  supplierId: number;
+  supplier_id: number;
 
   @JoiSchema(Joi.number().optional().allow(null))
-  warehouseId: number;
+  warehouse_id: number;
 
   @JoiSchema(Joi.string().required())
   date: string;
 
   @JoiSchema(Joi.string().optional().allow(null, ''))
   requested_date: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  invoice_no: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  po_no: string;
 
   @JoiSchema(Joi.string().optional().default('in_progress'))
   status: string;
@@ -41,14 +47,26 @@ export class CreatePoDto {
   @JoiSchema(Joi.number().optional().allow(null, ''))
   total: number;
 
-  @JoiSchema(Joi.number().required())
+  @JoiSchema(Joi.number().optional().default(0).allow(null, ''))
   term_credit: number;
 
   @JoiSchema(Joi.string().optional().allow(null, ''))
   notes: string;
 
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  due_date?: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  payment_type?: string;
+
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  received_at?: string;
+
   @JoiSchema(Joi.number().optional().allow(null, ''))
   signature_id: number;
+
+  @JoiSchema(Joi.number().optional().allow(null, ''))
+  due_days?: number;
 
   @JoiSchema(
     Joi.array()

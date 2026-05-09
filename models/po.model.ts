@@ -32,6 +32,12 @@ export class PoModel extends BaseModel {
   requested_date?: string;
   disc_percentage?: number;
   closed_notes?: string;
+  due_date?: string;
+  due_day?: number;
+  received_at?: string;
+  received_id?: number;
+  invoice_no?: string;
+  payment_type?: string;
   // === FIELD END ===
 
   @HasMany(() => PoItemsModel, {

@@ -1,0 +1,118 @@
+<table style='font-size: 11px;'
+  data-pdfmake='{"layout":"NoBorder","widths":["auto",5,"auto","*","auto",5,"auto"]}'>
+     <tr>
+        <td>Kepada</td>
+        <td>:</td>
+        <td>{{supplier.name}}</td>
+        <td></td>
+        <td>Tempo</td>
+        <td>:</td>
+        <td>{{IDR due_day}} Hari</td>
+    </tr>
+     <tr>
+        <td>Alamat</td>
+        <td>:</td>
+        <td>{{supplier.address}}</td>
+        <td></td>
+        <td>Jth. Tempo</td>
+        <td>:</td>
+        <td>{{DATE due_date}}</td>
+    </tr>
+     <tr>
+        <td>Telepon</td>
+        <td>:</td>
+        <td>{{supplier.phone}}</td>
+        <td></td>
+        <td>No. Ref #</td>
+        <td>:</td>
+        <td>{{invoice_no}}</td>
+    </tr>
+</table>
+
+<table
+  style='font-size: 11px; margin-top: -20px;'
+  data-pdfmake='{"widths":[15,"auto","*",40,20,30,50,50]}'
+>
+  <tr>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>No</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}'>KODE JASA</td>
+    <td data-pdfmake='{"border":[false, true, false, true]}' colspan="2">NAMA JASA</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>Qty</td>
+    <td style='text-align: center;' data-pdfmake='{"border":[false, true, false, true]}'>Satuan</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>HARGA</td>
+    <td style='text-align: right;' data-pdfmake='{"border":[false, true, false, true]}'>JUMLAH</td>
+  </tr>
+   {{#each items}}
+    <tr>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{addOne @index}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}'>{{this.product.code}}</td>
+      <td data-pdfmake='{"border":[false, false, false, false]}' colspan="2">{{this.product.name}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.qty}}</td>
+      <td style='text-align: center;' data-pdfmake='{"border":[false, false, false, false]}'>{{this.product.unit}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.price}}</td>
+      <td style='text-align: right;' data-pdfmake='{"border":[false, false, false, false]}'>{{IDR this.total}}</td>
+    </tr>
+  {{/each}}
+  <tr>
+    <td colspan="2" data-pdfmake='{"border":[false, true, false, false]}'>
+        Diterima : {{DATE received_at}}
+    </td>
+    <td data-pdfmake='{"border":[false, true, false, false]}' style="text-align: right;" colspan="2">
+        Total Qty : 
+    </td>
+    <td data-pdfmake='{"border":[false, true, false, false]}' style="text-align: right;">
+        {{IDR totalQty}}
+    </td>
+    <td data-pdfmake='{"border":[false, true, false, false]}' colspan="3">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="8" data-pdfmake='{"border":[false, false, false, false]}' style="font-style: italic;">
+        Terbilang : {{terbilang}}
+    </td>
+  </tr>
+</table>
+
+<table  style='font-size: 11px; margin-top: -20px;'
+  data-pdfmake='{"widths":["*",10,"*","*",50,1,40]}'>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;" >
+            Di Siapkan Oleh
+        </td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;" ></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: center;" >Bagian Pembelian</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="4"></td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" ></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>Total</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>:</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: right;">{{IDR total}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="3" ></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>Bayar</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>:</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: right;">{{#if (eq payment_method 'cash')}} {{IDR total}} {{/if}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;" >
+            {{created_by.name}}
+        </td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' ></td>
+        <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;" >
+            {{signature.name}}
+        </td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'></td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>Kredit</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}'>:</td>
+        <td data-pdfmake='{"border":[false, false, false, false]}' style="text-align: right;">{{#if (eq payment_method 'credit')}} {{IDR total}} {{/if}}</td>
+    </tr>
+    <tr>
+        <td data-pdfmake='{"border":[false, false, false, false]}' colspan="7" >
+            Catatan : {{notes}}
+        </td>
+    </tr>
+</table>

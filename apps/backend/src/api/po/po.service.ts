@@ -47,7 +47,11 @@ export class PoService {
 
   async create(body: CreatePoDto, auth: IAuth) {
     return await PoModel.transaction(async (trx) => {
-      const poCode = await this.generateTrxNo(trx, auth);
+      let poCode = body.po_no;
+
+      if (!poCode) {
+        poCode = await this.generateTrxNo(trx, auth);
+      }
 
       const payload = {
         sub_total: body.sub_total,
@@ -58,15 +62,21 @@ export class PoService {
         tax: body.tax,
         total: body.total,
         company_id: auth.company_id,
-        warehouse_id: body.warehouseId,
+        warehouse_id: body.warehouse_id,
         date: body.date || null,
-        supplier_id: body.supplierId,
+        supplier_id: body.supplier_id,
         term_credit: body.term_credit,
         notes: body.notes,
         signature_id: body.signature_id,
         closed_notes: body.closed_notes,
         status: body.status,
+        due_date: body.due_date || null,
+        due_day: body.due_days || 0,
+        received_at: body.received_at || null,
+        invoice_no: body.invoice_no,
+        payment_type: body.payment_type,
       };
+
       const items = body.items.map((item) => ({
         product_id: item.id,
         qty: item.qty,

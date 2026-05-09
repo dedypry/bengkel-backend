@@ -18,7 +18,6 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 import { Auth } from 'utils/decorators/auth.decorator';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { IQuery } from 'utils/interfaces/query';
-import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 import { CreateSupplierDto } from './dto/suppliers.dto';
 
 @UseGuards(AuthGuard)
@@ -30,13 +29,13 @@ export class SuppliersController {
   ) {}
 
   @Get()
-  list(@Query(new PaginationPipe()) query: IQuery, @Auth() auth: IAuth) {
+  list(@Query() query: IQuery, @Auth() auth: IAuth) {
     return this.suppliersService.list(query, auth);
   }
 
   @Get('all')
   listAll(@Query() query: IQuery, @Auth() auth: IAuth) {
-    return this.suppliersService.list(query, auth);
+    return this.suppliersService.list({} as IQuery, auth);
   }
 
   @Post()

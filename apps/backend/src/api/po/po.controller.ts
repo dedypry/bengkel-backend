@@ -7,6 +7,7 @@ import {
   Query,
   Param,
   Delete,
+  Res,
 } from '@nestjs/common';
 import { PoService } from './po.service';
 import { Auth } from 'utils/decorators/auth.decorator';
@@ -15,6 +16,10 @@ import { CreatePoDto } from './dto/po.dto';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 import { IQuery } from 'utils/interfaces/query';
+import type { Response } from 'express';
+import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
+import GeneratePDF from 'utils/services/pdf-make.service';
+import terbilang from '@gratcy/angka-terbilang-indonesia';
 
 @UseGuards(AuthGuard)
 @Controller('po')
@@ -29,6 +34,37 @@ export class PoController {
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.poService.detail(id, auth);
+  }
+
+  @Get('invoice/download/:id')
+  async downloadInvoice(
+    @Param('id') id: number,
+    @Auth() auth: IAuth,
+    @Res() res: Response,
+  ) {
+    const po = await this.poService.detail(id, auth);
+    const totalQty = po.items.reduce((sum, item) => sum + Number(item.qty), 0);
+    const html = await renderHtml({
+      location: 'po-invoice',
+      data: {
+        ...po,
+        totalQty,
+        terbilang: terbilang(Number(po.total), {
+          dec: '',
+          lang: 'id',
+        }),
+      },
+    });
+
+    const content = await layoutPDF({
+      header: 'FAKTUR PEMBELIAN',
+      content: [html],
+      companyId: auth.company_id,
+      invNo: po.po_no,
+      date: po.created_at,
+    });
+
+    return GeneratePDF.make(res).download(content);
   }
 
   @Post()

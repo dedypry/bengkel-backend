@@ -32,6 +32,10 @@ hb.registerHelper('ne', (val?: string) => {
   if (!val) return '';
   return val;
 });
+hb.registerHelper('eq', (val1?: string, val2?: string) => {
+  if (!val1 || !val2) return false;
+  return val1 === val2;
+});
 hb.registerHelper('addOne', (index: number) => index + 1);
 hb.registerHelper('mech', (val: any[]) => {
   return val.map((e) => e.name).join(', ');
