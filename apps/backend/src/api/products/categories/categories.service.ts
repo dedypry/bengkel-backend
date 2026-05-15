@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { ProductCategoriesModel } from 'models/product-categories.model';
 import { IAuth } from 'utils/interfaces/IAuth';
-import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
+import {
+  BulkCategoryUpdateDto,
+  CategoryQueryDto,
+  CreateCategoryDto,
+} from './dto/categories.dto';
 import slugify from 'slugify';
 import { fn, raw } from 'objection';
 import { ProductsModel } from 'models/products.model';
@@ -182,6 +186,19 @@ export class CategoriesService {
       .update({
         ...payload,
         slug: raw("CONCAT(slug, '_delete_', id)"),
+      });
+  }
+  async bulkProductCategoryUpdate(body: BulkCategoryUpdateDto, auth: IAuth) {
+    await ProductsModel.query()
+      .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (body.productIds !== 'all') {
+          builder.whereIn('id', body.productIds);
+        }
+      })
+      .update({
+        category_id: body.categoryId,
+        updated_by: auth.id,
       });
   }
 }

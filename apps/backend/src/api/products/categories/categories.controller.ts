@@ -12,7 +12,11 @@ import { CategoriesService } from './categories.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
-import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
+import {
+  BulkCategoryUpdateDto,
+  CategoryQueryDto,
+  CreateCategoryDto,
+} from './dto/categories.dto';
 
 @UseGuards(AuthGuard)
 @Controller('products/categories')
@@ -42,5 +46,14 @@ export class CategoriesController {
   async destroy(@Param('id') id: number, @Auth() auth: IAuth) {
     await this.categoriesService.destroy(id, auth);
     return 'Kategori berhasil dihapus';
+  }
+
+  @Post('bulk-update')
+  async bulkProductCategoryUpdate(
+    @Body() body: BulkCategoryUpdateDto,
+    @Auth() auth: IAuth,
+  ) {
+    await this.categoriesService.bulkProductCategoryUpdate(body, auth);
+    return 'Kategori berhasil diupdate';
   }
 }

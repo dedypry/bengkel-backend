@@ -31,3 +31,16 @@ export class CategoryQueryDto extends IQuery {
   isPaginate?: boolean;
   categoryId?: number;
 }
+
+export class BulkCategoryUpdateDto {
+  @JoiSchema(Joi.number().required())
+  categoryId: number;
+
+  @JoiSchema(
+    Joi.alternatives().try(
+      Joi.string().valid('all'),
+      Joi.array().items(Joi.number().required()),
+    ),
+  )
+  productIds: 'all' | number[];
+}
