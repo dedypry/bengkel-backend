@@ -61,7 +61,14 @@ export class ProductCategoriesModel extends BaseModel {
 
   @Modifier()
   childrens(query: AnyQueryBuilder) {
-    query.withGraphFetched('children').whereNull('parent_id');
+    query
+      .withGraphFetched('children(deleted)')
+      .whereNull('parent_id')
+      .modifiers({
+        deleted: (query: AnyQueryBuilder) => {
+          query.whereNull('deleted_at');
+        },
+      });
   }
 
   @HasMany(() => ProductsModel, {

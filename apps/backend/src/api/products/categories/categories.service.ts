@@ -102,14 +102,33 @@ export class CategoriesService {
           }
         }
 
-        await ProductCategoriesModel.query(trx)
-          .whereNotIn('id', ids)
-          .where('parent_id', category.id)
-          .update({
-            deleted_at: fn.now(),
-            updated_by: auth.id,
-            slug: raw("CONCAT(slug, '_delete_', id)"),
-          });
+        if (ids.length > 0) {
+          const { count: productCount }: any = await ProductsModel.query(trx)
+            .leftJoinRelated('category')
+            .whereNotIn('category_id', ids)
+            .whereNull('products.deleted_at')
+            .whereNull('category.deleted_at')
+            .where('category.parent_id', category.id)
+            .count()
+            .first();
+
+          console.log(productCount, ids, 'productCount');
+
+          if (productCount > 0) {
+            throw new BadRequestException(
+              'Kategori ini tidak dapat dihapus karena masih memiliki produk yang terkait',
+            );
+          }
+
+          await ProductCategoriesModel.query(trx)
+            .whereNotIn('id', ids)
+            .where('parent_id', category.id)
+            .update({
+              deleted_at: fn.now(),
+              updated_by: auth.id,
+              slug: raw("CONCAT(slug, '_delete_', id)"),
+            });
+        }
 
         return await ProductCategoriesModel.query(trx)
           .withGraphFetched('children')
