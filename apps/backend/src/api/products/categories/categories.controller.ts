@@ -31,8 +31,11 @@ export class CategoriesController {
 
   @Post()
   async create(@Body() body: CreateCategoryDto, @Auth() auth: IAuth) {
-    await this.categoriesService.create(body, auth);
-    return 'Kategory berhasil disimpan';
+    const category = await this.categoriesService.create(body, auth);
+    return {
+      message: 'Kategory berhasil disimpan',
+      data: category,
+    };
   }
 
   @Delete(':id')

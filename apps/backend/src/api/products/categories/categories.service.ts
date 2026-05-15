@@ -67,7 +67,7 @@ export class CategoriesService {
 
     delete payload.subCategories;
 
-    await ProductCategoriesModel.transaction(async (trx) => {
+    return await ProductCategoriesModel.transaction(async (trx) => {
       if (body.id) {
         const category = await ProductCategoriesModel.query(trx).findById(
           body.id,
@@ -104,8 +104,12 @@ export class CategoriesService {
             updated_by: auth.id,
             slug: raw("CONCAT(slug, '_delete_', id)"),
           });
+
+        return await ProductCategoriesModel.query(trx)
+          .withGraphFetched('children')
+          .findById(body.id);
       } else {
-        await ProductCategoriesModel.query(trx).insertGraph({
+        return await ProductCategoriesModel.query(trx).insertGraphAndFetch({
           ...payload,
           children: subCategories,
         } as any);
