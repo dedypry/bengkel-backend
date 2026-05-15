@@ -19,6 +19,41 @@ import { UploadService } from '../upload/upload.service';
 @Injectable()
 export class ProductsService {
   constructor(private readonly uploadService: UploadService) {}
+
+  private categoryRowWithoutGraph(
+    category: ProductCategoriesModel,
+  ): Record<string, unknown> {
+    const row = { ...category } as Record<string, unknown>;
+    delete row.parent;
+    delete row.children;
+    return row;
+  }
+
+  private groupCategoriesByParent(categories: ProductCategoriesModel[]) {
+    const grouped = new Map<number, Record<string, unknown>>();
+
+    for (const category of categories) {
+      if (category.parent_id && category.parent) {
+        const parentId = category.parent.id;
+        if (!grouped.has(parentId)) {
+          grouped.set(parentId, {
+            ...this.categoryRowWithoutGraph(category.parent),
+            children: [],
+          });
+        }
+        (grouped.get(parentId)!.children as Record<string, unknown>[]).push(
+          this.categoryRowWithoutGraph(category),
+        );
+      } else if (!grouped.has(category.id)) {
+        grouped.set(category.id, {
+          ...this.categoryRowWithoutGraph(category),
+          children: [],
+        });
+      }
+    }
+
+    return [...grouped.values()];
+  }
   async list(query: ProductQueryDto, auth: IAuth, isDownload: boolean = false) {
     let queryData: any = ProductsModel.query()
       .withGraphFetched('[category.parent,uom]')
@@ -66,17 +101,19 @@ export class ProductsService {
             'SUM(stock * sell_price)::BIGINT as total_potential_revenue',
           ),
         ]),
-      ProductCategoriesModel.query().whereIn(
-        'id',
-        catIds.map((e) => e.category_id),
-      ),
+      ProductCategoriesModel.query()
+        .withGraphFetched('parent')
+        .whereIn(
+          'id',
+          catIds.map((e) => e.category_id),
+        ),
     ]);
 
     return {
       ...result,
       stats: {
         ...stats,
-        categories,
+        categories: this.groupCategoriesByParent(categories),
       },
     };
   }

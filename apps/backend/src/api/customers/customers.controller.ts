@@ -122,9 +122,12 @@ export class CustomersController {
   @Post()
   @UseGuards(AuthGuard)
   async createCustomer(@Body() body: CreateCustomerDto, @Auth() auth: IAuth) {
-    await this.customersService.createCustomer(body, auth);
+    const customer = await this.customersService.createCustomer(body, auth);
 
-    return 'Customer berhasil di simpan';
+    return {
+      message: 'Customer berhasil di simpan',
+      data: customer,
+    };
   }
 
   @Delete(':id')

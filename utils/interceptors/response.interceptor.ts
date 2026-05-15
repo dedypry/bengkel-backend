@@ -45,6 +45,7 @@ export class ResponseInterceptor implements NestInterceptor {
             stats: data.stats,
           };
         }
+
         return data;
       }),
     );

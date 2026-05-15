@@ -58,14 +58,13 @@ export class CustomersService {
       });
   }
   async listCustomer(query: CustomerQueryDto) {
+    console.log('QUERY', query);
     const queryData = CustomersModel.query()
       .select([
         'customers.*',
         CustomersModel.relatedQuery('vehicles').count().as('total_vehicle'),
       ])
-      .withGraphFetched(
-        `[profile, ${query.isVehicle === 1 ? 'vehicles' : ''} ]`,
-      )
+      .withGraphFetched(`[profile, ${query.isVehicle == 1 ? 'vehicles' : ''} ]`)
       .where((builder) => {
         if (query.q) {
           builder
@@ -155,8 +154,8 @@ export class CustomersService {
     } as any;
 
     const phone = formatPhoneNumber(body.phone);
-    await CustomersModel.transaction(async (trx) => {
-      await CustomersModel.query(trx).upsertGraph(
+    return await CustomersModel.transaction(async (trx) => {
+      return await CustomersModel.query(trx).upsertGraphAndFetch(
         {
           id: body?.id || undefined,
           ...body,
@@ -167,19 +166,6 @@ export class CustomersService {
         { relate: ['vehicles'] },
       );
     });
-
-    // const company = await CompaniesModel.query().findById(auth.company_id);
-
-    // if (!body?.id) {
-    //   sendWelcomeMessage({
-    //     customerName: body.name,
-    //     vehicleName: `${body.vehicles[0].brand} - ${body.vehicles[0].model}`,
-    //     plateNumber: body.vehicles[0].plate_number,
-    //     workshopName: company?.name || '',
-    //     to: phone,
-    //   });
-    // }
-    return true;
   }
 
   async detail(id: number) {
