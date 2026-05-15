@@ -9,7 +9,7 @@ import { ProductsModel } from './products.model';
 import slugify from 'slugify';
 import type { AnyQueryBuilder } from 'objection';
 
-@Table('product_categories', { softDelete: true, hide: ['company_id'] })
+@Table('product_categories', { hide: ['company_id'] })
 export class ProductCategoriesModel extends BaseModel {
   // === FIELD START ===
   name!: string;

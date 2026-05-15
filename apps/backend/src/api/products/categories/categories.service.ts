@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductCategoriesModel } from 'models/product-categories.model';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CategoryQueryDto, CreateCategoryDto } from './dto/categories.dto';
 import slugify from 'slugify';
 import { fn, raw } from 'objection';
+import { ProductsModel } from 'models/products.model';
 
 @Injectable()
 export class CategoriesService {
@@ -24,6 +29,7 @@ export class CategoriesService {
       .where((builder) => {
         builder.where('company_id', auth.company_id).orWhereNull('company_id');
       })
+      .whereNull('deleted_at')
       .orderBy('id', 'desc');
   }
 
@@ -118,14 +124,45 @@ export class CategoriesService {
   }
 
   async destroy(id: number, auth: IAuth) {
-    const category = await ProductCategoriesModel.query().findById(id);
+    const category = await ProductCategoriesModel.query()
+      .withGraphFetched('children')
+      .whereNull('deleted_at')
+      .where('id', id)
+      .first();
 
     if (!category) throw new NotFoundException();
 
-    await category.$query().patch({
+    const childIds = category.children.map((e) => e.id);
+
+    if (childIds.length > 0) {
+      const { count: productCount }: any = await ProductsModel.query()
+        .whereIn('category_id', childIds)
+        .whereNull('deleted_at')
+        .count()
+        .first();
+
+      if (productCount > 0) {
+        throw new BadRequestException(
+          'Kategori ini tidak dapat dihapus karena masih memiliki produk yang terkait',
+        );
+      }
+    }
+
+    const payload = {
       deleted_at: fn.now(),
       updated_by: auth.id,
-      slug: category.slug + '_delete_' + category.id,
+    };
+
+    await category.$query().patch({
+      ...payload,
+      slug: raw("CONCAT(slug, '_delete_', id)"),
     });
+
+    await ProductCategoriesModel.query()
+      .whereIn('id', childIds)
+      .update({
+        ...payload,
+        slug: raw("CONCAT(slug, '_delete_', id)"),
+      });
   }
 }
