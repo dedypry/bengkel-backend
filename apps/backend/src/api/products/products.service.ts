@@ -236,7 +236,7 @@ export class ProductsService {
     const key = randomString(4);
 
     const price = this.importCellNumber(row, 'F');
-    const payload = {
+    const payload: any = {
       code,
       company_id: auth.company_id,
       name,
@@ -252,8 +252,13 @@ export class ProductsService {
       category_id,
       purchase_price: price,
       sell_price: price,
+      stock: row['H'] || 0,
+      min_stock: row['I'] || 0,
     };
-    console.log('PAYLOAD', payload);
+
+    if (payload.stock) {
+      console.log('PAYLOAD', payload);
+    }
 
     const product = await ProductsModel.query()
       .where({ code, company_id: auth.company_id })

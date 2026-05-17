@@ -69,7 +69,7 @@ export class ProductsController {
     const products = await this.productsService.list(query, auth, true);
 
     this.excelJs.download({
-      name: 'product master',
+      name: 'Laporan',
       headers: [
         { header: 'KODE', key: 'code', width: 20 },
         { header: 'NAMA', key: 'name', width: 90 },
@@ -77,8 +77,9 @@ export class ProductsController {
         { header: 'SUB GROUP', key: 'sub_group', width: 12 },
         { header: 'SATUAN', key: 'uom' },
         { header: 'HARGA JUAL', key: 'sell_price', width: 20 },
-        { header: 'PAJAK %', key: 'ppn' },
         { header: 'RAK', key: 'location' },
+        { header: 'STOK', key: 'stock' },
+        { header: 'MIN STOK', key: 'min_stock' },
       ],
       body: products.map((item: ProductsModel) => ({
         ...item,
@@ -86,16 +87,12 @@ export class ProductsController {
         sub_group: item.category?.name,
         uom: item.unit?.toUpperCase(),
         sell_price: Number(item.sell_price),
+        stock: Number(item.stock),
+        min_stock: Number(item.min_stock),
       })),
       worksheetFn: (ws) => {
-        // Ambil kolom ke-6 (F)
         const priceColumn = ws.getColumn(6);
-
-        // Terapkan format mata uang Indonesia
-        // Format: "Rp" #,##0
         priceColumn.numFmt = '_-"Rp"* #,##0_-';
-
-        // Opsional: Bikin teks jadi rata kanan (align right) agar rapi
         priceColumn.alignment = { horizontal: 'right' };
       },
       res,
