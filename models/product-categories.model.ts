@@ -21,37 +21,93 @@ export class ProductCategoriesModel extends BaseModel {
   parent_id?: number;
   // === FIELD END ===
 
+  private static buildSlug(
+    name: string,
+    parent?: ProductCategoriesModel | null,
+  ): string {
+    const base = slugify(name.trim(), { lower: true, strict: true });
+    if (parent?.slug) {
+      return `${parent.slug}-${base}`;
+    }
+    return base;
+  }
+
   static async findOrCreate(
     name: string,
     parent?: string,
     company_id?: number,
   ) {
+    const trimmedName = name.trim();
+    if (!trimmedName) return null;
+
+    let parentId: number | null = null;
+    let parentCategory: ProductCategoriesModel | null = null;
+
+    if (parent && parent.trim() !== '') {
+      parentCategory = await this.findOrCreate(
+        parent.trim(),
+        undefined,
+        company_id,
+      );
+      parentId = parentCategory?.id ?? null;
+    }
+
+    const slug = this.buildSlug(trimmedName, parentCategory);
+
     let category = await this.query()
       .where({ company_id })
-      .whereRaw('LOWER(name) = ?', [name.toLowerCase()])
+      .whereNull('deleted_at')
+      .modify((qb) => {
+        if (parentId === null) {
+          qb.whereNull('parent_id');
+        } else {
+          qb.where('parent_id', parentId);
+        }
+      })
+      .andWhere((q) => {
+        q.whereRaw('LOWER(name) = ?', [trimmedName.toLowerCase()]).orWhere(
+          'slug',
+          slug,
+        );
+      })
       .first();
 
     if (!category) {
       try {
-        let parentId: number | null = null;
+        category = await this.query()
+          .insertAndFetch({
+            name: trimmedName,
+            slug,
+            parent_id: parentId,
+            company_id,
+          } as any)
+          .onConflict('slug')
+          .ignore();
 
-        if (parent) {
-          const parentCategory = await this.findOrCreate(parent.trim());
-          parentId = parentCategory?.id;
+        if (!category) {
+          category = await this.query()
+            .where({ company_id, slug })
+            .whereNull('deleted_at')
+            .first();
         }
-
-        category = await this.query().insertAndFetch({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-          parent_id: parentId,
-          company_id,
-        } as any);
       } catch (err) {
         console.error(err);
-        // Jika ada proses paralel yang insert di waktu yang sama
         category = await this.query()
           .where({ company_id })
-          .whereRaw('LOWER(name) = ?', [name.toLowerCase()])
+          .whereNull('deleted_at')
+          .modify((qb) => {
+            if (parentId === null) {
+              qb.whereNull('parent_id');
+            } else {
+              qb.where('parent_id', parentId);
+            }
+          })
+          .andWhere((q) => {
+            q.whereRaw('LOWER(name) = ?', [trimmedName.toLowerCase()]).orWhere(
+              'slug',
+              slug,
+            );
+          })
           .first();
       }
     }

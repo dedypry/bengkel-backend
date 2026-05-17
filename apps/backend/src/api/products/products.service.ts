@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-base-to-string */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   CreateProductDto,
@@ -9,13 +8,13 @@ import { IAuth } from 'utils/interfaces/IAuth';
 import { ProductsModel } from 'models/products.model';
 import slugify from 'slugify';
 import { ImagesModel } from 'models/images.model';
-import { Row } from 'exceljs';
 import { UomsModel } from 'models/uoms.model';
 import { ProductCategoriesModel } from 'models/product-categories.model';
 import { fn, raw } from 'objection';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { OrderItemsModel } from 'models/order-items.model';
 import { UploadService } from '../upload/upload.service';
+import { randomString } from 'utils/helpers/global';
 @Injectable()
 export class ProductsService {
   constructor(private readonly uploadService: UploadService) {}
@@ -184,53 +183,89 @@ export class ProductsService {
     return 'Stock berhasil diperbaharui';
   }
 
-  async createFromImport(row: Row, auth: IAuth) {
-    const uomValue = row.getCell('E').value?.toString(); // Ambil value as string
-    if (!uomValue) return; // Skip jika kolom E kosong
+  private importCellString(row: Record<string, unknown>, key: string): string {
+    const value = row[key];
+    if (value == null || value === '') return '';
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value).trim();
+    }
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    return '';
+  }
 
-    const code = uomValue.toLowerCase().trim();
-    const name = uomValue.trim();
+  private importCellNumber(
+    row: Record<string, unknown>,
+    key: string,
+  ): number | undefined {
+    const value = row[key];
+    if (value == null || value === '') return undefined;
+    if (typeof value === 'number') return value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
 
-    // Gunakan variabel uom untuk menyimpan hasil
-    const uom = await UomsModel.findOrCreate(code, name, auth.company_id);
+  async createFromImport(row: Record<string, unknown>, auth: IAuth) {
+    const code = this.importCellString(row, 'A');
+    const name = this.importCellString(row, 'B');
+    if (!code || !name) return;
 
-    const catValue = row.getCell('D').value?.toString().trim() || '';
-    const catParentValue = row.getCell('C').value?.toString().trim() || '';
-    const category = await ProductCategoriesModel.findOrCreate(
-      catValue,
-      catParentValue,
-      auth.company_id,
-    );
+    const uomValue = this.importCellString(row, 'E');
+    let uom_id: number | undefined;
+    if (uomValue) {
+      const uom = await UomsModel.findOrCreate(
+        uomValue.toLowerCase(),
+        uomValue,
+        auth.company_id,
+      );
+      uom_id = uom?.id;
+    }
 
+    const catValue = this.importCellString(row, 'D');
+    const catParentValue = this.importCellString(row, 'C');
+    let category_id: number | undefined;
+    if (catValue) {
+      const category = await ProductCategoriesModel.findOrCreate(
+        catValue,
+        catParentValue || undefined,
+        auth.company_id,
+      );
+      category_id = category?.id;
+    }
+
+    const key = randomString(4);
+
+    const price = this.importCellNumber(row, 'F');
     const payload = {
-      code: row.getCell('A').value as string,
+      code,
       company_id: auth.company_id,
-      name: row.getCell('B').value,
-      unit: row.getCell('E').value,
-      location: row.getCell('H').value,
+      name,
+      unit: uomValue || 'PCS',
+      location: this.importCellString(row, 'H') || '',
       updated_by: auth.id,
-      slug: slugify(row.getCell('B').value as any, {
+      slug: slugify(name + '-' + key, {
         lower: true,
         trim: true,
         strict: true,
       }),
-      uom_id: uom?.id,
-      category_id: category?.id,
-      purchase_price: row.getCell('F').value as number,
-      sell_price: row.getCell('F').value as number,
+      uom_id,
+      category_id,
+      purchase_price: price,
+      sell_price: price,
     };
+    console.log('PAYLOAD', payload);
 
     const product = await ProductsModel.query()
-      .where('code', payload.code)
+      .where({ code, company_id: auth.company_id })
       .first();
 
-    await ProductsModel.query().upsertGraph({
-      ...(product && {
-        id: product.id,
-      }),
-      ...payload,
-    } as any);
-    return payload;
+    if (product) {
+      await product.$query().patch(payload);
+    } else {
+      await ProductsModel.query().insert(payload);
+    }
+
+    return 'Produk berhasil di import';
   }
 
   async destroy(id: number, auth: IAuth) {

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -27,6 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelJsService } from 'utils/services/exceljs.service';
 import { ProductsModel } from 'models/products.model';
 import type { Response } from 'express';
+import { Xlsx } from 'utils/services/xlsx';
 
 @UseGuards(AuthGuard)
 @Controller('products')
@@ -117,27 +117,15 @@ export class ProductsController {
   }
 
   @Post('/import')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(xlsx)$/)) {
-          return callback(
-            new BadRequestException('Hanya file .xlsx yang diperbolehkan!'),
-            false,
-          );
-        }
-        callback(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   import(@UploadedFile() file: Express.Multer.File, @Auth() auth: IAuth) {
-    this.excelJs.uploadStreamFile({
-      lineStart: 2,
+    Xlsx.uploadExcel({
       fileBuffer: file.buffer,
       worksheetName: 'Laporan',
       parseRow: (row) => this.productsService.createFromImport(row, auth),
     });
-    return 'Product Berhasil di proses, mohon tunggu beberapa saat';
+
+    return 'Product Berhasil di proses, mohon tunggu beberapa saat dan refresh halaman';
   }
 
   @Post()
