@@ -22,7 +22,7 @@ export class SuppliersService {
       })
       .orderBy('created_at', 'DESC');
 
-    if (query.page >= 0) {
+    if (query.noPaginate != 1) {
       supp = supp.page(query.page, query.pageSize);
     }
 

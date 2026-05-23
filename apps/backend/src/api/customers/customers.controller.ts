@@ -61,6 +61,7 @@ export class CustomersController {
         ];
       }
       return customer.vehicles.map((vehicle: VehiclesModel) => ({
+        id: customer.id,
         created_at: dayjs(vehicle.created_at).format('DD MMM YYYY'),
         name: customer.name,
         phone: customer.phone,
@@ -77,6 +78,7 @@ export class CustomersController {
     this.excelJs.download({
       name: 'List Customer',
       headers: [
+        { header: 'ID', key: 'id', width: 22 },
         { header: 'Waktu Input', key: 'created_at', width: 22 },
         { header: 'Nama Customer', key: 'name', width: 22 },
         { header: 'Telp', key: 'phone', width: 15 },
@@ -118,6 +120,13 @@ export class CustomersController {
   detail(@Param('id') id: number) {
     return this.customersService.detail(id);
   }
+
+  // @Post('import-excel')
+  // @UseGuards(AuthGuard)
+  // @UseInterceptors(FileInterceptor('file'))
+  // importExcel(@Body() body: any, @Auth() auth: IAuth) {
+  //   return this.customersService.importExcel(body, auth);
+  // }
 
   @Post()
   @UseGuards(AuthGuard)

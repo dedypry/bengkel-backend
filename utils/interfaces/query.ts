@@ -8,5 +8,8 @@ export class IQuery {
   @JoiSchema(Joi.number().default(10))
   pageSize: number;
 
+  @JoiSchema(Joi.number().default(0))
+  noPaginate: number;
+
   q?: string;
 }
