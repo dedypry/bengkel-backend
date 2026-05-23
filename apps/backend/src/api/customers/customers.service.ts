@@ -194,7 +194,9 @@ export class CustomersService {
   }
 
   async listBrand() {
-    return await CompaniesModel.query().withGraphFetched('address');
+    return await CompaniesModel.query()
+      .withGraphFetched('address')
+      .whereNull('deleted_at');
   }
 
   async createFromImport(row: any, auth: IAuth) {
