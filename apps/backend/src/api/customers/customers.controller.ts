@@ -119,6 +119,32 @@ export class CustomersController {
     return this.customersService.listBrand();
   }
 
+  @Get('import/template')
+  importTemplate(@Res() res: Response) {
+    return this.excelJs.download({
+      name: 'Laporan',
+      headers: [
+        { header: 'NO. POLISI', key: 'plate_number', width: 18 },
+        { header: 'NAMA', key: 'name', width: 24 },
+        { header: 'ALAMAT', key: 'address', width: 30 },
+        { header: 'KELURAHAN/DESA', key: 'subdistrict', width: 20 },
+        { header: 'KECAMATAN', key: 'district', width: 20 },
+        { header: 'KOTA', key: 'city', width: 20 },
+        { header: 'PROVINSI', key: 'province', width: 20 },
+        { header: 'NO. TELEPON', key: 'phone', width: 18 },
+        { header: 'NO. HP', key: 'mobile_phone', width: 18 },
+        { header: 'TIPE', key: 'type', width: 16 },
+        { header: 'WARNA', key: 'color', width: 16 },
+        { header: 'THN. RAKIT', key: 'manufacture_year', width: 14 },
+        { header: 'NO. RANGKA', key: 'vin_number', width: 22 },
+        { header: 'NO. MESIN', key: 'engine_number', width: 22 },
+        { header: 'GRUP CUSTOMER', key: 'customer_group', width: 20 },
+      ],
+      body: [],
+      res,
+    });
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard)
   detail(@Param('id') id: number) {

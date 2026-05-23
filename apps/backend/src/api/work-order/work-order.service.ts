@@ -2,9 +2,11 @@ import { Body, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CancelDto,
   ChangeSugestionDto,
+  ComplainWorkOrderDto,
   ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
+  UpdatePicSaDto,
   UpdateStatusWoDto,
   WoQuery,
   WorkOrderRequestDto,
@@ -182,7 +184,7 @@ export class WorkOrderService {
           full_name: body?.customer?.name,
           phone_number: body?.customer?.phone,
           model: 'customers',
-          birth_date: body?.customer?.birth_date,
+          birth_date: body?.customer?.birth_date || null,
         },
       } as any;
 
@@ -761,5 +763,42 @@ export class WorkOrderService {
     });
 
     return 'data berhasil di hapus';
+  }
+
+  async updateComplaint(id: number, body: ComplainWorkOrderDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await wo.$query().patch({
+      complaints: body.complaints,
+      updated_by: auth.id,
+    });
+
+    return 'Komplain berhasil diubah';
+  }
+
+  async updatePicAndSa(id: number, body: UpdatePicSaDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    await wo.$query().patch({
+      ...(body.pic_id !== undefined && {
+        pic_id: body.pic_id,
+      }),
+      ...(body.sa_id !== undefined && {
+        sa_id: body.sa_id,
+      }),
+      updated_by: auth.id,
+    });
+
+    return 'PIC dan SA berhasil diubah';
   }
 }

@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { VehiclesService } from './vehicles.service';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 import { IQuery } from 'utils/interfaces/query';
@@ -8,6 +17,7 @@ import type { IAuth } from 'utils/interfaces/IAuth';
 import GeneratePDF from 'utils/services/pdf-make.service';
 import type { Response } from 'express';
 import { AuthGuard } from 'utils/guards/auth.guard';
+import { CreateVehiclesDto } from './dto/vehicles.dto';
 
 @UseGuards(AuthGuard)
 @Controller('vehicles')
@@ -50,5 +60,12 @@ export class VehiclesController {
     }
 
     return res.json(result);
+  }
+
+  @Post()
+  async updateOrCreate(@Body() body: CreateVehiclesDto, @Auth() auth: IAuth) {
+    await this.vehiclesService.updateOrCreateVehicle(body, auth);
+
+    return 'Data kendaraan berhasil diubah';
   }
 }

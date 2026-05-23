@@ -201,7 +201,7 @@ export class CustomersService {
     const phoneNumber = formatPhoneNumber(row.I);
     let [vehicle, customer] = await Promise.all([
       VehiclesModel.query().findOne('plate_number', row.A),
-      CustomersModel.query().findOne('phone_number', phoneNumber),
+      CustomersModel.query().findOne('phone', phoneNumber),
     ]);
     // ROW {
     //   A: 'Z 1743 ME',

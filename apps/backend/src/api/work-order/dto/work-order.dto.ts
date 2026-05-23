@@ -64,7 +64,7 @@ export class WorkOrderRequestDto {
       plate_number: Joi.string().required(),
       brand: Joi.string().required(),
       model: Joi.string().required(),
-      year: Joi.string().required(),
+      year: Joi.string().optional().allow('', null),
       color: Joi.string().allow('', null),
       engine_capacity: Joi.string().allow('', null),
       transmission_type: Joi.string().allow('', null),
@@ -182,4 +182,23 @@ export class ListPaymentQueryDto {
 
 export class CancelDto {
   cancelNote?: string;
+}
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class ComplainWorkOrderDto {
+  @JoiSchema(Joi.string().required())
+  complaints: string;
+}
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class UpdatePicSaDto {
+  @JoiSchema(Joi.number().optional().allow(null))
+  pic_id?: number;
+
+  @JoiSchema(Joi.number().optional().allow(null))
+  sa_id?: number;
 }

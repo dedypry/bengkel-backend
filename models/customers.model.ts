@@ -22,6 +22,7 @@ export class CustomersModel extends BaseModel {
   updated_by?: number;
   status?: string;
   password?: string;
+  group?: string;
   // === FIELD END ===
 
   @ManyToMany(() => VehiclesModel, {

@@ -13,9 +13,11 @@ import { WorkOrderService } from './work-order.service';
 import {
   CancelDto,
   ChangeSugestionDto,
+  ComplainWorkOrderDto,
   ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
+  UpdatePicSaDto,
   UpdateStatusWoDto,
   WoQuery,
   WorkOrderRequestDto,
@@ -58,6 +60,24 @@ export class WorkOrderController {
     @Auth() auth: IAuth,
   ) {
     return this.workOrderService.updateMechanichs(id, body, auth);
+  }
+
+  @Patch('complaint/:id')
+  updateComplaint(
+    @Param('id') id: number,
+    @Body() body: ComplainWorkOrderDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.updateComplaint(id, body, auth);
+  }
+
+  @Patch('pic-sa/:id')
+  updatePicAndSa(
+    @Param('id') id: number,
+    @Body() body: UpdatePicSaDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.updatePicAndSa(id, body, auth);
   }
 
   @Patch('service/:id')
