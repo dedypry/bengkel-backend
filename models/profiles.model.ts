@@ -23,6 +23,10 @@ export class ProfilesModel extends BaseModel {
   place_birth?: string;
   updated_by?: number;
   model?: string;
+  province_name?: string;
+  city_name?: string;
+  district_name?: string;
+  subdistrict_name?: string;
   // === FIELD END ===
 
   @BelongsToOne(() => ProvinceModel, {

@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 
-export const formatPhoneNumber = (phone: string): string => {
+export const formatPhoneNumber = (phone?: string): string => {
+  if (!phone) return '';
   // 1. Hapus semua karakter yang bukan angka (termasuk tanda +)
   let cleaned = phone.replace(/\D/g, '');
 

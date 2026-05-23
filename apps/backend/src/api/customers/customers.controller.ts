@@ -7,7 +7,9 @@ import {
   Post,
   Query,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
@@ -20,6 +22,8 @@ import type { Response } from 'express';
 import { VehiclesModel } from 'models/vehicles.model';
 import dayjs from 'dayjs';
 import { CustomersModel } from 'models/customers.model';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Xlsx } from 'utils/services/xlsx';
 
 @Controller('customers')
 export class CustomersController {
@@ -121,12 +125,18 @@ export class CustomersController {
     return this.customersService.detail(id);
   }
 
-  // @Post('import-excel')
-  // @UseGuards(AuthGuard)
-  // @UseInterceptors(FileInterceptor('file'))
-  // importExcel(@Body() body: any, @Auth() auth: IAuth) {
-  //   return this.customersService.importExcel(body, auth);
-  // }
+  @Post('import-excel')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  importExcel(@UploadedFile() file: Express.Multer.File, @Auth() auth: IAuth) {
+    Xlsx.uploadExcel({
+      fileBuffer: file.buffer,
+      worksheetName: 'Laporan',
+      parseRow: (row) => this.customersService.createFromImport(row, auth),
+    });
+
+    return 'Data sedang di proses, mohon tunggu beberapa saat';
+  }
 
   @Post()
   @UseGuards(AuthGuard)

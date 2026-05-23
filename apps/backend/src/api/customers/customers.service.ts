@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { ServicesModel } from 'models/services.model';
 import { VehiclesModel } from 'models/vehicles.model';
 import { IQuery } from 'utils/interfaces/query';
+import { CustomerVehicleModel } from 'models/customer-vehicle.model';
 @Injectable()
 export class CustomersService {
   async getStats() {
@@ -194,5 +195,87 @@ export class CustomersService {
 
   async listBrand() {
     return await CompaniesModel.query().withGraphFetched('address');
+  }
+
+  async createFromImport(row: any, auth: IAuth) {
+    const phoneNumber = formatPhoneNumber(row.I);
+    let [vehicle, customer] = await Promise.all([
+      VehiclesModel.query().findOne('plate_number', row.A),
+      CustomersModel.query().findOne('phone_number', phoneNumber),
+    ]);
+    // ROW {
+    //   A: 'Z 1743 ME',
+    //   B: 'OM JAJANG',
+    //   C: 'BENGKEL AUTOHERO TASIK',
+    //   D: 'TASIKMALAYA',
+    //   E: 'TASIKMALAYA',
+    //   F: 'TASIKMALAYA',
+    //   G: 'JAWA BARAT',
+    //   H: null,
+    //   I: "'085282571421",
+    //   J: 'CRZ',
+    //   K: 'HITAM',
+    //   L: 2013,
+    //   M: 'JHMZF1422DS300196',
+    //   N: 'ZF1',
+    //   O: 'CUS00002'
+    // }
+    const payloadVehile = {
+      plate_number: row.A,
+      brand: '',
+      model: row.J,
+      year: row.L,
+      vin_number: row.M,
+      engine_number: row.N,
+    };
+
+    const payloadCustomer: any = {
+      name: row.B,
+      phone: phoneNumber,
+      email: '',
+      customer_type: 'personal',
+      nik_ktp: '',
+      credit_limit: 0,
+      notes: '',
+      company_id: auth.company_id,
+      updated_by: auth.id,
+      group: row.O,
+      profile: {
+        full_name: row.B,
+        phone_number: phoneNumber,
+        email: row.O,
+        model: 'customers',
+        province_name: row.G,
+        city_name: row.F,
+        district_name: row.E,
+        subdistrict_name: row.D,
+        address: row.C,
+      },
+    };
+
+    if (vehicle) {
+      await vehicle.$query().patch(payloadVehile);
+    } else {
+      vehicle = await VehiclesModel.query().insert(payloadVehile);
+    }
+
+    if (customer) {
+      await customer.$query().patch(payloadCustomer);
+    } else {
+      customer = await CustomersModel.query().insert(payloadCustomer);
+    }
+
+    const vehCust = await CustomerVehicleModel.query().findOne({
+      customer_id: customer.id,
+      vehicle_id: vehicle.id,
+    });
+
+    if (!vehCust) {
+      await CustomerVehicleModel.query().insert({
+        customer_id: customer.id,
+        vehicle_id: vehicle.id,
+      });
+    }
+    console.log('ROW', row);
   }
 }
