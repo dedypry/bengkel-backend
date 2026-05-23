@@ -90,15 +90,39 @@ export class ProductsService {
         .where('company_id', auth.company_id)
         .first()
         .select([
-          ProductsModel.raw(
-            'COUNT(CASE WHEN stock <= min_stock THEN 1 END)::INTEGER as low_stock_count',
+          ProductsModel.raw(`
+        COUNT(
+          CASE WHEN stock <= min_stock THEN 1 END
+        )::INTEGER as low_stock_count
+      `),
+
+          ProductsModel.raw(`
+        COALESCE(
+          SUM(
+            CASE
+              WHEN stock::TEXT = 'NaN'
+                OR purchase_price::TEXT = 'NaN'
+              THEN 0
+              ELSE stock * purchase_price
+            END
           ),
-          ProductsModel.raw(
-            'SUM(stock * purchase_price)::BIGINT as total_inventory_value',
+          0
+        )::BIGINT as total_inventory_value
+      `),
+
+          ProductsModel.raw(`
+        COALESCE(
+          SUM(
+            CASE
+              WHEN stock::TEXT = 'NaN'
+                OR sell_price::TEXT = 'NaN'
+              THEN 0
+              ELSE stock * sell_price
+            END
           ),
-          ProductsModel.raw(
-            'SUM(stock * sell_price)::BIGINT as total_potential_revenue',
-          ),
+          0
+        )::BIGINT as total_potential_revenue
+      `),
         ]),
       ProductCategoriesModel.query()
         .withGraphFetched('parent')
