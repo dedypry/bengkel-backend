@@ -7,6 +7,6 @@ export class AiController {
 
   @Post()
   consult(@Body() body: any) {
-    return this.aiService.consultProblem(body.msg);
+    return this.aiService.consultProblem(body.msg, Number(body.company_id));
   }
 }

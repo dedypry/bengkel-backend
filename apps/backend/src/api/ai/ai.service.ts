@@ -1,181 +1,233 @@
 import 'dotenv/config';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-// import { ServicesModel } from 'models/services.model';
-// import { ProductsModel } from 'models/products.model';
+import { CompaniesModel } from 'models/companies.model';
+import { ProductsModel } from 'models/products.model';
+import { ServicesModel } from 'models/services.model';
 
 @Injectable()
 export class AiService {
-  private model;
-  private readonly workshopProfile = {
-    name: 'Honda Clinic Pradana',
-    address:
-      'Jl. Raya Muchtar No.86, Sawangan, Kec. Sawangan, Kota Depok, Jawa Barat 16517, Indonesia',
-    phone: '0812-8640-286',
-    hours: {
-      weekday: '08.30–17.00',
-      sunday: '09.00–16.00',
-    },
-  };
+  private model: any;
 
   constructor() {
+    if (!process.env.GEMINI_API_KEY) {
+      return;
+    }
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
     this.model = genAI.getGenerativeModel({
-      model: 'gemini-3-flash-preview',
+      model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
       systemInstruction: `
-Kamu adalah asisten teknisi bengkel.
+Kamu adalah chatbot customer service bengkel.
 Aturan WAJIB:
-- Jawaban singkat, teknis, to-the-point.
-- Jangan mengarang harga.
-- Jika data tidak ada, katakan dengan jelas.
-- Tidak perlu pembukaan/penutup.
+- Jawab dalam Bahasa Indonesia yang ramah, singkat, dan mudah dipahami pelanggan.
+- Jawab pertanyaan company profile, layanan, produk/sparepart, harga, dan estimasi biaya berdasarkan DATA BENGKEL yang diberikan.
+- Jangan mengarang harga, alamat, nomor telepon, layanan, produk, atau estimasi di luar data.
+- Jika data tidak ditemukan, katakan perlu konfirmasi admin atau pengecekan langsung.
+- JANGAN menulis kalimat ajakan menekan tombol (mis. "klik tombol WhatsApp"); tombol kontak admin sudah disediakan terpisah di antarmuka.
       `,
     });
   }
 
-  async consultProblem(userPrompt: string) {
+  async consultProblem(userPrompt: string, companyId?: number) {
     if (!userPrompt) throw new ForbiddenException();
 
-    const profileIntent =
-      /alamat|dimana|lokasi|maps|buka|jam|operasional|telepon|telp|kontak|nomor/i.test(
-        userPrompt.toLowerCase(),
-      );
-
-    const isAskingPrice =
-      /harga|biaya|berapa|ongkos|service|servis|ganti/i.test(userPrompt);
-
-    if (profileIntent && !isAskingPrice) {
-      return `
-${this.workshopProfile.name}
-Alamat: ${this.workshopProfile.address}
-Jam operasional:
-• Senin–Sabtu: ${this.workshopProfile.hours.weekday}
-• Minggu: ${this.workshopProfile.hours.sunday}
-Telepon: ${this.workshopProfile.phone}
-      `.trim();
+    if (!this.model) {
+      return 'Chatbot belum aktif karena GEMINI_API_KEY belum dikonfigurasi di backend.';
     }
 
-    const result = await this.model.generateContent(userPrompt);
-    return (
-      result.response.text() ||
-      'Keluhan kurang jelas. Sebutkan gejala motor/mobil secara spesifik.'
+    const resolvedCompanyId = Number(
+      companyId || process.env.DEFAULT_COMPANY_ID || 1,
     );
 
-    //     if (!isAskingPrice) {
-    //       // === KELUHAN TEKNIS SAJA ===
-    //       const result = await this.model.generateContent(userPrompt);
-    //       return (
-    //         result.response.text() ||
-    //         'Keluhan kurang jelas. Sebutkan gejala motor/mobil secara spesifik.'
-    //       );
-    //     }
+    const wantPrice = /harga|biaya|tarif|ongkos|berapa/i.test(userPrompt);
+    const wantEstimate =
+      /estimasi|perkiraan|kira-?kira|total biaya|biaya total|abis berapa|habis berapa/i.test(
+        userPrompt,
+      );
 
-    //     // === PENCARIAN DATABASE ===
-    //     const keyword = this.extractKeyword(userPrompt);
+    const context = await this.buildWorkshopContext(
+      resolvedCompanyId,
+      userPrompt,
+      wantPrice || wantEstimate,
+    );
 
-    //     const [services, products] = await Promise.all([
-    //       ServicesModel.query()
-    //         .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
-    //         .orderByRaw(
-    //           `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
-    //           [keyword],
-    //         )
-    //         .limit(3),
+    const estimateInstruction =
+      wantPrice || wantEstimate
+        ? `
+- Pertanyaan ini tentang HARGA/ESTIMASI. WAJIB tampilkan rincian dari DATA BENGKEL:
+  • Sebutkan tiap jasa/produk relevan beserta harganya (format Rupiah, mis. Rp150.000).
+  • Hitung dan tampilkan TOTAL ESTIMASI (boleh berupa rentang minimal–maksimal jika item bervariasi).
+  • Jelaskan estimasi bisa berubah setelah pengecekan langsung.
+- Hanya jika DATA BENGKEL benar-benar kosong, katakan butuh pengecekan/konfirmasi admin.`
+        : '';
 
-    //       ProductsModel.query()
-    //         .whereRaw(`search_vector @@ plainto_tsquery('simple', ?)`, [keyword])
-    //         .orderByRaw(
-    //           `ts_rank(search_vector, plainto_tsquery('simple', ?)) DESC`,
-    //           [keyword],
-    //         )
-    //         .limit(3),
-    //     ]);
+    const result = await this.model.generateContent(`
+DATA BENGKEL:
+${JSON.stringify(context, null, 2)}
 
-    //     const data = [...services, ...products];
+PERTANYAAN PELANGGAN:
+${userPrompt}
 
-    //     if (data.length === 0) {
-    //       return `
-    // Bisa. Keluhan "${keyword}" biasanya perlu pemeriksaan langsung.
+Instruksi jawaban:
+- Pakai data company profile jika pertanyaan tentang alamat, jam operasional, kontak, atau profil bengkel.
+- Pakai data layanan untuk harga jasa/service dan estimasi pengerjaan.
+- Pakai data produk untuk harga sparepart/product.
+- Jangan mengarang angka di luar DATA BENGKEL.${estimateInstruction}
+- JANGAN menutup dengan ajakan menekan tombol apa pun; cukup akhiri dengan jawaban yang relevan.
+`);
 
-    // Untuk estimasi biaya pasti, kendaraan perlu dicek di bengkel terlebih dahulu.
-    // `;
-    //     }
-
-    //     // === AI HANYA MERANGKUM DATA ===
-    //     const summaryPrompt = `
-    //     DATA LAYANAN BENGKEL:
-
-    // ${JSON.stringify(
-    //   data.map((d: any) => ({
-    //     nama: d.name,
-    //     harga: d.price || d.purchase_price,
-    //   })),
-    //   null,
-    //   2,
-    // )}
-
-    // Instruksi WAJIB:
-    // 1. Awali dengan 1 kalimat singkat menjelaskan kemungkinan penyebab keluhan.
-    // 2. Gunakan bahasa mekanik bengkel, normal, profesional, tidak huruf besar semua.
-    // 3. Tampilkan daftar layanan dan harga menggunakan bullet "•".
-    // 4. Gabungkan layanan yang fungsinya sama (jangan duplikat).
-    // 5. Jangan menambah, mengubah, atau mengira-ngira data di luar yang diberikan.
-    // 6. Hitung total harga dari semua layanan yang ditampilkan.
-    // 7. Hitung total estimasi pengerjaan HANYA dari field "estimasi_menit".
-    // 8. Jika "estimasi_menit" tidak tersedia, tuliskan: "Estimasi pengerjaan: perlu pengecekan langsung".
-    // 9. Tutup dengan ringkasan singkat berisi total harga dan estimasi waktu.
-    // `;
-
-    //     const result = await this.model.generateContent(summaryPrompt);
-
-    //     return (
-    //       result.response.text()?.replace(/^\*+/gm, '•')?.trim() ||
-    //       'Data ditemukan, namun gagal merangkum harga.'
-    //     );
+    return (
+      result.response.text() ||
+      'Maaf, saya belum bisa menjawab pertanyaan itu. Silakan chat WhatsApp admin untuk bantuan lebih lanjut.'
+    );
   }
 
-  private extractKeyword(text: string): string {
+  private async buildWorkshopContext(
+    companyId: number,
+    userPrompt: string,
+    includeFallback = false,
+  ) {
+    const keywords = this.extractKeywords(userPrompt);
+    const hasKeyword = keywords.some((keyword) => keyword.length > 0);
+
+    const company = await CompaniesModel.query()
+      .withGraphFetched('address')
+      .findById(companyId);
+
+    let services = await this.searchServices(companyId, keywords);
+    let products = await this.searchProducts(companyId, keywords);
+
+    // Saat pertanyaan tentang harga/estimasi tapi tidak ketemu item spesifik,
+    // ambil daftar representatif agar AI tetap punya data untuk berhitung.
+    if (includeFallback && (!hasKeyword || services.length === 0)) {
+      services = await this.searchServices(companyId, []);
+    }
+    if (includeFallback && (!hasKeyword || products.length === 0)) {
+      products = await this.searchProducts(companyId, []);
+    }
+
+    return {
+      company: company
+        ? {
+            id: company.id,
+            name: company.name,
+            email: company.email,
+            phone_number: company.phone_number,
+            address: company.address?.title,
+          }
+        : null,
+      services: services.map((service) => ({
+        code: service.code,
+        name: service.name,
+        category: service.category?.name,
+        description: service.description,
+        price: service.price,
+        estimated_duration: service.estimated_duration,
+        estimated_type: service.estimated_type,
+      })),
+      products: products.map((product) => ({
+        code: product.code,
+        name: product.name,
+        category: product.category?.name,
+        description: product.description,
+        sell_price: product.sell_price,
+        stock: product.stock,
+        unit: product.uom?.name || product.unit,
+      })),
+    };
+  }
+
+  private async searchServices(companyId: number, keywords: string[]) {
+    const terms = keywords.filter((keyword) => keyword.length > 0);
+
+    return ServicesModel.query()
+      .withGraphFetched('category')
+      .where('company_id', companyId)
+      .where((builder) => {
+        if (!terms.length) return;
+        terms.forEach((keyword) => {
+          builder
+            .orWhereILike('name', `%${keyword}%`)
+            .orWhereILike('code', `%${keyword}%`)
+            .orWhereILike('description', `%${keyword}%`);
+        });
+      })
+      .orderBy('name')
+      .limit(12);
+  }
+
+  private async searchProducts(companyId: number, keywords: string[]) {
+    const terms = keywords.filter((keyword) => keyword.length > 0);
+
+    return ProductsModel.query()
+      .withGraphFetched('[category,uom]')
+      .where('products.company_id', companyId)
+      .where((builder) => {
+        if (!terms.length) return;
+        terms.forEach((keyword) => {
+          builder
+            .orWhereILike('products.name', `%${keyword}%`)
+            .orWhereILike('products.code', `%${keyword}%`)
+            .orWhereILike('products.description', `%${keyword}%`);
+        });
+      })
+      .orderBy('products.name')
+      .limit(12);
+  }
+
+  private extractKeywords(text: string): string[] {
     const lower = text.toLowerCase();
 
-    const mappings: { keyword: string; patterns: RegExp[] }[] = [
+    // Sinonim/gejala umum → istilah yang dicari di nama jasa & produk.
+    const synonyms: { test: RegExp; terms: string[] }[] = [
       {
-        keyword: 'kaki-kaki',
-        patterns: [/gruduk/, /gluduk/, /bunyi bawah/, /tidak stabil/],
+        test: /kaki|gruduk|gluduk|bunyi bawah|tidak stabil|tie ?rod|ball ?joint|bushing|long ?tie/,
+        terms: ['kaki', 'tie rod', 'ball joint', 'bushing'],
       },
       {
-        keyword: 'shockbreaker',
-        patterns: [/amblas/, /keras/, /empuk/, /mantul/],
+        test: /shock|sok|amblas|keras|empuk|mantul/,
+        terms: ['shock', 'shockbreaker'],
       },
       {
-        keyword: 'rem',
-        patterns: [/rem/, /cakram/, /ngerem/],
+        test: /rem|cakram|kampas|ngerem|brake/,
+        terms: ['rem', 'kampas', 'cakram'],
       },
+      { test: /oli|pelumas|mesin kasar|oil/, terms: ['oli', 'oil'] },
+      { test: /ban|getar|oleng|tire/, terms: ['ban'] },
+      { test: /aki|accu|baterai/, terms: ['aki', 'accu'] },
+      { test: /ac\b|freon|kompresor|dingin/, terms: ['ac', 'freon'] },
       {
-        keyword: 'oli',
-        patterns: [/oli/, /pelumas/, /mesin kasar/],
+        test: /tune ?up|servis rutin|servis berkala|berkala/,
+        terms: ['tune up', 'servis', 'berkala'],
       },
-      {
-        keyword: 'ban',
-        patterns: [/ban/, /getar/, /oleng/],
-      },
+      { test: /filter|saringan/, terms: ['filter'] },
+      { test: /kopling|clutch/, terms: ['kopling'] },
     ];
 
-    for (const map of mappings) {
-      if (map.patterns.some((p) => p.test(lower))) {
-        return map.keyword;
+    const matched = new Set<string>();
+
+    for (const map of synonyms) {
+      if (map.test.test(lower)) {
+        map.terms.forEach((term) => matched.add(term));
       }
     }
 
-    // fallback terakhir → kata terpenting
-    return lower
+    const rawTokens = lower
       .replace(
-        /harga|biaya|berapa|ongkos|service|servis|ganti|apakah|bisa|memperbaiki/gi,
-        '',
+        /harga|biaya|berapa|ongkos|service|servis|ganti|apakah|bisa|memperbaiki|perbaiki|benerin|betulin|estimasi|perkiraan|produk|product|sparepart|alamat|lokasi|jam|buka|kontak|nomor|telepon|whatsapp|untuk|saya|mau|tolong|kalau/gi,
+        ' ',
       )
+      .replace(/[^a-z0-9\s]/g, ' ')
       .trim()
-      .split(' ')
-      .slice(0, 2)
-      .join(' ');
+      .split(/\s+/)
+      .filter((word) => word.length > 2);
+
+    rawTokens.forEach((token) => matched.add(token));
+
+    const keywords = [...matched].slice(0, 8);
+
+    return keywords.length ? keywords : [''];
   }
 }
