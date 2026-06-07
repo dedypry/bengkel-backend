@@ -36,6 +36,7 @@ import { PoModule } from './api/po/po.module';
 import { WarehouseModule } from './api/warehouse/warehouse.module';
 import { AttendanceModule } from './api/attendance/attendance.module';
 import { PayrollModule } from './api/payroll/payroll.module';
+import { QueueModule } from './api/queue/queue.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { PayrollModule } from './api/payroll/payroll.module';
     WarehouseModule,
     AttendanceModule,
     PayrollModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [],
