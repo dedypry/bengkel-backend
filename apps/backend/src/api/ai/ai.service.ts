@@ -37,20 +37,26 @@ Aturan WAJIB:
       return 'Chatbot belum aktif karena GEMINI_API_KEY belum dikonfigurasi di backend.';
     }
 
-    const resolvedCompanyId = Number(
-      companyId || process.env.DEFAULT_COMPANY_ID || 1,
-    );
+    const parsedCompanyId = Number(companyId);
+    const resolvedCompanyId =
+      Number.isFinite(parsedCompanyId) && parsedCompanyId > 0
+        ? parsedCompanyId
+        : undefined;
 
     const wantPrice = /harga|biaya|tarif|ongkos|berapa/i.test(userPrompt);
     const wantEstimate =
       /estimasi|perkiraan|kira-?kira|total biaya|biaya total|abis berapa|habis berapa/i.test(
         userPrompt,
       );
+    const wantList =
+      /layanan|jasa|service|servis|produk|product|sparepart|spare part|menu|daftar|tersedia|apa saja|apa aja|list/i.test(
+        userPrompt,
+      );
 
     const context = await this.buildWorkshopContext(
-      resolvedCompanyId,
       userPrompt,
-      wantPrice || wantEstimate,
+      resolvedCompanyId,
+      wantPrice || wantEstimate || wantList,
     );
 
     const estimateInstruction =
@@ -63,6 +69,19 @@ Aturan WAJIB:
 - Hanya jika DATA BENGKEL benar-benar kosong, katakan butuh pengecekan/konfirmasi admin.`
         : '';
 
+    const scopeInstruction =
+      context.scope === 'all'
+        ? `
+- DATA BENGKEL mencakup BANYAK cabang (tidak spesifik satu cabang). Jika pelanggan menanyakan "di mana", lokasi, atau ketersediaan layanan, sebutkan daftar cabang beserta alamat/kontaknya dari "companies".
+- Saat menampilkan harga/estimasi lintas cabang, sebutkan harga itu dari cabang mana (field "company" pada tiap item) karena bisa berbeda antar cabang.`
+        : '';
+
+    const listInstruction = wantList
+      ? `
+- Pelanggan menanyakan DAFTAR/KETERSEDIAAN layanan atau produk. WAJIB langsung tampilkan daftarnya dari DATA BENGKEL (gunakan bullet, kelompokkan per kategori bila ada, sebutkan harga bila tersedia).
+- DILARANG menyuruh pelanggan menghubungi admin/cek langsung selama "services" atau "products" pada DATA BENGKEL tidak kosong.`
+      : '';
+
     const result = await this.model.generateContent(`
 DATA BENGKEL:
 ${JSON.stringify(context, null, 2)}
@@ -74,7 +93,7 @@ Instruksi jawaban:
 - Pakai data company profile jika pertanyaan tentang alamat, jam operasional, kontak, atau profil bengkel.
 - Pakai data layanan untuk harga jasa/service dan estimasi pengerjaan.
 - Pakai data produk untuk harga sparepart/product.
-- Jangan mengarang angka di luar DATA BENGKEL.${estimateInstruction}
+- Jangan mengarang angka di luar DATA BENGKEL.${scopeInstruction}${listInstruction}${estimateInstruction}
 - JANGAN menutup dengan ajakan menekan tombol apa pun; cukup akhiri dengan jawaban yang relevan.
 `);
 
@@ -85,16 +104,19 @@ Instruksi jawaban:
   }
 
   private async buildWorkshopContext(
-    companyId: number,
     userPrompt: string,
+    companyId?: number,
     includeFallback = false,
   ) {
     const keywords = this.extractKeywords(userPrompt);
     const hasKeyword = keywords.some((keyword) => keyword.length > 0);
 
-    const company = await CompaniesModel.query()
+    const companies = await CompaniesModel.query()
       .withGraphFetched('address')
-      .findById(companyId);
+      .modify((builder) => {
+        if (companyId) builder.where('id', companyId);
+      });
+    const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
     let services = await this.searchServices(companyId, keywords);
     let products = await this.searchProducts(companyId, keywords);
@@ -108,17 +130,20 @@ Instruksi jawaban:
       products = await this.searchProducts(companyId, []);
     }
 
+    const companyProfiles = companies.map((company) => ({
+      id: company.id,
+      name: company.name,
+      email: company.email,
+      phone_number: company.phone_number,
+      address: company.address?.title,
+    }));
+
     return {
-      company: company
-        ? {
-            id: company.id,
-            name: company.name,
-            email: company.email,
-            phone_number: company.phone_number,
-            address: company.address?.title,
-          }
-        : null,
-      services: services.map((service) => ({
+      scope: companyId ? 'single' : 'all',
+      company: companyId ? (companyProfiles[0] ?? null) : null,
+      companies: companyProfiles,
+      services: services.map((service: any) => ({
+        company: companyMap.get(service.company_id),
         code: service.code,
         name: service.name,
         category: service.category?.name,
@@ -127,7 +152,8 @@ Instruksi jawaban:
         estimated_duration: service.estimated_duration,
         estimated_type: service.estimated_type,
       })),
-      products: products.map((product) => ({
+      products: products.map((product: any) => ({
+        company: companyMap.get(product.company_id),
         code: product.code,
         name: product.name,
         category: product.category?.name,
@@ -139,12 +165,17 @@ Instruksi jawaban:
     };
   }
 
-  private async searchServices(companyId: number, keywords: string[]) {
+  private async searchServices(
+    companyId: number | undefined,
+    keywords: string[],
+  ) {
     const terms = keywords.filter((keyword) => keyword.length > 0);
 
     return ServicesModel.query()
       .withGraphFetched('category')
-      .where('company_id', companyId)
+      .modify((builder) => {
+        if (companyId) builder.where('company_id', companyId);
+      })
       .where((builder) => {
         if (!terms.length) return;
         terms.forEach((keyword) => {
@@ -155,15 +186,20 @@ Instruksi jawaban:
         });
       })
       .orderBy('name')
-      .limit(12);
+      .limit(companyId ? 12 : 24);
   }
 
-  private async searchProducts(companyId: number, keywords: string[]) {
+  private async searchProducts(
+    companyId: number | undefined,
+    keywords: string[],
+  ) {
     const terms = keywords.filter((keyword) => keyword.length > 0);
 
     return ProductsModel.query()
       .withGraphFetched('[category,uom]')
-      .where('products.company_id', companyId)
+      .modify((builder) => {
+        if (companyId) builder.where('products.company_id', companyId);
+      })
       .where((builder) => {
         if (!terms.length) return;
         terms.forEach((keyword) => {
@@ -174,7 +210,7 @@ Instruksi jawaban:
         });
       })
       .orderBy('products.name')
-      .limit(12);
+      .limit(companyId ? 12 : 24);
   }
 
   private extractKeywords(text: string): string[] {
@@ -216,7 +252,7 @@ Instruksi jawaban:
 
     const rawTokens = lower
       .replace(
-        /harga|biaya|berapa|ongkos|service|servis|ganti|apakah|bisa|memperbaiki|perbaiki|benerin|betulin|estimasi|perkiraan|produk|product|sparepart|alamat|lokasi|jam|buka|kontak|nomor|telepon|whatsapp|untuk|saya|mau|tolong|kalau/gi,
+        /harga|biaya|berapa|ongkos|service|servis|layanan|jasa|menu|daftar|tersedia|apa saja|apa aja|ganti|apakah|bisa|memperbaiki|perbaiki|benerin|betulin|estimasi|perkiraan|produk|product|sparepart|alamat|lokasi|jam|buka|kontak|nomor|telepon|whatsapp|untuk|saya|mau|tolong|kalau|yang|saja|adalah/gi,
         ' ',
       )
       .replace(/[^a-z0-9\s]/g, ' ')
