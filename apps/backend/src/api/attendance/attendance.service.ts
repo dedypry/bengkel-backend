@@ -269,7 +269,7 @@ export class AttendanceService {
       .modify((b) => {
         if (companyId) b.where('company_id', companyId);
       })
-      .where((b) => b.where('machine_pin', pin).orWhere('nik', pin))
+      .where((b) => b.where('mesin_id', pin).orWhere('machine_pin', pin))
       .first();
   }
 
@@ -320,7 +320,8 @@ export class AttendanceService {
       status: this.resolveStatus(date, checkIn!),
       work_minutes: workMinutes,
       // Pertahankan sumber manual bila sudah dikoreksi admin
-      source: existing?.source === 'manual' ? 'manual' : params.source || 'machine',
+      source:
+        existing?.source === 'manual' ? 'manual' : params.source || 'machine',
     };
 
     if (existing) {

@@ -7,6 +7,9 @@ import { JoiSchema } from 'nestjs-joi';
 export class EmployeeDto {
   id?: number;
 
+  @JoiSchema(Joi.string().optional().allow(null, ''))
+  mesin_id?: string;
+
   @JoiSchema(Joi.string().required())
   name: string;
 

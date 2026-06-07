@@ -43,6 +43,7 @@ export class EmployeesService {
       department: data.department,
       email: data.email,
       status: data.status,
+      mesin_id: data.mesin_id || null,
     };
 
     const payloadProfile = {
