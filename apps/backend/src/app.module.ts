@@ -34,6 +34,8 @@ import { VendorTransactionModule } from './api/vendor-transaction/vendor-transac
 import { VehicleMasterModule } from './api/vehicle-master/vehicle-master.module';
 import { PoModule } from './api/po/po.module';
 import { WarehouseModule } from './api/warehouse/warehouse.module';
+import { AttendanceModule } from './api/attendance/attendance.module';
+import { PayrollModule } from './api/payroll/payroll.module';
 
 @Module({
   imports: [
@@ -78,6 +80,8 @@ import { WarehouseModule } from './api/warehouse/warehouse.module';
     VehicleMasterModule,
     PoModule,
     WarehouseModule,
+    AttendanceModule,
+    PayrollModule,
   ],
   controllers: [AppController],
   providers: [],
