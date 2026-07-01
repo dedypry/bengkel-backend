@@ -84,4 +84,21 @@ export class VehicleMasterService {
 
     return `Data berhasil dihapus`;
   }
+
+  async exportList(query: IQueryVehicles) {
+    return VehicleMasterModel.query()
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .whereILike('merk', `%${query.q}%`)
+            .orWhereILike('type', `%${query.q}%`);
+        }
+
+        if (query.merk) {
+          builder.where('type', query.merk);
+        }
+      })
+      .orderBy('type', 'asc')
+      .orderBy('merk', 'asc');
+  }
 }

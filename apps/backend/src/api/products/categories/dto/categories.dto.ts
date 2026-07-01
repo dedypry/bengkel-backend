@@ -30,6 +30,11 @@ export class CreateCategoryDto {
 export class CategoryQueryDto extends IQuery {
   isPaginate?: boolean;
   categoryId?: number;
+  is_active?: string;
+  productFilter?: string;
+  subCategoryFilter?: string;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export class BulkCategoryUpdateDto {

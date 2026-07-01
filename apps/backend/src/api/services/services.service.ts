@@ -11,8 +11,8 @@ import { fn } from 'objection';
 
 @Injectable()
 export class ServicesService {
-  async list(query: IQuery, auth: IAuth) {
-    return await ServicesModel.query()
+  private buildServiceQuery(query: IQuery, auth: IAuth) {
+    return ServicesModel.query()
       .withGraphFetched('[category]')
       .orderBy('created_at', 'desc')
       .where((build) => {
@@ -22,8 +22,21 @@ export class ServicesService {
             .orWhereILike('code', `%${query.q}%`);
         }
       })
-      .where('company_id', auth.company_id)
-      .page(query.page, query.pageSize);
+      .where('company_id', auth.company_id);
+  }
+
+  async list(query: IQuery, auth: IAuth) {
+    const qb = this.buildServiceQuery(query, auth);
+
+    if (query.noPaginate == 1) {
+      return await qb;
+    }
+
+    return qb.page(query.page, query.pageSize);
+  }
+
+  async exportList(query: IQuery, auth: IAuth): Promise<ServicesModel[]> {
+    return await this.buildServiceQuery(query, auth);
   }
 
   async createService(body: CreateServiceDto, auth: IAuth) {

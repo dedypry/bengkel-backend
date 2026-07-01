@@ -59,4 +59,13 @@ export class UpdateServiceSettingsDTO {
 
   @JoiSchema(Joi.array().optional())
   mechanic_roles: string[];
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  notes_service: string;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  notes_sales: string;
+
+  @JoiSchema(Joi.array().items(Joi.string()).optional())
+  next_service_notes: string[];
 }

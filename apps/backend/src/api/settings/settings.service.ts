@@ -47,7 +47,14 @@ export class SettingsService {
   async updateSetting(body: UpdateServiceSettingsDTO, auth: IAuth) {
     const settings = Object.entries(body).map(([key, val]) => ({
       key: key,
-      value: val === null ? null : String(val),
+      value:
+        val === null || val === undefined
+          ? null
+          : Array.isArray(val)
+            ? key === 'next_service_notes'
+              ? JSON.stringify(val)
+              : val.join(',')
+            : String(val),
       company_id: auth.company_id,
     }));
 

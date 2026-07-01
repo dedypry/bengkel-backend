@@ -9,7 +9,7 @@ import { IQuery } from 'utils/interfaces/query';
 @Injectable()
 export class WarehouseService {
   async list(query: IQuery, auth: IAuth) {
-    return await WarehousesModel.query()
+    let qb = WarehousesModel.query()
       .withGraphFetched('[province, city, district]')
       .where('company_id', auth.company_id)
       .where((builder) => {
@@ -19,7 +19,27 @@ export class WarehouseService {
             .orWhere(raw(`LOWER(code) ILIKE LOWER('%${query.q}%')`));
         }
       })
-      .page(query.page, query.pageSize);
+      .orderBy('created_at', 'desc');
+
+    if (query.noPaginate == 1) {
+      return await qb;
+    }
+
+    return qb.page(query.page, query.pageSize);
+  }
+
+  async exportList(query: IQuery, auth: IAuth): Promise<WarehousesModel[]> {
+    return WarehousesModel.query()
+      .withGraphFetched('[province, city, district]')
+      .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (query.q) {
+          builder
+            .where(raw(`LOWER(name) ILIKE LOWER('%${query.q}%')`))
+            .orWhere(raw(`LOWER(code) ILIKE LOWER('%${query.q}%')`));
+        }
+      })
+      .orderBy('created_at', 'desc');
   }
 
   async create(body: CreateWarehouseDto, auth: IAuth) {

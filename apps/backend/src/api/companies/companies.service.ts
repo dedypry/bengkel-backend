@@ -64,7 +64,7 @@ export class CompaniesService {
         logo_url: body.logo_url,
         email: body.email,
         phone_number: body.phone_number,
-        fax: body.phone_number,
+        fax: body.fax,
         npwp: body.npwp,
         updated_by: auth.id,
         is_ppn: body.is_ppn,

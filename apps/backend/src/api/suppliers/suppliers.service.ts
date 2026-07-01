@@ -29,6 +29,17 @@ export class SuppliersService {
     return await supp;
   }
 
+  async exportList(query: IQuery, auth: IAuth): Promise<SuppliersModel[]> {
+    return SuppliersModel.query()
+      .where('company_id', auth.company_id)
+      .where((builder) => {
+        if (query.q) {
+          builder.whereILike('name', `%${query.q}%`);
+        }
+      })
+      .orderBy('created_at', 'DESC');
+  }
+
   async generateCode(auth: IAuth) {
     const supp: any = await SuppliersModel.query()
       .select(raw('MAX(code) as code'))
