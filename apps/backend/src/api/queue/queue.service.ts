@@ -7,6 +7,7 @@ import { QueueCategoriesModel } from 'models/queue-categories.model';
 import { QueuesModel } from 'models/queues.model';
 import dayjs from 'utils/helpers/dayjs';
 import type { IAuth } from 'utils/interfaces/IAuth';
+import { PusherService } from '../notifications/pusher.service';
 import {
   QUEUE_STATUS,
   QueueCategoryDto,
@@ -19,6 +20,7 @@ const DEFAULT_SHOP_NAME = 'BENGKEL MAJU JAYA';
 
 @Injectable()
 export class QueueService {
+  constructor(private readonly pusherService: PusherService) {}
   async categories(companyId: number) {
     return await QueueCategoriesModel.query()
       .where('company_id', companyId)
@@ -54,7 +56,7 @@ export class QueueService {
   }
 
   async generate(categoryId: number, companyId: number) {
-    return await QueueCategoriesModel.transaction(async (trx) => {
+    const result = await QueueCategoriesModel.transaction(async (trx) => {
       const today = dayjs().tz(TZ).format('YYYY-MM-DD');
       const category = await QueueCategoriesModel.query(trx)
         .where('id', categoryId)
@@ -66,8 +68,20 @@ export class QueueService {
 
       if (!category) throw new NotFoundException('Kategori antrean tidak ditemukan');
 
-      const currentNumber =
-        category.last_reset_date === today ? Number(category.current_number) || 0 : 0;
+      const lastResetToday = this.isSameQueueDate(category.last_reset_date, today);
+      let currentNumber = lastResetToday
+        ? Number(category.current_number) || 0
+        : 0;
+
+      const maxRow = (await QueuesModel.query(trx)
+        .where('company_id', companyId)
+        .where('category_id', category.id)
+        .where('queue_date', today)
+        .max('sequence as max_sequence')
+        .first()) as { max_sequence?: string | number | null };
+
+      const maxSequence = Number(maxRow?.max_sequence) || 0;
+      currentNumber = Math.max(currentNumber, maxSequence);
       const sequence = currentNumber + 1;
       const queueNumber = `${category.prefix_code}-${sequence
         .toString()
@@ -93,6 +107,10 @@ export class QueueService {
         ticket_text: this.formatTicket(queueNumber, category.name),
       };
     });
+
+    await this.broadcastQueueUpdate(companyId, 'generated');
+
+    return result;
   }
 
   async list(auth: IAuth, query: QueueQueryDto) {
@@ -122,13 +140,21 @@ export class QueueService {
 
     if (!queue) throw new NotFoundException('Tidak ada antrean menunggu');
 
-    return await queue.$query().patchAndFetch({
+    const updated = await queue.$query().patchAndFetch({
       status: QUEUE_STATUS.CALLING,
       attendant_id: auth.id,
       counter_number: counterNumber,
       called_at: new Date().toISOString(),
       updated_by: auth.id,
     } as any);
+
+    await this.broadcastQueueUpdate(auth.company_id, 'called', {
+      queue_number: updated.queue_number,
+      counter_number: updated.counter_number ?? counterNumber ?? null,
+      category_name: queue.category?.name,
+    });
+
+    return updated;
   }
 
   async updateStatus(dto: UpdateQueueStatusDto, auth: IAuth) {
@@ -160,7 +186,23 @@ export class QueueService {
       payload.done_at = queue.done_at || new Date().toISOString();
     }
 
-    return await queue.$query().patchAndFetch(payload);
+    const updated = await queue.$query().patchAndFetch(payload);
+
+    if (dto.status === QUEUE_STATUS.CALLING) {
+      const withCategory = await QueuesModel.query()
+        .findById(updated.id)
+        .withGraphFetched('category');
+
+      await this.broadcastQueueUpdate(auth.company_id, 'called', {
+        queue_number: withCategory?.queue_number,
+        counter_number: withCategory?.counter_number ?? null,
+        category_name: withCategory?.category?.name,
+      });
+    } else {
+      await this.broadcastQueueUpdate(auth.company_id, 'status_updated');
+    }
+
+    return updated;
   }
 
   async display(companyId: number) {
@@ -206,6 +248,34 @@ export class QueueService {
       .modify((builder) => {
         if (companyId) builder.where('company_id', companyId);
       });
+  }
+
+  private isSameQueueDate(
+    dateValue: string | Date | null | undefined,
+    today: string,
+  ) {
+    if (!dateValue) {
+      return false;
+    }
+
+    return dayjs(dateValue).tz(TZ).format('YYYY-MM-DD') === today;
+  }
+
+  private async broadcastQueueUpdate(
+    companyId: number,
+    action: string,
+    meta: Record<string, unknown> = {},
+  ) {
+    try {
+      await this.pusherService.notifyCompanyQueue(companyId, 'queue.updated', {
+        action,
+        company_id: companyId,
+        updated_at: new Date().toISOString(),
+        ...meta,
+      });
+    } catch (error) {
+      console.error('Pusher queue broadcast failed:', error);
+    }
   }
 
   formatTicket(
