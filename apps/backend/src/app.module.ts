@@ -37,6 +37,7 @@ import { WarehouseModule } from './api/warehouse/warehouse.module';
 import { AttendanceModule } from './api/attendance/attendance.module';
 import { PayrollModule } from './api/payroll/payroll.module';
 import { QueueModule } from './api/queue/queue.module';
+import { NotificationsModule } from './api/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { QueueModule } from './api/queue/queue.module';
     AttendanceModule,
     PayrollModule,
     QueueModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [],
