@@ -3,10 +3,11 @@ import { InvoicesService } from './invoices.service';
 import { InvoicesController } from './invoices.controller';
 import { BullModule } from '@nestjs/bull';
 import { MailQueueProcessor } from '../../queue/mail.queue.processor';
-// import { WhatsappService } from 'utils/services/wa.service';
+import { CustomerEmailModule } from 'utils/modules/customer-email.module';
 
 @Module({
   imports: [
+    CustomerEmailModule,
     BullModule.registerQueue({
       name: 'MAIL-QUEUE',
     }),

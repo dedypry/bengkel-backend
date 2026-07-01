@@ -11,9 +11,11 @@ import { IQuery } from 'utils/interfaces/query';
 import { SettingsModel } from 'models/settings.model';
 import { generateNo } from 'utils/helpers/global';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
+import { CustomerEmailService } from 'utils/services/customer-email.service';
 
 @Injectable()
 export class PaymentsService {
+  constructor(private readonly customerEmailService: CustomerEmailService) {}
   async list(query: IQuery, auth: IAuth) {
     return await PaymentsModel.query()
       .alias('py')
@@ -236,6 +238,10 @@ export class PaymentsService {
       }
       return true;
     });
+
+    void this.customerEmailService.notifyPaymentComplete(body.woId, auth.company_id);
+    void this.customerEmailService.notifyInvoice(body.woId, auth.company_id);
+
     return 'Pembayaran Berhasil';
   }
 

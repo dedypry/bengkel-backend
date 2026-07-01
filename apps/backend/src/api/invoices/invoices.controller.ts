@@ -14,20 +14,18 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import type { Response } from 'express';
-import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
 import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
 import GeneratePDF from 'utils/services/pdf-make.service';
 import { QueryParamInvoice } from './dto/invoice.dto';
 import { calculateTotalEstimation } from 'utils/helpers/global';
+import { CustomerEmailService } from 'utils/services/customer-email.service';
 
 @UseGuards(AuthGuard)
 @Controller('invoices')
 export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
-    @InjectQueue('MAIL-QUEUE') private readonly queue: Queue,
-    // private readonly waService: WhatsappService,
+    private readonly customerEmailService: CustomerEmailService,
   ) {}
 
   @Get(':id')
@@ -78,22 +76,11 @@ export class InvoicesController {
   }
 
   @Post(':id/send')
-  async invoiceSendWa(@Param('id') id: number, @Auth() auth: IAuth) {
-    const result = await this.invoicesService.payment(id, auth);
-
-    this.queue.add('send-mail-inv', {
-      to: result.customer?.email,
-      subject: `invoice-${result.trx_no}`,
-      template: 'invoice',
-      context: result,
+  async invoiceSendEmail(@Param('id') id: number, @Auth() auth: IAuth) {
+    await this.customerEmailService.notifyInvoice(id, auth.company_id, {
+      force: true,
     });
-    return 'Email sedang proses pengiriman';
 
-    // return this.waService.sendMessage({
-    //   to: '6281286141441',
-    //   file: buffer.toString('base64'),
-    //   content: 'INI INVOICE NYA',
-    //   fileType: 'application/pdf',
-    // });
+    return { message: 'Email sedang diproses' };
   }
 }

@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CompaniesModel } from 'models/companies.model';
 import { SettingsModel } from 'models/settings.model';
 import { IAuth } from 'utils/interfaces/IAuth';
+import { CustomerEmailService } from 'utils/services/customer-email.service';
 import { UpdateServiceSettingsDTO } from './dto/settings.dto';
+
+const MASKED_PASSWORD = '********';
 
 @Injectable()
 export class SettingsService {
+  constructor(private readonly customerEmailService: CustomerEmailService) {}
   async detail(auth: IAuth) {
     const [company, settingData] = await Promise.all([
       CompaniesModel.query().findById(auth.company_id),
@@ -38,23 +42,43 @@ export class SettingsService {
     const result = {};
 
     for (const item of settings) {
-      result[item.key] = item.value;
+      result[item.key] =
+        item.key === 'smtp_password' && item.value
+          ? MASKED_PASSWORD
+          : item.value;
     }
 
     return result;
   }
 
+  private serializeSettingValue(key: string, val: unknown) {
+    if (val === null || val === undefined) {
+      return null;
+    }
+
+    if (typeof val === 'boolean') {
+      return val ? 'true' : 'false';
+    }
+
+    if (Array.isArray(val)) {
+      return key === 'next_service_notes' ? JSON.stringify(val) : val.join(',');
+    }
+
+    return String(val as any);
+  }
+
   async updateSetting(body: UpdateServiceSettingsDTO, auth: IAuth) {
-    const settings = Object.entries(body).map(([key, val]) => ({
-      key: key,
-      value:
-        val === null || val === undefined
-          ? null
-          : Array.isArray(val)
-            ? key === 'next_service_notes'
-              ? JSON.stringify(val)
-              : val.join(',')
-            : String(val),
+    const entries = Object.entries(body).filter(([key, val]) => {
+      if (key === 'smtp_password') {
+        return val && val !== MASKED_PASSWORD;
+      }
+
+      return val !== undefined;
+    });
+
+    const settings = entries.map(([key, val]) => ({
+      key,
+      value: this.serializeSettingValue(key, val),
       company_id: auth.company_id,
     }));
 
@@ -64,5 +88,20 @@ export class SettingsService {
       .merge(['value']);
 
     return 'data berhasil di perbaharui';
+  }
+
+  async sendTestEmail(email: string, auth: IAuth) {
+    const sent = await this.customerEmailService.sendTestEmail(
+      auth.company_id,
+      email,
+    );
+
+    if (!sent) {
+      throw new BadRequestException(
+        'Gagal mengirim email. Periksa konfigurasi SMTP.',
+      );
+    }
+
+    return { message: 'Email tes berhasil dikirim' };
   }
 }

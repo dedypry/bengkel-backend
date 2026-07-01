@@ -1,23 +1,43 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { MailerService } from '@nestjs-modules/mailer';
 import { Process, Processor } from '@nestjs/bull';
 import type { Job } from 'bull';
 import 'dotenv/config';
-import { getHtmlContent } from 'utils/helpers/html-contect';
+import { CustomerEmailService } from 'utils/services/customer-email.service';
 
 @Processor('MAIL-QUEUE')
 export class MailQueueProcessor {
-  constructor(private readonly mailService: MailerService) {}
+  constructor(private readonly customerEmailService: CustomerEmailService) {}
 
   @Process('send-mail-inv')
-  async handleSendKta(job: Job) {
-    const { template, context, to, subject } = job.data;
-    try {
-      const html = await getHtmlContent('invoice', context);
+  async handleSendInvoice(job: Job) {
+    const { to, subject, template, context, companyId } = job.data;
 
-      console.log('SUCCESS SEND EMAIL');
+    try {
+      const sent = await this.customerEmailService.sendEmail({
+        companyId,
+        to,
+        subject,
+        template,
+        context,
+      });
+
+      console.log('sent', sent);
+
+      if (!sent) {
+        console.warn('[EMAIL SKIPPED]', {
+          source: 'MAIL-QUEUE',
+          template,
+          to,
+          subject,
+        });
+      }
     } catch (error) {
-      console.error('ERROR', error);
+      console.error('[EMAIL FAILED]', {
+        source: 'MAIL-QUEUE',
+        template,
+        to,
+        subject,
+        error,
+      });
     }
   }
 }

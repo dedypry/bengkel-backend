@@ -68,4 +68,37 @@ export class UpdateServiceSettingsDTO {
 
   @JoiSchema(Joi.array().items(Joi.string()).optional())
   next_service_notes: string[];
+
+  @JoiSchema(Joi.boolean().optional())
+  email_enabled: boolean;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  smtp_host: string;
+
+  @JoiSchema(Joi.number().integer().min(1).max(65535).optional())
+  smtp_port: number;
+
+  @JoiSchema(Joi.boolean().optional())
+  smtp_secure: boolean;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  smtp_user: string;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  smtp_password: string;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  smtp_from_name: string;
+
+  @JoiSchema(Joi.string().email().optional().allow('', null))
+  smtp_from_email: string;
+
+  @JoiSchema(Joi.boolean().optional())
+  email_notify_wo_ready: boolean;
+
+  @JoiSchema(Joi.boolean().optional())
+  email_notify_payment_complete: boolean;
+
+  @JoiSchema(Joi.boolean().optional())
+  email_notify_invoice: boolean;
 }

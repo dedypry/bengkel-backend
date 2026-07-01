@@ -4,6 +4,7 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { UpdateServiceSettingsDTO } from './dto/settings.dto';
+import { TestEmailDto } from './dto/test-email.dto';
 
 @UseGuards(AuthGuard)
 @Controller('settings')
@@ -23,5 +24,10 @@ export class SettingsController {
   @Post()
   updateSetting(@Body() body: UpdateServiceSettingsDTO, @Auth() auth: IAuth) {
     return this.settingsService.updateSetting(body, auth);
+  }
+
+  @Post('email/test')
+  sendTestEmail(@Body() body: TestEmailDto, @Auth() auth: IAuth) {
+    return this.settingsService.sendTestEmail(body.email, auth);
   }
 }

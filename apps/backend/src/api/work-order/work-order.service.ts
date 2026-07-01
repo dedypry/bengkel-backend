@@ -28,6 +28,7 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { BookingsModel } from 'models/bookings.model';
 import { SettingsModel } from 'models/settings.model';
 import { VehicleMasterModel } from 'models/vehicle-master.model';
+import { CustomerEmailService } from 'utils/services/customer-email.service';
 
 interface ICreateOrUpdateWoItem {
   woId: number;
@@ -39,6 +40,8 @@ interface ICreateOrUpdateWoItem {
 }
 @Injectable()
 export class WorkOrderService {
+  constructor(private readonly customerEmailService: CustomerEmailService) {}
+
   async list(query: WoQuery, auth: IAuth) {
     const data = await WorkOrdersModel.query()
       .alias('wo')
@@ -390,6 +393,10 @@ export class WorkOrderService {
         }
       }),
     );
+
+    if (body.progress === 'ready') {
+      void this.customerEmailService.notifyWoReady(id, auth.company_id);
+    }
   }
 
   async updateMechanichs(id: number, body: UpdateMechanicWoDto, auth: IAuth) {
