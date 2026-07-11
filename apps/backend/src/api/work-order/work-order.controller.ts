@@ -43,6 +43,11 @@ export class WorkOrderController {
     return this.workOrderService.listPayment(query, auth);
   }
 
+  @Post('call-cashier/:id')
+  callCashier(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.workOrderService.callCashier(id, auth);
+  }
+
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.workOrderService.detail(id, auth);

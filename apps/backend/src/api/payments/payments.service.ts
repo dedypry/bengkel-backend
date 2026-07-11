@@ -12,10 +12,14 @@ import { SettingsModel } from 'models/settings.model';
 import { generateNo } from 'utils/helpers/global';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { CustomerEmailService } from 'utils/services/customer-email.service';
+import { PusherService } from '../notifications/pusher.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly customerEmailService: CustomerEmailService) {}
+  constructor(
+    private readonly customerEmailService: CustomerEmailService,
+    private readonly pusherService: PusherService,
+  ) {}
   async list(query: IQuery, auth: IAuth) {
     return await PaymentsModel.query()
       .alias('py')
@@ -241,8 +245,34 @@ export class PaymentsService {
 
     void this.customerEmailService.notifyPaymentComplete(body.woId, auth.company_id);
     void this.customerEmailService.notifyInvoice(body.woId, auth.company_id);
+    void this.broadcastServiceUpdate(body.woId, auth.company_id, 'payment_completed', {
+      progress: 'finish',
+    });
 
     return 'Pembayaran Berhasil';
+  }
+
+  private async broadcastServiceUpdate(
+    workOrderId: number,
+    companyId: number,
+    action: string,
+    meta: Record<string, unknown> = {},
+  ) {
+    try {
+      await this.pusherService.notifyCompanyService(
+        companyId,
+        'service.updated',
+        {
+          action,
+          company_id: companyId,
+          work_order_id: workOrderId,
+          updated_at: new Date().toISOString(),
+          ...meta,
+        },
+      );
+    } catch (error) {
+      console.error('Pusher service broadcast failed:', error);
+    }
   }
 
   async generateTrxNo(companyId: number) {

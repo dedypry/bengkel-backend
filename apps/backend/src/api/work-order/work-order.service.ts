@@ -1,4 +1,4 @@
-import { Body, Injectable, NotFoundException } from '@nestjs/common';
+import { Body, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CancelDto,
   ChangeSugestionDto,
@@ -29,6 +29,7 @@ import { BookingsModel } from 'models/bookings.model';
 import { SettingsModel } from 'models/settings.model';
 import { VehicleMasterModel } from 'models/vehicle-master.model';
 import { CustomerEmailService } from 'utils/services/customer-email.service';
+import { PusherService } from '../notifications/pusher.service';
 
 interface ICreateOrUpdateWoItem {
   woId: number;
@@ -40,7 +41,10 @@ interface ICreateOrUpdateWoItem {
 }
 @Injectable()
 export class WorkOrderService {
-  constructor(private readonly customerEmailService: CustomerEmailService) {}
+  constructor(
+    private readonly customerEmailService: CustomerEmailService,
+    private readonly pusherService: PusherService,
+  ) {}
 
   async list(query: WoQuery, auth: IAuth) {
     const data = await WorkOrdersModel.query()
@@ -120,6 +124,83 @@ export class WorkOrderService {
         processing: Number(stats?.processing || 0),
         completed: Number(stats?.completed || 0),
       },
+    };
+  }
+
+  async displayForTv(companyId: number) {
+    const today = dayjs().format('YYYY-MM-DD');
+
+    const company = await CompaniesModel.query()
+      .findById(companyId)
+      .select('id', 'name');
+
+    const orders = await WorkOrdersModel.query()
+      .alias('wo')
+      .joinRelated('[vehicle, customer]')
+      .withGraphFetched('[vehicle, customer]')
+      .where('wo.company_id', companyId)
+      .whereNotIn('wo.progress', ['finish', 'cancel'])
+      .whereRaw('DATE(wo.created_at) = ?', [today])
+      .orderByRaw(
+        `CASE wo.progress
+          WHEN 'ready' THEN 1
+          WHEN 'on_progress' THEN 2
+          WHEN 'queue' THEN 3
+          WHEN 'pick_up' THEN 4
+          ELSE 5
+        END`,
+      )
+      .orderBy('wo.updated_at', 'desc')
+      .limit(24);
+
+    const statsRow: any = await WorkOrdersModel.query()
+      .where('company_id', companyId)
+      .whereRaw('DATE(created_at) = ?', [today])
+      .whereNotIn('progress', ['finish', 'cancel'])
+      .select(
+        raw("count(*) filter (where progress in ('queue', 'pick_up')) as waiting"),
+        raw("count(*) filter (where progress = 'on_progress') as processing"),
+        raw("count(*) filter (where progress = 'ready') as ready"),
+      )
+      .first();
+
+    const mapped = orders.map((wo) => this.mapDisplayOrder(wo));
+    const featured =
+      mapped.find((item) => item.progress === 'ready') ||
+      mapped.find((item) => item.progress === 'on_progress') ||
+      mapped[0] ||
+      null;
+
+    return {
+      date: today,
+      company_name: company?.name || 'Bengkel',
+      stats: {
+        waiting: Number(statsRow?.waiting) || 0,
+        processing: Number(statsRow?.processing) || 0,
+        ready: Number(statsRow?.ready) || 0,
+        total: mapped.length,
+      },
+      featured,
+      orders: mapped,
+    };
+  }
+
+  private mapDisplayOrder(wo: WorkOrdersModel) {
+    const progress =
+      wo.progress === 'pick_up' ? 'queue' : (wo.progress as string);
+
+    return {
+      id: wo.id,
+      queue_no: wo.queue_no || wo.trx_no,
+      trx_no: wo.trx_no,
+      plate_number: wo.vehicle?.plate_number,
+      vehicle_name: [wo.vehicle?.brand, wo.vehicle?.model]
+        .filter(Boolean)
+        .join(' '),
+      progress,
+      start_at: wo.start_at,
+      end_at: wo.end_at,
+      updated_at: wo.updated_at,
     };
   }
 
@@ -333,6 +414,11 @@ export class WorkOrderService {
 
       return wo;
     });
+
+    void this.broadcastServiceUpdate(result.id, auth.company_id, 'created', {
+      progress: result.progress,
+    });
+
     return {
       message: 'Order Berhasil disimpan',
       data: result,
@@ -356,7 +442,7 @@ export class WorkOrderService {
 
   async updateProgres(id: number, body: UpdateStatusWoDto, auth: IAuth) {
     const wo = await WorkOrdersModel.query()
-      .withGraphFetched('mechanics')
+      .withGraphFetched('[mechanics, vehicle, customer]')
       .findOne({
         id,
         company_id: auth.company_id,
@@ -396,6 +482,75 @@ export class WorkOrderService {
 
     if (body.progress === 'ready') {
       void this.customerEmailService.notifyWoReady(id, auth.company_id);
+      void this.broadcastCashierCall(wo, auth.company_id);
+    }
+
+    void this.broadcastServiceUpdate(wo.id, auth.company_id, 'status_updated', {
+      progress: body.progress,
+    });
+  }
+
+  async callCashier(id: number, auth: IAuth) {
+    const wo = await WorkOrdersModel.query()
+      .withGraphFetched('[vehicle, customer]')
+      .findOne({
+        id,
+        company_id: auth.company_id,
+      });
+
+    if (!wo) throw new NotFoundException();
+
+    if (wo.progress !== 'ready') {
+      throw new BadRequestException(
+        'Panggilan kasir hanya untuk unit dengan status siap bayar',
+      );
+    }
+
+    await this.broadcastCashierCall(wo, auth.company_id);
+
+    return { message: 'Panggilan ke kasir berhasil dikirim' };
+  }
+
+  private async broadcastServiceUpdate(
+    workOrderId: number,
+    companyId: number,
+    action: string,
+    meta: Record<string, unknown> = {},
+  ) {
+    try {
+      await this.pusherService.notifyCompanyService(
+        companyId,
+        'service.updated',
+        {
+          action,
+          company_id: companyId,
+          work_order_id: workOrderId,
+          updated_at: new Date().toISOString(),
+          ...meta,
+        },
+      );
+    } catch (error) {
+      console.error('Pusher service broadcast failed:', error);
+    }
+  }
+
+  private async broadcastCashierCall(
+    wo: WorkOrdersModel,
+    companyId: number,
+  ) {
+    try {
+      await this.pusherService.notifyCompanyService(companyId, 'cashier.call', {
+        action: 'called',
+        company_id: companyId,
+        work_order_id: wo.id,
+        plate_number: wo.vehicle?.plate_number,
+        queue_no: wo.queue_no,
+        trx_no: wo.trx_no,
+        customer_name: wo.customer?.name,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Pusher cashier call broadcast failed:', error);
     }
   }
 
@@ -420,6 +575,9 @@ export class WorkOrderService {
         },
       );
       return { message: 'Mekanik berhasil diperbarui' };
+    }).then((result) => {
+      void this.broadcastServiceUpdate(id, auth.company_id, 'mechanic_updated');
+      return result;
     });
   }
 
@@ -472,6 +630,10 @@ export class WorkOrderService {
         cancel_note: body.cancelNote,
         updated_by: auth.id,
       });
+    });
+
+    void this.broadcastServiceUpdate(id, auth.company_id, 'status_updated', {
+      progress: 'cancel',
     });
   }
 

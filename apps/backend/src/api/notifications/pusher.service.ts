@@ -23,6 +23,10 @@ export class PusherService {
     return `queue-company-${companyId}`;
   }
 
+  companyServiceChannel(companyId: number) {
+    return `service-company-${companyId}`;
+  }
+
   authenticate(socketId: string, channel: string, userId: number) {
     if (channel !== this.userChannel(userId)) {
       throw new ForbiddenException('Channel tidak valid');
@@ -42,6 +46,18 @@ export class PusherService {
   ) {
     await this.pusher.trigger(
       this.companyQueueChannel(companyId),
+      event,
+      payload,
+    );
+  }
+
+  async notifyCompanyService(
+    companyId: number,
+    event: string,
+    payload: unknown,
+  ) {
+    await this.pusher.trigger(
+      this.companyServiceChannel(companyId),
       event,
       payload,
     );
