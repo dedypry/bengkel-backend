@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengingat Servis Berkala</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+    .header { background: #0f766e; color: #fff; padding: 24px; text-align: center; }
+    .content { padding: 24px; }
+    .footer { background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; }
+    .badge { display: inline-block; background: #ccfbf1; color: #115e59; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: bold; }
+    .info { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2 style="margin: 0;">{{ company.name }}</h2>
+      <p style="margin: 8px 0 0; font-size: 13px; opacity: 0.85;">Pengingat Servis Berkala</p>
+    </div>
+    <div class="content">
+      <p>Yth. <strong>{{ customer.name }}</strong>,</p>
+      <p>
+        Ini pengingat bahwa kendaraan Anda dengan nomor polisi
+        <strong>{{ vehicle.plate_number }}</strong> ({{ vehicle.brand }} {{ vehicle.model }})
+        sudah mendekati jadwal servis berikutnya.
+      </p>
+      <div class="info">
+        <p style="margin: 0 0 8px;"><strong>Target KM servis:</strong> {{ next_km }} km</p>
+        <p style="margin: 0 0 8px;"><strong>Perkiraan jadwal servis:</strong> {{ dueDateFormatted }}</p>
+        <p style="margin: 0;"><strong>Pengingat dikirim:</strong> {{ reminderDays }} hari sebelum jadwal</p>
+      </div>
+      <p><span class="badge">WAKTU SERVIS BERIKUTNYA</span></p>
+      <p style="font-size: 14px; color: #64748b;">
+        Silakan hubungi bengkel kami untuk melakukan booking servis agar kendaraan tetap prima.
+      </p>
+    </div>
+    <div class="footer">
+      <p style="margin: 0;">Terima kasih atas kepercayaan Anda.</p>
+      <p style="margin: 4px 0 0;">{{ company.phone_number }} | {{ company.email }}</p>
+    </div>
+  </div>
+</body>
+</html>

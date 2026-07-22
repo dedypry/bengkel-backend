@@ -49,6 +49,9 @@ export class WorkOrdersModel extends BaseModel {
   disc_percentage?: number;
   disc_value?: number;
   cancel_note?: string;
+  remind_next_service?: boolean;
+  next_service_due_date?: string | null;
+  next_service_reminder_sent_at?: string | null;
   // === FIELD END ===
 
   @HasMany(() => WorkOrderItemsModel, {

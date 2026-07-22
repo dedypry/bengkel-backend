@@ -107,6 +107,9 @@ export class WorkOrderRequestDto {
 
   @JoiSchema(Joi.array())
   mechanic_ids: number[];
+
+  @JoiSchema(Joi.boolean().optional().default(false))
+  remind_next_service?: boolean;
 }
 
 @JoiSchemaOptions({

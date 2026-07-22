@@ -240,6 +240,13 @@ export class PaymentsService {
       } else {
         await dataPayment.$query(trx).patch(payloadPayment);
       }
+
+      await this.customerEmailService.scheduleNextServiceReminder(
+        wo.id,
+        auth.company_id,
+        trx,
+      );
+
       return true;
     });
 

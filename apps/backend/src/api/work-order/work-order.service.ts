@@ -366,6 +366,7 @@ export class WorkOrderService {
         promo_data: JSON.stringify(promoData),
         complaints: body.complaints,
         booking_id: body.booking_id,
+        remind_next_service: !!body.remind_next_service,
         ...(body.mechanic_ids.length > 0 && {
           mechanics: body.mechanic_ids.map((id) => ({ id })),
         }),

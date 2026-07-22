@@ -69,6 +69,12 @@ export class UpdateServiceSettingsDTO {
   @JoiSchema(Joi.array().items(Joi.string()).optional())
   next_service_notes: string[];
 
+  @JoiSchema(Joi.number().integer().min(0).optional())
+  next_service_reminder_days: number;
+
+  @JoiSchema(Joi.number().integer().min(1).optional())
+  next_service_interval_days: number;
+
   @JoiSchema(Joi.boolean().optional())
   email_enabled: boolean;
 
@@ -101,4 +107,7 @@ export class UpdateServiceSettingsDTO {
 
   @JoiSchema(Joi.boolean().optional())
   email_notify_invoice: boolean;
+
+  @JoiSchema(Joi.boolean().optional())
+  email_notify_next_service: boolean;
 }
