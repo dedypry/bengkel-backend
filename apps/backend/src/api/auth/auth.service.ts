@@ -67,7 +67,7 @@ export class AuthService {
   async register(body: RegisterDto) {
     const find = await CustomersModel.query()
       .where('email', body.email)
-      .where('phone', body.phone)
+      .orWhere('phone', body.phone)
       .first();
 
     if (find) throw new BadRequestException('Email/phone sudah ada disystem');
