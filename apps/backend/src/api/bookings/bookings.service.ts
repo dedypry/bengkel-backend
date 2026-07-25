@@ -51,22 +51,22 @@ export class BookingsService {
   }
 
   async create(data: CreateBookingDto, auth: IAuth) {
+    const isCustomer = auth.type === 'cs';
     const payload: any = {
       ...data,
-      customer_id: auth.id,
-      updated_by: auth.id,
+      customer_id: isCustomer ? auth.id : data.customer_id,
+      // updated_by / created_by FK ke users — jangan pakai customers.id
+      ...(!isCustomer && { updated_by: auth.id }),
     };
-
-    if (auth.type != 'cs') {
-      payload.customer_id = data.customer_id;
-    }
 
     if (data?.id) {
       await BookingsModel.query()
         .findById(data?.id)
         .update(payload as any);
     } else {
-      payload['created_by'] = auth.id;
+      if (!isCustomer) {
+        payload.created_by = auth.id;
+      }
       await BookingsModel.query().insert(payload as any);
     }
 
@@ -108,8 +108,6 @@ export class BookingsService {
       await BookingsModel.query(trx).insert({
         customer_id: customer.id,
         vehicle_id: vehicle.id,
-        created_by: customer.id,
-        updated_by: customer.id,
         branch_id: body.branch_id,
         booking_date: body.booking_date,
         booking_time: body.booking_time,
@@ -133,7 +131,7 @@ export class BookingsService {
 
     await booking.$query().patch({
       deleted_at: fn.now(),
-      updated_by: auth.id,
+      ...(auth.type !== 'cs' && { updated_by: auth.id }),
     });
 
     return 'booking berhasil dibatalkan';

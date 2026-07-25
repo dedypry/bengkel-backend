@@ -6,9 +6,10 @@ import { VehiclesModel } from 'models/vehicles.model';
 @Injectable()
 export class VehicleService {
   async create(body: CreateVehicleDto, auth: IAuth) {
+    // Customer JWT pakai customers.id — jangan isi updated_by (FK ke users).
     const payload: any = {
       ...body,
-      updated_by: auth.id,
+      ...(auth.type !== 'cs' && { updated_by: auth.id }),
     };
 
     let vehicle: VehiclesModel = null as any;
