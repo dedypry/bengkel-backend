@@ -56,17 +56,30 @@ export class ProductsService {
   async list(query: ProductQueryDto, auth: IAuth, isDownload: boolean = false) {
     let queryData: any = ProductsModel.query()
       .withGraphFetched('[category.parent,uom]')
+      .where('products.company_id', auth.company_id)
       .where((builder) => {
         if (query.q) {
           builder
             .whereILike('products.name', `%${query.q}%`)
             .orWhereILike('products.code', `%${query.q}%`);
         }
+      })
+      .modify((builder) => {
         if (query.categoryId) {
           builder.where('category_id', query.categoryId);
         }
+        if (query.status === 'empty') {
+          builder.whereRaw('CAST(stock AS NUMERIC) = 0');
+        } else if (query.status === 'low') {
+          builder.whereRaw(
+            'CAST(stock AS NUMERIC) > 0 AND CAST(stock AS NUMERIC) <= CAST(min_stock AS NUMERIC)',
+          );
+        } else if (query.status === 'ok') {
+          builder.whereRaw(
+            'CAST(stock AS NUMERIC) > CAST(min_stock AS NUMERIC)',
+          );
+        }
       })
-      .where('products.company_id', auth.company_id)
       .orderByRaw('CAST(stock AS NUMERIC) ASC');
 
     if (isDownload) {

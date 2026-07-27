@@ -54,6 +54,9 @@ export class ProductQueryDto extends IQuery {
   categoryId?: number;
 
   noStats?: number;
+
+  /** empty | low | ok */
+  status?: string;
 }
 
 @JoiSchemaOptions({
