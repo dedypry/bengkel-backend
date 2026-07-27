@@ -22,6 +22,7 @@ import { AuthGuard } from 'utils/guards/auth.guard';
 import { CreateServiceDto } from './dto/service.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelJsService } from 'utils/services/exceljs.service';
+import { Xlsx } from 'utils/services/xlsx';
 import type { Response } from 'express';
 import dayjs from 'dayjs';
 
@@ -68,7 +69,8 @@ export class ServicesController {
         code: row.code || '-',
         name: row.name,
         category: row.category?.name || '-',
-        duration: `${row.estimated_duration || 0} ${durationTypeLabel[row.estimated_type || ''] || row.estimated_type || ''}`.trim(),
+        duration:
+          `${row.estimated_duration || 0} ${durationTypeLabel[row.estimated_type || ''] || row.estimated_type || ''}`.trim(),
         difficulty: row.difficulty || '-',
         price: Number(row.price || 0),
         status: row.is_active ? 'Aktif' : 'Nonaktif',
@@ -95,13 +97,64 @@ export class ServicesController {
     return this.servicesService.createCategory(body, auth);
   }
 
+  @Get('import/template')
+  importTemplate(@Res() res: Response) {
+    return this.excelJs.download({
+      name: 'Laporan',
+      headers: [
+        { header: 'KODE', key: 'code', width: 16 },
+        { header: 'NAMA', key: 'name', width: 36 },
+        { header: 'GRUP', key: 'group', width: 12 },
+        { header: 'SUB GRUP', key: 'sub_group', width: 22 },
+        { header: 'HARGA JUAL', key: 'sell_price', width: 16 },
+        { header: 'PAJAK %', key: 'tax', width: 12 },
+        { header: 'WAKTU', key: 'duration', width: 12 },
+        {
+          header: 'KETERANGAN (Menit/Jam/Hari)',
+          key: 'duration_unit',
+          width: 28,
+        },
+      ],
+      body: [
+        {
+          code: 'BC00001',
+          name: 'PERBAIKAN BOCOR OLI',
+          group: 'CS',
+          sub_group: '',
+          sell_price: 700000,
+          tax: 0,
+          duration: 1,
+          duration_unit: 'Hari',
+        },
+        {
+          code: 'GR00003',
+          name: 'GANTI OLI MESIN+FILTER',
+          group: 'OR+',
+          sub_group: 'SERVICE BERKALA',
+          sell_price: 0,
+          tax: 0,
+          duration: 30,
+          duration_unit: 'Menit',
+        },
+      ],
+      worksheetFn: (ws) => {
+        const priceColumn = ws.getColumn(5);
+        priceColumn.numFmt = '#,##0';
+        priceColumn.alignment = { horizontal: 'right' };
+      },
+      res,
+    });
+  }
+
   @Post('/import')
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(xlsx)$/)) {
+        if (!file.originalname.match(/\.(xlsx|xls)$/i)) {
           return callback(
-            new BadRequestException('Hanya file .xlsx yang diperbolehkan!'),
+            new BadRequestException(
+              'Hanya file .xlsx atau .xls yang diperbolehkan!',
+            ),
             false,
           );
         }
@@ -110,10 +163,10 @@ export class ServicesController {
     }),
   )
   import(@UploadedFile() file: Express.Multer.File, @Auth() auth: IAuth) {
-    this.excelJs.uploadStreamFile({
-      lineStart: 2,
+    Xlsx.uploadExcel({
       fileBuffer: file.buffer,
       worksheetName: 'Laporan',
+      cellNotNull: 'A',
       parseRow: (row) => this.servicesService.createFromImport(row, auth),
     });
     return 'Jasa Berhasil di proses, mohon tunggu beberapa saat';

@@ -5,8 +5,6 @@ import { IQuery } from 'utils/interfaces/query';
 import { CreateCategoryDto } from './dto/category.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { CreateServiceDto } from './dto/service.dto';
-import { Row } from 'exceljs';
-import { getRow } from 'utils/helpers/global';
 import { fn } from 'objection';
 
 @Injectable()
@@ -68,33 +66,70 @@ export class ServicesService {
     return category;
   }
 
-  async createFromImport(row: Row, auth: IAuth) {
+  private importCellString(row: Record<string, unknown>, key: string): string {
+    const value = row[key];
+    if (value == null || value === '') return '';
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value).trim();
+    }
+    return '';
+  }
+
+  private parseImportNumber(value?: string | number | null): number {
+    if (value == null || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    // Format ID: 100.000 / 100,5 → hapus pemisah ribuan, koma jadi desimal
+    const normalized = String(value)
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private parseDurationType(value?: string): string {
+    const unit = (value || '').toLowerCase().trim();
+    if (unit.includes('menit')) return 'minutes';
+    if (unit.includes('hari')) return 'days';
+    if (unit.includes('jam')) return 'hours';
+    return 'hours';
+  }
+
+  async createFromImport(row: Record<string, unknown>, auth: IAuth) {
+    // Format: A KODE, B NAMA, C GRUP, D SUB GRUP, E HARGA JUAL,
+    // F PAJAK %, G WAKTU, H KETERANGAN (Menit/Jam/Hari)
+    const code = this.importCellString(row, 'A');
+    const name = this.importCellString(row, 'B');
+    if (!code || !name) return;
+
+    const group = this.importCellString(row, 'C');
+    const subGroup = this.importCellString(row, 'D');
+    const categoryName = subGroup || group;
+    if (!categoryName) return;
+
     const category = await ServiceCategoriesModel.findOrCreate(
-      getRow(row, 'D') || getRow(row, 'C'),
-      getRow(row, 'C'),
+      categoryName,
+      subGroup ? group : undefined,
       auth.company_id,
     );
+
     const payload = {
-      code: getRow(row, 'A'),
-      name: getRow(row, 'B'),
-      price: getRow(row, 'E'),
-      estimated_duration: getRow(row, 'G'),
-      estimated_type: 'hours',
+      code,
+      name,
+      price: this.parseImportNumber(row.E as string | number | null),
+      ppn: this.parseImportNumber(row.F as string | number | null),
+      estimated_duration: this.parseImportNumber(
+        row.G as string | number | null,
+      ),
+      estimated_type: this.parseDurationType(this.importCellString(row, 'H')),
       category_id: category?.id,
       updated_by: auth.id,
       company_id: auth.company_id,
     };
 
-    const es = getRow(row, 'G').toLowerCase();
-    if (es) {
-      if (es === 'menit') {
-        payload.estimated_type = 'minutes';
-      } else if (es === 'hari') {
-        payload.estimated_type = 'days';
-      }
-    }
-
-    const service = await ServicesModel.query().findOne('code', payload.code);
+    const service = await ServicesModel.query()
+      .where({ code: payload.code, company_id: auth.company_id })
+      .first();
 
     if (service) {
       await service.$query().patch(payload as any);
