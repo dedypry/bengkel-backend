@@ -13,6 +13,7 @@ export class ServicesService {
     return ServicesModel.query()
       .withGraphFetched('[category]')
       .orderBy('created_at', 'desc')
+      .where('company_id', auth.company_id)
       .where((build) => {
         if (query.q) {
           build
@@ -20,7 +21,14 @@ export class ServicesService {
             .orWhereILike('code', `%${query.q}%`);
         }
       })
-      .where('company_id', auth.company_id);
+      .modify((build) => {
+        if ((query as any).category_id) {
+          build.where('category_id', (query as any).category_id);
+        }
+        if ((query as any).difficulty) {
+          build.where('difficulty', (query as any).difficulty);
+        }
+      });
   }
 
   async list(query: IQuery, auth: IAuth) {
