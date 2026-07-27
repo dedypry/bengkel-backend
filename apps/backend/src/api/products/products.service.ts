@@ -260,12 +260,14 @@ export class ProductsService {
     const key = randomString(4);
 
     const price = this.importCellNumber(row, 'F');
+    // Kolom mengikuti template/export:
+    // A kode, B nama, C group, D sub group, E satuan, F harga, G rak, H stok, I min stok
     const payload: any = {
       code,
       company_id: auth.company_id,
       name,
       unit: uomValue || 'PCS',
-      location: this.importCellString(row, 'H') || '',
+      location: this.importCellString(row, 'G') || '',
       updated_by: auth.id,
       slug: slugify(name + '-' + key, {
         lower: true,
@@ -276,13 +278,9 @@ export class ProductsService {
       category_id,
       purchase_price: price,
       sell_price: price,
-      stock: row['H'] || 0,
-      min_stock: row['I'] || 0,
+      stock: this.importCellNumber(row, 'H') ?? 0,
+      min_stock: this.importCellNumber(row, 'I') ?? 0,
     };
-
-    if (payload.stock) {
-      console.log('PAYLOAD', payload);
-    }
 
     const product = await ProductsModel.query()
       .where({ code, company_id: auth.company_id })

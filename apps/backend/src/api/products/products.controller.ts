@@ -99,6 +99,43 @@ export class ProductsController {
     });
   }
 
+  @Get('import/template')
+  importTemplate(@Res() res: Response) {
+    return this.excelJs.download({
+      name: 'Laporan',
+      headers: [
+        { header: 'KODE', key: 'code', width: 20 },
+        { header: 'NAMA', key: 'name', width: 40 },
+        { header: 'GROUP', key: 'group', width: 16 },
+        { header: 'SUB GROUP', key: 'sub_group', width: 16 },
+        { header: 'SATUAN', key: 'uom', width: 12 },
+        { header: 'HARGA JUAL', key: 'sell_price', width: 18 },
+        { header: 'RAK', key: 'location', width: 12 },
+        { header: 'STOK', key: 'stock', width: 12 },
+        { header: 'MIN STOK', key: 'min_stock', width: 12 },
+      ],
+      body: [
+        {
+          code: 'BRG-001',
+          name: 'Contoh Oli Mesin 1L',
+          group: 'Sparepart',
+          sub_group: 'Oli',
+          uom: 'PCS',
+          sell_price: 75000,
+          location: 'A1',
+          stock: 10,
+          min_stock: 2,
+        },
+      ],
+      worksheetFn: (ws) => {
+        const priceColumn = ws.getColumn(6);
+        priceColumn.numFmt = '_-"Rp"* #,##0_-';
+        priceColumn.alignment = { horizontal: 'right' };
+      },
+      res,
+    });
+  }
+
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.productsService.detail(id, auth);
