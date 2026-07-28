@@ -61,9 +61,18 @@ export class WorkOrderService {
       })
       .where((builder) => {
         if (query.status && query.status != 'all' && !query.isHistory) {
-          builder
-            .where('progress', query.status)
-            .orWhere('wo.status', query.status);
+          if (query.status === 'active') {
+            // On Progress: semua yang belum selesai / batal
+            builder.whereNotIn('progress', ['finish', 'cancel']);
+          } else if (query.status === 'finish') {
+            builder.where('progress', 'finish');
+          } else if (query.status === 'cancel') {
+            builder.where('progress', 'cancel');
+          } else {
+            builder
+              .where('progress', query.status)
+              .orWhere('wo.status', query.status);
+          }
         }
 
         if (query.isHistory == 1) {
