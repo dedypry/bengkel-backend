@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { CompaniesModel } from 'models/companies.model';
 import { QueueCategoriesModel } from 'models/queue-categories.model';
 import { QueuesModel } from 'models/queues.model';
 import dayjs from 'utils/helpers/dayjs';
@@ -47,7 +48,8 @@ export class QueueService {
         .where('company_id', auth.company_id)
         .whereNull('deleted_at');
 
-      if (!category) throw new NotFoundException('Kategori antrean tidak ditemukan');
+      if (!category)
+        throw new NotFoundException('Kategori antrean tidak ditemukan');
 
       return await category.$query().patchAndFetch(payload as any);
     }
@@ -58,17 +60,24 @@ export class QueueService {
   async generate(categoryId: number, companyId: number) {
     const result = await QueueCategoriesModel.transaction(async (trx) => {
       const today = dayjs().tz(TZ).format('YYYY-MM-DD');
-      const category = await QueueCategoriesModel.query(trx)
-        .where('id', categoryId)
-        .where('company_id', companyId)
-        .where('is_active', true)
-        .whereNull('deleted_at')
-        .forUpdate()
-        .first();
+      const [category, company] = await Promise.all([
+        QueueCategoriesModel.query(trx)
+          .where('id', categoryId)
+          .where('company_id', companyId)
+          .where('is_active', true)
+          .whereNull('deleted_at')
+          .forUpdate()
+          .first(),
+        CompaniesModel.query(trx).findById(companyId).select('name'),
+      ]);
 
-      if (!category) throw new NotFoundException('Kategori antrean tidak ditemukan');
+      if (!category)
+        throw new NotFoundException('Kategori antrean tidak ditemukan');
 
-      const lastResetToday = this.isSameQueueDate(category.last_reset_date, today);
+      const lastResetToday = this.isSameQueueDate(
+        category.last_reset_date,
+        today,
+      );
       let currentNumber = lastResetToday
         ? Number(category.current_number) || 0
         : 0;
@@ -104,7 +113,11 @@ export class QueueService {
       return {
         queue,
         category,
-        ticket_text: this.formatTicket(queueNumber, category.name),
+        ticket_text: this.formatTicket(
+          queueNumber,
+          category.name,
+          company?.name,
+        ),
       };
     });
 
@@ -207,33 +220,36 @@ export class QueueService {
 
   async display(companyId: number) {
     const today = dayjs().tz(TZ).format('YYYY-MM-DD');
-    const calling = await QueuesModel.query()
-      .withGraphFetched('category')
-      .where('company_id', companyId)
-      .where('queue_date', today)
-      .whereIn('status', [QUEUE_STATUS.CALLING, QUEUE_STATUS.PROCESSING])
-      .orderBy('called_at', 'desc')
-      .limit(8);
-
-    const waiting = await QueuesModel.query()
-      .withGraphFetched('category')
-      .where('company_id', companyId)
-      .where('queue_date', today)
-      .where('status', QUEUE_STATUS.WAITING)
-      .orderBy('created_at', 'asc')
-      .limit(10);
-
-    const [{ count: totalWaiting }]: any = await QueuesModel.query()
-      .where('company_id', companyId)
-      .where('queue_date', today)
-      .where('status', QUEUE_STATUS.WAITING)
-      .count();
+    const [company, calling, waiting, totalWaitingResult] = await Promise.all([
+      CompaniesModel.query().findById(companyId).select('id', 'name'),
+      QueuesModel.query()
+        .withGraphFetched('category')
+        .where('company_id', companyId)
+        .where('queue_date', today)
+        .whereIn('status', [QUEUE_STATUS.CALLING, QUEUE_STATUS.PROCESSING])
+        .orderBy('called_at', 'desc')
+        .limit(8),
+      QueuesModel.query()
+        .withGraphFetched('category')
+        .where('company_id', companyId)
+        .where('queue_date', today)
+        .where('status', QUEUE_STATUS.WAITING)
+        .orderBy('created_at', 'asc')
+        .limit(10),
+      QueuesModel.query()
+        .where('company_id', companyId)
+        .where('queue_date', today)
+        .where('status', QUEUE_STATUS.WAITING)
+        .count()
+        .first() as any,
+    ]);
 
     return {
       date: today,
+      company_name: company?.name || DEFAULT_SHOP_NAME,
       calling,
       waiting,
-      total_waiting: Number(totalWaiting) || 0,
+      total_waiting: Number(totalWaitingResult?.count || 0) || 0,
     };
   }
 
