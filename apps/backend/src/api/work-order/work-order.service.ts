@@ -116,11 +116,32 @@ export class WorkOrderService {
     });
 
     const stats: any = await WorkOrdersModel.query()
-      .where('company_id', auth.company_id)
+      .alias('wo')
+      .where('wo.company_id', auth.company_id)
+      .where((builder) => {
+        if (query.date_from) {
+          const start = dayjs(query.date_from).startOf('day').toISOString();
+          builder.where('wo.created_at', '>=', start);
+        }
+        if (query.date_to) {
+          const end = dayjs(query.date_to).endOf('day').toISOString();
+          builder.where('wo.created_at', '<=', end);
+        }
+        if (query.date && !query.date_from && !query.date_to) {
+          builder.whereRaw('DATE(wo.created_at) = ?', [query.date]);
+        }
+      })
       .select(
-        raw("count(*) filter (where progress = 'queue') as waiting"),
-        raw("count(*) filter (where progress = 'on_progress') as processing"),
-        raw("count(*) filter (where progress = 'finish') as completed"),
+        raw('count(*)::INTEGER as total'),
+        raw(
+          "count(*) filter (where progress = 'queue')::INTEGER as waiting",
+        ),
+        raw(
+          "count(*) filter (where progress = 'on_progress')::INTEGER as processing",
+        ),
+        raw(
+          "count(*) filter (where progress = 'finish')::INTEGER as completed",
+        ),
       )
       .first();
 
@@ -128,7 +149,7 @@ export class WorkOrderService {
       results,
       total: data.total,
       stats: {
-        total: data.total,
+        total: Number(stats?.total || 0),
         waiting: Number(stats?.waiting || 0),
         processing: Number(stats?.processing || 0),
         completed: Number(stats?.completed || 0),
