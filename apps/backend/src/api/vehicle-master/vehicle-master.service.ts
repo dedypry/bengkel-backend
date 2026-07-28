@@ -18,11 +18,12 @@ export class VehicleMasterService {
       }
     });
     if (query.page) {
-      dataQuery = dataQuery.page(query.page - 1, query.pageSize || 10);
-    }
+      const page = Math.max(Number(query.page) || 1, 1);
+      const pageSize = Math.max(Number(query.pageSize) || 10, 1);
 
-    if (query.page) {
-      return await dataQuery.orderBy('created_at', 'desc');
+      return await dataQuery
+        .orderBy('created_at', 'desc')
+        .page(page - 1, pageSize);
     }
 
     const results = await dataQuery.orderBy('merk', 'asc');
