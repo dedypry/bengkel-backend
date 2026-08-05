@@ -38,8 +38,11 @@ export class SuppliersController {
   }
 
   @Get('all')
-  listAll(@Query() query: IQuery, @Auth() auth: IAuth) {
-    return this.suppliersService.list({} as IQuery, auth);
+  listAll(@Auth() auth: IAuth) {
+    return this.suppliersService.list(
+      { noPaginate: 1 } as IQuery,
+      auth,
+    );
   }
 
   @Get('export/excel')
