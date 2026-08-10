@@ -1,0 +1,37 @@
+---
+description: Catat pengetahuan baru ke .cursor/knowledge; buat rule alwaysApply jika pola berulang
+alwaysApply: true
+---
+
+# Capture Knowledge
+
+## Sebelum task kompleks
+
+1. Baca `.cursor/knowledge/INDEX.md` (ringkas, wajib untuk fix/feature multi-file)
+2. Buka **hanya** file topik yang relevan di INDEX — jangan baca semua
+
+Cross-repo: knowledge master di `backend/.cursor/knowledge/INDEX.md`
+
+## Saat menemukan pengetahuan baru
+
+**Wajib catat** jika: bug root cause, konvensi project, gotcha env, keputusan arsitektur.
+
+1. Append ke `.cursor/knowledge/{topik}.md` — bullet singkat + path file
+2. Update baris di `INDEX.md` jika topik baru
+3. **Buat rule** jika pola harus selalu diikuti AI → `.cursor/rules/{nama}.mdc` dengan `alwaysApply: true`
+4. Jangan catat hal yang trivial atau mudah di-grep
+
+## Format entri knowledge (max 5 baris)
+
+```markdown
+## [Judul singkat] — YYYY-MM-DD
+- **Masalah/Konteks:** ...
+- **Solusi/Pola:** ...
+- **File:** `path/to/file.ts`
+```
+
+## Rule baru = otomatis diterapkan
+
+Semua rule di `.cursor/rules/*.mdc` dengan `alwaysApply: true` aktif tiap session tanpa user @ mention.
+
+Skill detail: `capture-knowledge`
