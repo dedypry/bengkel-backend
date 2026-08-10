@@ -4,8 +4,8 @@
 /build
 /public
 
-# Logs
-logs
+# Logs (root only — jangan ignore apps/backend/src/api/logs)
+/logs
 *.log
 npm-debug.log*
 pnpm-debug.log*

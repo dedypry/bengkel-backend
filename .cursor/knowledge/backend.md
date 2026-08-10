@@ -35,6 +35,12 @@
 - **Activity log:** `audit_logs` diisi `AuditLogInterceptor` global (mutasi POST/PUT/PATCH/DELETE); kolom `token` (join `personal_access_token.token`), `status` (`success`|`error`), `response_message` (jsonb). Error validasi/exception ikut direkam via `catchError` + fallback `HandleExceptionFilter`; helper `utils/helpers/audit-log.helper.ts`.
 - **File:** `apps/backend/src/api/logs/`, `utils/interceptors/audit-log.interceptor.ts`, `bengkel-admin/src/pages/logs/`
 
+## .gitignore `logs` — module tidak ter-deploy — 2026-08-10
+- **Konteks:** Server crash `Cannot find module './api/logs/logs.module'` padahal `app.module.ts` sudah import `LogsModule`.
+- **Penyebab:** `.gitignore` entry `logs` match folder `apps/backend/src/api/logs/` (sama di admin: `src/pages/logs/`).
+- **Pola:** Pakai `/logs` (root only) bukan `logs`.
+- **File:** `backend/.gitignore`, `bengkel-admin/.gitignore`
+
 ## Monorepo
 
 | Repo | Stack |
