@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -143,7 +144,7 @@ export class ProductsController {
 
   @Patch('update-stock/:id')
   updateStock(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateStockDto,
     @Auth() auth: IAuth,
   ) {

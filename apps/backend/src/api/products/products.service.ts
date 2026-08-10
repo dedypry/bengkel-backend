@@ -328,17 +328,19 @@ export class ProductsService {
     const wo: any = await WorkOrderItemsModel.query()
       .select(raw("(data->>'id')::int").as('product_id'))
       .joinRelated('work_order')
-      .where('work_order.company_id', auth.company_id);
+      .where('work_order.company_id', auth.company_id)
+      .whereRaw("(data->>'id') ~ '^[0-9]+$'");
 
     const order = await OrderItemsModel.query()
       .select('product_id')
       .joinRelated('order')
-      .where('order.company_id', auth.company_id);
+      .where('order.company_id', auth.company_id)
+      .whereNotNull('product_id');
 
     const allProductIds = [
       ...wo.map((item: { product_id: number }) => item.product_id),
       ...order.map((item) => item.product_id),
-    ];
+    ].filter((id): id is number => Number.isFinite(id) && id > 0);
 
     const counts: Record<number, number> = {};
     allProductIds.forEach((id) => {
@@ -353,19 +355,29 @@ export class ProductsService {
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
 
+    if (!sortedProducts.length) {
+      return [];
+    }
+
     const products = await ProductsModel.query()
       .withGraphFetched('[category,uom]')
+      .where('company_id', auth.company_id)
       .whereIn(
         'id',
         sortedProducts.map((item) => item.product_id),
       );
 
-    const result = sortedProducts.map((sp) => ({
-      sold: sp.total,
-      ...products.find((p) => p.id === sp.product_id),
-    }));
+    return sortedProducts
+      .map((sp) => {
+        const product = products.find((p) => p.id === sp.product_id);
+        if (!product) return null;
 
-    return result;
+        return {
+          ...product,
+          sold: sp.total,
+        };
+      })
+      .filter(Boolean);
   }
 
   async getByIds(ids: any, auth: IAuth) {
