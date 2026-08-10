@@ -15,9 +15,14 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { OrderItemsModel } from 'models/order-items.model';
 import { UploadService } from '../upload/upload.service';
 import { randomString } from 'utils/helpers/global';
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class ProductsService {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(
+    private readonly uploadService: UploadService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private categoryRowWithoutGraph(
     category: ProductCategoriesModel,
@@ -216,6 +221,12 @@ export class ProductsService {
       stock: body.stock,
       updated_by: auth.id,
     });
+
+    const updated = await ProductsModel.query().findById(id);
+
+    if (updated) {
+      await this.notificationsService.notifyCompanyLowStock(updated);
+    }
 
     return 'Stock berhasil diperbaharui';
   }
