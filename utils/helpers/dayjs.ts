@@ -10,9 +10,18 @@ dayjs.tz.setDefault('Asia/Jakarta');
 
 const TZ = 'Asia/Jakarta';
 
-export function resolveWorkOrderCreatedAt(dateInput: string): string {
-  const orderDate = dayjs.tz(dateInput, TZ).startOf('day');
+export function resolveWorkOrderCreatedAt(dateInput?: string | null): string {
   const now = dayjs().tz(TZ);
+
+  if (!dateInput) {
+    return now.toISOString();
+  }
+
+  const orderDate = dayjs.tz(dateInput, TZ).startOf('day');
+
+  if (!orderDate.isValid()) {
+    return now.toISOString();
+  }
 
   if (orderDate.isSame(now, 'day')) {
     return now.toISOString();

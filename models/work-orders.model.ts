@@ -12,6 +12,9 @@ import { VehiclesModel } from './vehicles.model';
 import { WorkOrderItemsModel } from './work-order-items.model';
 import { PaymentsModel } from './payments.model';
 import { CompaniesModel } from './companies.model';
+import { resolveWorkOrderCreatedAt } from 'utils/helpers/dayjs';
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 @Table('work_orders')
 export class WorkOrdersModel extends BaseModel {
@@ -57,9 +60,14 @@ export class WorkOrdersModel extends BaseModel {
   $beforeInsert() {
     const now = new Date().toISOString();
 
-    if (!this.created_at) {
-      this.created_at = now;
+    if (
+      !this.created_at ||
+      (typeof this.created_at === 'string' &&
+        DATE_ONLY_PATTERN.test(this.created_at))
+    ) {
+      this.created_at = resolveWorkOrderCreatedAt(this.created_at);
     }
+
     this.updated_at = now;
   }
 

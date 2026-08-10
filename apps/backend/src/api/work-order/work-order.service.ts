@@ -420,10 +420,9 @@ export class WorkOrderService {
         complaints: body.complaints,
         booking_id: body.booking_id,
         remind_next_service: !!body.remind_next_service,
-        ...(!body.id &&
-          body.created_at && {
-            created_at: resolveWorkOrderCreatedAt(body.created_at),
-          }),
+        ...(!body.id && {
+          created_at: resolveWorkOrderCreatedAt(body.created_at),
+        }),
         ...(body.mechanic_ids.length > 0 && {
           mechanics: body.mechanic_ids.map((id) => ({ id })),
         }),
