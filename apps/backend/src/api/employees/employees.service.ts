@@ -120,29 +120,21 @@ export class EmployeesService {
 
     if (!user) throw new NotFoundException();
 
-    const [reviews, ratingSummary] = await Promise.all([
-      MechanicRatingsModel.query()
-        .where('mechanic_id', id)
-        .where('company_id', auth.company_id)
-        .withGraphFetched('work_order.[vehicle,customer]')
-        .orderBy('created_at', 'desc'),
-      MechanicRatingsModel.query()
-        .where('mechanic_id', id)
-        .where('company_id', auth.company_id)
-        .select([
-          MechanicRatingsModel.raw(
-            'ROUND(AVG(rating)::numeric, 2)::float as average',
-          ),
-          MechanicRatingsModel.raw('COUNT(id)::int as total'),
-        ])
-        .first(),
-    ]);
+    const ratingSummary = await MechanicRatingsModel.query()
+      .where('mechanic_id', id)
+      .where('company_id', auth.company_id)
+      .select([
+        MechanicRatingsModel.raw(
+          'ROUND(AVG(rating)::numeric, 2)::float as average',
+        ),
+        MechanicRatingsModel.raw('COUNT(id)::int as total'),
+      ])
+      .first();
 
     const summary = ratingSummary as any;
 
     return {
       ...user,
-      reviews,
       rating_summary: {
         average: Number(summary?.average || 0),
         total: Number(summary?.total || 0),
