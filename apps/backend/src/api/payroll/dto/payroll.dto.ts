@@ -10,9 +10,7 @@ export class SalaryDto {
   @JoiSchema(Joi.number().required())
   user_id!: number;
 
-  @JoiSchema(
-    Joi.string().valid('monthly', 'weekly', 'daily').required(),
-  )
+  @JoiSchema(Joi.string().valid('monthly', 'weekly', 'daily').required())
   salary_type!: string;
 
   @JoiSchema(Joi.number().min(0).required())

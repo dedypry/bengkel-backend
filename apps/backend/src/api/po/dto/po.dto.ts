@@ -2,6 +2,19 @@ import { JoiSchema } from 'nestjs-joi';
 import * as Joi from 'joi';
 import { IQuery } from 'utils/interfaces/query';
 
+export class CreatePoItemDto {
+  id: number;
+  code: string;
+  name: string;
+  unit: string;
+  qty: number;
+  price: number;
+  disc_percentage: number;
+  disc_value: number;
+  ppn_percentage: number;
+  total: number;
+}
+
 export class CreatePoDto {
   @JoiSchema(Joi.number().optional().allow(null, ''))
   id?: number;
@@ -88,19 +101,6 @@ export class CreatePoDto {
       .required(),
   )
   items: CreatePoItemDto[];
-}
-
-export class CreatePoItemDto {
-  id: number;
-  code: string;
-  name: string;
-  unit: string;
-  qty: number;
-  price: number;
-  disc_percentage: number;
-  disc_value: number;
-  ppn_percentage: number;
-  total: number;
 }
 
 export class BulkDownloadPoInvoiceDto {

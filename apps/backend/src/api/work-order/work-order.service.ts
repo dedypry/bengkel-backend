@@ -1,4 +1,9 @@
-import { Body, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Body,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CancelDto,
   ChangeSugestionDto,
@@ -134,9 +139,7 @@ export class WorkOrderService {
       })
       .select(
         raw('count(*)::INTEGER as total'),
-        raw(
-          "count(*) filter (where progress = 'queue')::INTEGER as waiting",
-        ),
+        raw("count(*) filter (where progress = 'queue')::INTEGER as waiting"),
         raw(
           "count(*) filter (where progress = 'on_progress')::INTEGER as processing",
         ),
@@ -189,7 +192,9 @@ export class WorkOrderService {
       .whereRaw('DATE(created_at) = ?', [today])
       .whereNotIn('progress', ['finish', 'cancel'])
       .select(
-        raw("count(*) filter (where progress in ('queue', 'pick_up')) as waiting"),
+        raw(
+          "count(*) filter (where progress in ('queue', 'pick_up')) as waiting",
+        ),
         raw("count(*) filter (where progress = 'on_progress') as processing"),
         raw("count(*) filter (where progress = 'ready') as ready"),
       )
@@ -570,10 +575,7 @@ export class WorkOrderService {
     }
   }
 
-  private async broadcastCashierCall(
-    wo: WorkOrdersModel,
-    companyId: number,
-  ) {
+  private async broadcastCashierCall(wo: WorkOrdersModel, companyId: number) {
     try {
       await this.pusherService.notifyCompanyService(companyId, 'cashier.call', {
         action: 'called',

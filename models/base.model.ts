@@ -30,6 +30,7 @@ export class BaseModel extends Model {
   }
 
   async $afterUpdate(opt: any, queryContext: any) {
+    void opt;
     await this.saveHistory('UPDATE', queryContext);
   }
 
@@ -37,9 +38,9 @@ export class BaseModel extends Model {
     await this.saveHistory('DELETE', queryContext);
   }
 
-  private async saveHistory(action: string, queryContext: any) {
+  private async saveHistory(action: string, queryContext?: any) {
     const knex = (this.constructor as typeof BaseModel).knex();
-    const userId = (this as any).updated_by;
+    const userId = queryContext?.user?.id ?? (this as any).updated_by;
 
     if (!userId) {
       return;

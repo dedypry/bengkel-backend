@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { NotificationsModel } from 'models/notifications.model';
 import { IAuth } from 'utils/interfaces/IAuth';
-import { CreateNotificationDto, QueryNotificationDto } from './dto/notifications.dto';
+import {
+  CreateNotificationDto,
+  QueryNotificationDto,
+} from './dto/notifications.dto';
 import { PusherService } from './pusher.service';
 
 @Injectable()

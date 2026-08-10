@@ -9,7 +9,7 @@ import { IQuery } from 'utils/interfaces/query';
 @Injectable()
 export class WarehouseService {
   async list(query: IQuery, auth: IAuth) {
-    let qb = WarehousesModel.query()
+    const qb = WarehousesModel.query()
       .withGraphFetched('[province, city, district]')
       .where('company_id', auth.company_id)
       .where((builder) => {

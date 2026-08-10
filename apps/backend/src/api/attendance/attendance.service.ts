@@ -44,11 +44,12 @@ export class AttendanceService {
           builder.whereExists(
             UsersModel.query()
               .whereColumn('users.id', 'attendances.user_id')
-              .where((b) =>
-                b
-                  .whereILike('users.name', `%${query.q}%`)
-                  .orWhereILike('users.nik', `%${query.q}%`),
-              ),
+              .where((b) => {
+                b.whereILike('users.name', `%${query.q}%`).orWhereILike(
+                  'users.nik',
+                  `%${query.q}%`,
+                );
+              }),
           );
         }
       })
@@ -185,9 +186,9 @@ export class AttendanceService {
 
   async devices(auth: IAuth) {
     return await AttendanceDevicesModel.query()
-      .where((b) =>
-        b.where('company_id', auth.company_id).orWhereNull('company_id'),
-      )
+      .where((b) => {
+        b.where('company_id', auth.company_id).orWhereNull('company_id');
+      })
       .whereNull('deleted_at')
       .orderBy('id', 'desc');
   }
@@ -269,7 +270,9 @@ export class AttendanceService {
       .modify((b) => {
         if (companyId) b.where('company_id', companyId);
       })
-      .where((b) => b.where('mesin_id', pin).orWhere('machine_pin', pin))
+      .where((b) => {
+        b.where('mesin_id', pin).orWhere('machine_pin', pin);
+      })
       .first();
   }
 

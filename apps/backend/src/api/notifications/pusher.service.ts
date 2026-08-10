@@ -39,11 +39,7 @@ export class PusherService {
     await this.pusher.trigger(this.userChannel(userId), event, payload);
   }
 
-  async notifyCompanyQueue(
-    companyId: number,
-    event: string,
-    payload: unknown,
-  ) {
+  async notifyCompanyQueue(companyId: number, event: string, payload: unknown) {
     await this.pusher.trigger(
       this.companyQueueChannel(companyId),
       event,

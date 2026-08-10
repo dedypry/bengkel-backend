@@ -54,7 +54,11 @@ export class UpdateQueueStatusDto {
   @JoiSchema(Joi.number().required())
   id!: number;
 
-  @JoiSchema(Joi.string().valid(...Object.values(QUEUE_STATUS)).required())
+  @JoiSchema(
+    Joi.string()
+      .valid(...Object.values(QUEUE_STATUS))
+      .required(),
+  )
   status!: string;
 
   @JoiSchema(Joi.string().optional().allow('', null))

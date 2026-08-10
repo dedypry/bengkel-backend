@@ -250,11 +250,19 @@ export class PaymentsService {
       return true;
     });
 
-    void this.customerEmailService.notifyPaymentComplete(body.woId, auth.company_id);
+    void this.customerEmailService.notifyPaymentComplete(
+      body.woId,
+      auth.company_id,
+    );
     void this.customerEmailService.notifyInvoice(body.woId, auth.company_id);
-    void this.broadcastServiceUpdate(body.woId, auth.company_id, 'payment_completed', {
-      progress: 'finish',
-    });
+    void this.broadcastServiceUpdate(
+      body.woId,
+      auth.company_id,
+      'payment_completed',
+      {
+        progress: 'finish',
+      },
+    );
 
     return 'Pembayaran Berhasil';
   }

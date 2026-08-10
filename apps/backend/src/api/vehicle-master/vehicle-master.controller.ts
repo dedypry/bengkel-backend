@@ -32,10 +32,7 @@ export class VehicleMasterController {
 
   @Get('export/excel')
   @UseGuards(AuthGuard)
-  async exportExcel(
-    @Query() query: IQueryVehicles,
-    @Res() res: Response,
-  ) {
+  async exportExcel(@Query() query: IQueryVehicles, @Res() res: Response) {
     const rows = await this.vehicleMasterService.exportList(query);
 
     return this.excelJs.download({

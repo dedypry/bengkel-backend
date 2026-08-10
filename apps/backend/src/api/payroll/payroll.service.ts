@@ -31,11 +31,12 @@ export class PayrollService {
           builder.whereExists(
             UsersModel.query()
               .whereColumn('users.id', 'employee_salaries.user_id')
-              .where((b) =>
-                b
-                  .whereILike('users.name', `%${query.q}%`)
-                  .orWhereILike('users.nik', `%${query.q}%`),
-              ),
+              .where((b) => {
+                b.whereILike('users.name', `%${query.q}%`).orWhereILike(
+                  'users.nik',
+                  `%${query.q}%`,
+                );
+              }),
           );
         }
       })
@@ -117,7 +118,9 @@ export class PayrollService {
       .whereNull('deleted_at')
       .withGraphFetched('[items(orderByName).[user.[profile]]]')
       .modifiers({
-        orderByName: (builder) => builder.orderBy('id', 'asc'),
+        orderByName: (builder) => {
+          builder.orderBy('id', 'asc');
+        },
       });
 
     if (!payroll) throw new NotFoundException('Penggajian tidak ditemukan');
@@ -238,8 +241,7 @@ export class PayrollService {
 
     const base = dto.base_salary ?? (Number(item.base_salary) || 0);
     const allowance = dto.allowance ?? (Number(item.allowance) || 0);
-    const overtime =
-      dto.overtime_amount ?? (Number(item.overtime_amount) || 0);
+    const overtime = dto.overtime_amount ?? (Number(item.overtime_amount) || 0);
     const bonus = dto.bonus ?? (Number(item.bonus) || 0);
     const deduction = dto.deduction ?? (Number(item.deduction) || 0);
 

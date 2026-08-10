@@ -6,7 +6,7 @@ import { IAuth } from 'utils/interfaces/IAuth';
 @Injectable()
 export class VehicleMasterService {
   async list(query: IQueryVehicles) {
-    let dataQuery: any = VehicleMasterModel.query().where((builder) => {
+    const dataQuery: any = VehicleMasterModel.query().where((builder) => {
       if (query.q) {
         builder
           .whereILike('merk', `%${query.q}%`)
