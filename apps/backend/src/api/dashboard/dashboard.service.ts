@@ -35,7 +35,7 @@ export class DashboardService {
       product,
     ] = await Promise.all([
       WorkOrdersModel.query()
-        .withGraphFetched('[vehicle,customer.profile,mechanic]')
+        .withGraphFetched('[vehicle,customer.profile,mechanics]')
         .where('company_id', auth.company_id)
         .orderByRaw(`CASE WHEN status = 'closed' THEN 1 ELSE 0 END ASC`)
         .orderBy('created_at', 'desc')
@@ -119,10 +119,7 @@ export class DashboardService {
   ) {
     const stats = await WorkOrdersModel.query()
       .where('company_id', auth.company_id)
-      .whereBetween('created_at', [
-        start.toISOString(),
-        end.toISOString(),
-      ])
+      .whereBetween('created_at', [start.toISOString(), end.toISOString()])
       .select([
         WorkOrdersModel.raw('DATE(created_at) as date'),
         WorkOrdersModel.raw('SUM(grand_total) as grand_total'),
@@ -204,10 +201,7 @@ export class DashboardService {
 
     const stats = await WorkOrdersModel.query()
       .where('company_id', auth.company_id)
-      .whereBetween('created_at', [
-        start.toISOString(),
-        end.toISOString(),
-      ])
+      .whereBetween('created_at', [start.toISOString(), end.toISOString()])
       .select([
         WorkOrdersModel.raw("DATE_TRUNC('month', created_at)::date as date"),
         WorkOrdersModel.raw('SUM(grand_total) as grand_total'),
