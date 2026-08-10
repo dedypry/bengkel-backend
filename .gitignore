@@ -15,6 +15,7 @@ lerna-debug.log*
 google-credentials.json
 .wwebjs_auth
 /backups/
+.eslintcache
 
 # OS
 .DS_Store

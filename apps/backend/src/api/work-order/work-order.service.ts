@@ -27,7 +27,7 @@ import { ProductsModel } from 'models/products.model';
 import { calculateTotalEstimation, generateNo } from 'utils/helpers/global';
 import { fn, raw } from 'objection';
 import { CompaniesModel } from 'models/companies.model';
-import dayjs from 'dayjs';
+import dayjs, { resolveWorkOrderCreatedAt } from 'utils/helpers/dayjs';
 import { PromosModel } from 'models/promos.model';
 import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { WorkOrderItemsModel } from 'models/work-order-items.model';
@@ -74,6 +74,10 @@ export class WorkOrderService {
             builder.where('progress', 'finish');
           } else if (query.status === 'cancel') {
             builder.where('progress', 'cancel');
+          } else if (
+            ['pick_up', 'queue', 'on_progress', 'ready'].includes(query.status)
+          ) {
+            builder.where('progress', query.status);
           } else {
             builder
               .where('progress', query.status)
@@ -142,12 +146,19 @@ export class WorkOrderService {
       })
       .select(
         raw('count(*)::INTEGER as total'),
+        raw(
+          "count(*) filter (where progress = 'pick_up')::INTEGER as waiting_queue",
+        ),
         raw("count(*) filter (where progress = 'queue')::INTEGER as waiting"),
         raw(
           "count(*) filter (where progress = 'on_progress')::INTEGER as processing",
         ),
+        raw("count(*) filter (where progress = 'ready')::INTEGER as ready"),
         raw(
           "count(*) filter (where progress = 'finish')::INTEGER as completed",
+        ),
+        raw(
+          "count(*) filter (where progress = 'cancel')::INTEGER as cancelled",
         ),
       )
       .first();
@@ -157,9 +168,12 @@ export class WorkOrderService {
       total: data.total,
       stats: {
         total: Number(stats?.total || 0),
+        waiting_queue: Number(stats?.waiting_queue || 0),
         waiting: Number(stats?.waiting || 0),
         processing: Number(stats?.processing || 0),
+        ready: Number(stats?.ready || 0),
         completed: Number(stats?.completed || 0),
+        cancelled: Number(stats?.cancelled || 0),
       },
     };
   }
@@ -408,7 +422,7 @@ export class WorkOrderService {
         remind_next_service: !!body.remind_next_service,
         ...(!body.id &&
           body.created_at && {
-            created_at: dayjs(body.created_at).startOf('day').toISOString(),
+            created_at: resolveWorkOrderCreatedAt(body.created_at),
           }),
         ...(body.mechanic_ids.length > 0 && {
           mechanics: body.mechanic_ids.map((id) => ({ id })),
@@ -1027,7 +1041,7 @@ export class WorkOrderService {
     }
 
     await wo.$query().patch({
-      created_at: dayjs(body.created_at).startOf('day').toISOString(),
+      created_at: resolveWorkOrderCreatedAt(body.created_at),
       updated_by: auth.id,
     });
 
