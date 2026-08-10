@@ -159,13 +159,18 @@ export class DashboardService {
     }
   }
 
+  private finishedWorkOrdersQuery(auth: IAuth) {
+    return WorkOrdersModel.query()
+      .where('company_id', auth.company_id)
+      .where('progress', 'finish');
+  }
+
   private async fetchDailyRevenueStats(
     auth: IAuth,
     start: dayjs.Dayjs,
     end: dayjs.Dayjs,
   ) {
-    const stats = await WorkOrdersModel.query()
-      .where('company_id', auth.company_id)
+    const stats = await this.finishedWorkOrdersQuery(auth)
       .whereBetween('created_at', [start.toISOString(), end.toISOString()])
       .select([
         WorkOrdersModel.raw('DATE(created_at) as date'),
@@ -246,8 +251,7 @@ export class DashboardService {
     const end = dayjs().tz().endOf('day');
     const start = end.subtract(11, 'month').startOf('month');
 
-    const stats = await WorkOrdersModel.query()
-      .where('company_id', auth.company_id)
+    const stats = await this.finishedWorkOrdersQuery(auth)
       .whereBetween('created_at', [start.toISOString(), end.toISOString()])
       .select([
         WorkOrdersModel.raw("DATE_TRUNC('month', created_at)::date as date"),
@@ -310,16 +314,14 @@ export class DashboardService {
     }
 
     const [currentRange, previousRange] = await Promise.all([
-      WorkOrdersModel.query()
-        .where('company_id', auth.company_id)
+      this.finishedWorkOrdersQuery(auth)
         .whereBetween('created_at', [
           currentStart.toISOString(),
           end.toISOString(),
         ])
         .sum('grand_total as total')
         .first(),
-      WorkOrdersModel.query()
-        .where('company_id', auth.company_id)
+      this.finishedWorkOrdersQuery(auth)
         .whereBetween('created_at', [
           previousStart.toISOString(),
           previousEnd.toISOString(),
