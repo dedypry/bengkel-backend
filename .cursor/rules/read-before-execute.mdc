@@ -1,0 +1,39 @@
+---
+description: Baca konteks minimal sebelum eksekusi; hemat token dengan targeted search, bukan full-file read
+alwaysApply: true
+---
+
+# Read Before Execute
+
+Sebelum **edit file**, **jalankan command**, **migrate DB**, atau **ubah config** — kumpulkan konteks dulu. Jangan langsung eksekusi dari asumsi.
+
+## Urutan (hemat token)
+
+1. **Cari dulu** — `Grep` / `Glob` untuk lokasi simbol, import, atau pattern
+2. **Baca sepotong** — `Read` dengan `offset` + `limit` (±30–80 baris sekitar match)
+3. **Full file** — hanya jika file kecil (<200 baris), atau setelah grep tidak cukup
+4. **Eksekusi** — edit/command setelah tahu file, baris, dan pola yang dipakai proyek
+
+## Wajib baca sebelum eksekusi
+
+| Aksi | Baca minimal |
+|------|----------------|
+| Edit fungsi/komponen | Signature + body target + 1 contoh serupa di repo |
+| Backend API | Controller route → service method → DTO/model terkait |
+| Frontend form/page | Schema + handler submit + komponen field terkait |
+| Migration | 1–2 migration terbaru (pola knex) + model/kolom target |
+| Fix bug | File error + caller langsung (bukan seluruh modul) |
+
+## Hemat token
+
+- Jangan baca file yang user attach penuh jika sudah ada `@path (baris X-Y)` — fokus ke range itu
+- Batch `Grep`/`Glob` paralel; hindari baca berurutan file besar
+- Jangan ulang baca file yang sudah ada di context conversation
+- Prefer `Grep` output_mode `files_with_matches` dulu, baru `content` di file kandidat
+- Skill detail: baca `read-before-execute` skill saat task multi-file atau arsitektur tidak jelas
+
+## Skip baca penuh kecuali perlu
+
+- Generated/lock (`pnpm-lock.yaml`, `.eslintcache`)
+- Seed/migration lama tidak terkait task
+- File >500 baris — grep + partial read saja
