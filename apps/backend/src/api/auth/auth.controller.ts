@@ -19,6 +19,11 @@ import 'dotenv/config';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Get('branding')
+  branding() {
+    return this.authService.getBranding();
+  }
+
   @Post('login')
   login(@Body() body: AuthDto, @Req() req: Request) {
     return this.authService.login(body, req);

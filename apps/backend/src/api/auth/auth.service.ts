@@ -16,6 +16,7 @@ import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
 import dayjs from 'dayjs';
+import { CompaniesModel } from 'models/companies.model';
 import { UsersModel } from 'models/users.model';
 import { CustomersModel } from 'models/customers.model';
 import { formatPhoneNumber } from 'utils/helpers/format';
@@ -104,6 +105,22 @@ export class AuthService {
     return {
       access_token: token,
       user: payload,
+    };
+  }
+
+  async getBranding() {
+    const withLogo = await CompaniesModel.query()
+      .whereNotNull('logo_url')
+      .where('logo_url', '!=', '')
+      .orderBy('id', 'asc')
+      .first();
+
+    const company =
+      withLogo ?? (await CompaniesModel.query().orderBy('id', 'asc').first());
+
+    return {
+      name: company?.name ?? null,
+      logo_url: company?.logo_url ?? null,
     };
   }
 

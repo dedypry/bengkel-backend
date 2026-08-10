@@ -159,4 +159,29 @@ export class UserService {
       is_current: isCurrent,
     };
   }
+
+  async revokeCurrentSession(auth: IAuth, token: string) {
+    if (!token) {
+      return { message: 'Logout berhasil' };
+    }
+
+    const session = await PersonalAccessTokenModel.query()
+      .where('user_id', auth.id)
+      .where('token', token)
+      .first();
+
+    if (!session) {
+      return { message: 'Sesi sudah berakhir' };
+    }
+
+    const sessionId = session.id;
+
+    await session.$query().delete();
+
+    await this.pusherService.notifyUser(auth.id, 'session.revoked', {
+      revoked_session_ids: [sessionId],
+    });
+
+    return { message: 'Logout berhasil' };
+  }
 }

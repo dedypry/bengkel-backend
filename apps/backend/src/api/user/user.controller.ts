@@ -72,4 +72,13 @@ export class UserController {
     const token = authorization?.replace(/^Bearer\s+/i, '') || '';
     return this.userService.revokeSession(auth, Number(id), token);
   }
+
+  @Post('logout')
+  logout(
+    @Auth() auth: IAuth,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const token = authorization?.replace(/^Bearer\s+/i, '') || '';
+    return this.userService.revokeCurrentSession(auth, token);
+  }
 }
