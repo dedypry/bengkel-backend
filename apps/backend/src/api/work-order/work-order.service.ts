@@ -6,6 +6,7 @@ import {
   ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
+  UpdateOrderDateDto,
   UpdatePicSaDto,
   UpdateStatusWoDto,
   WoQuery,
@@ -397,6 +398,10 @@ export class WorkOrderService {
         complaints: body.complaints,
         booking_id: body.booking_id,
         remind_next_service: !!body.remind_next_service,
+        ...(!body.id &&
+          body.created_at && {
+            created_at: dayjs(body.created_at).startOf('day').toISOString(),
+          }),
         ...(body.mechanic_ids.length > 0 && {
           mechanics: body.mechanic_ids.map((id) => ({ id })),
         }),
@@ -1000,5 +1005,27 @@ export class WorkOrderService {
     });
 
     return 'PIC dan SA berhasil diubah';
+  }
+
+  async updateOrderDate(id: number, body: UpdateOrderDateDto, auth: IAuth) {
+    const wo = await WorkOrdersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!wo) throw new NotFoundException();
+
+    if (wo.progress === 'finish') {
+      throw new BadRequestException(
+        'Tanggal order tidak dapat diubah setelah finish',
+      );
+    }
+
+    await wo.$query().patch({
+      created_at: dayjs(body.created_at).startOf('day').toISOString(),
+      updated_by: auth.id,
+    });
+
+    return { message: 'Tanggal order berhasil diubah' };
   }
 }

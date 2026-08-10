@@ -110,6 +110,9 @@ export class WorkOrderRequestDto {
 
   @JoiSchema(Joi.boolean().optional().default(false))
   remind_next_service?: boolean;
+
+  @JoiSchema(Joi.string().optional().allow('', null))
+  created_at?: string;
 }
 
 @JoiSchemaOptions({
@@ -204,4 +207,12 @@ export class UpdatePicSaDto {
 
   @JoiSchema(Joi.number().optional().allow(null))
   sa_id?: number;
+}
+
+@JoiSchemaOptions({
+  allowUnknown: false,
+})
+export class UpdateOrderDateDto {
+  @JoiSchema(Joi.string().required())
+  created_at!: string;
 }

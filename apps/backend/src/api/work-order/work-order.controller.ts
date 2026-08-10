@@ -17,6 +17,7 @@ import {
   ListPaymentQueryDto,
   MechanicRatting,
   UpdateMechanicWoDto,
+  UpdateOrderDateDto,
   UpdatePicSaDto,
   UpdateStatusWoDto,
   WoQuery,
@@ -83,6 +84,15 @@ export class WorkOrderController {
     @Auth() auth: IAuth,
   ) {
     return this.workOrderService.updatePicAndSa(id, body, auth);
+  }
+
+  @Patch('order-date/:id')
+  updateOrderDate(
+    @Param('id') id: number,
+    @Body() body: UpdateOrderDateDto,
+    @Auth() auth: IAuth,
+  ) {
+    return this.workOrderService.updateOrderDate(id, body, auth);
   }
 
   @Patch('service/:id')

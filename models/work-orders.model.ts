@@ -54,6 +54,15 @@ export class WorkOrdersModel extends BaseModel {
   next_service_reminder_sent_at?: string | null;
   // === FIELD END ===
 
+  $beforeInsert() {
+    const now = new Date().toISOString();
+
+    if (!this.created_at) {
+      this.created_at = now;
+    }
+    this.updated_at = now;
+  }
+
   @HasMany(() => WorkOrderItemsModel, {
     to: 'work_order_id',
   })
