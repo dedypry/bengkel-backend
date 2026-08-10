@@ -12,4 +12,6 @@ export class IQuery {
   noPaginate: number;
 
   q?: string;
+  id?: string;
+  min_rating?: number;
 }

@@ -39,6 +39,15 @@ export class EmployeesController {
     return this.employeesService.summary(auth);
   }
 
+  @Get(':id/reviews')
+  listReviews(
+    @Param('id') id: number,
+    @Auth() auth: IAuth,
+    @Query(new PaginationPipe()) query: IQuery & { rating?: string },
+  ) {
+    return this.employeesService.listReviews(id, auth, query);
+  }
+
   @Get(':id')
   detail(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.employeesService.detail(id, auth);

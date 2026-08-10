@@ -150,6 +150,63 @@ export class EmployeesService {
     };
   }
 
+  async listReviews(
+    id: number,
+    auth: IAuth,
+    query: IQuery & { rating?: string },
+  ) {
+    const user = await UsersModel.query().findOne({
+      id,
+      company_id: auth.company_id,
+    });
+
+    if (!user) throw new NotFoundException();
+
+    const pageSize = query.pageSize || 25;
+    const page = query.page ?? 0;
+    const rating = query.rating ? Number(query.rating) : undefined;
+
+    const reviewsQuery = MechanicRatingsModel.query()
+      .where('mechanic_id', id)
+      .where('company_id', auth.company_id)
+      .withGraphFetched('work_order.[vehicle,customer]')
+      .orderBy('created_at', 'desc');
+
+    const summaryQuery = MechanicRatingsModel.query()
+      .where('mechanic_id', id)
+      .where('company_id', auth.company_id);
+
+    if (rating && rating >= 1 && rating <= 5) {
+      reviewsQuery.whereRaw('FLOOR(rating)::int = ?', [rating]);
+      summaryQuery.whereRaw('FLOOR(rating)::int = ?', [rating]);
+    }
+
+    const [reviewsPage, ratingSummary] = await Promise.all([
+      reviewsQuery.page(page, pageSize),
+      summaryQuery
+        .select([
+          MechanicRatingsModel.raw(
+            'ROUND(AVG(rating)::numeric, 2)::float as average',
+          ),
+          MechanicRatingsModel.raw('COUNT(id)::int as total'),
+        ])
+        .first(),
+    ]);
+
+    const summary = ratingSummary as any;
+
+    return {
+      data: reviewsPage.results,
+      total: reviewsPage.total,
+      page: page + 1,
+      pageSize,
+      rating_summary: {
+        average: Number(summary?.average || 0),
+        total: Number(summary?.total || 0),
+      },
+    };
+  }
+
   async summary(auth: IAuth) {
     const result = (await UsersModel.query()
       .where('company_id', auth.company_id)

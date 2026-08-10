@@ -31,8 +31,18 @@ export class MechanicsService {
       .whereIn('roles.slug', roles)
       .where('users.company_id', auth.company_id)
       .where((build) => {
-        if (query.q) {
-          build.whereILike('users.name', `%${query.q}%`);
+        if (query.q?.trim()) {
+          const term = query.q.trim();
+
+          build.where((nested) => {
+            nested.whereILike('users.name', `%${term}%`);
+
+            if (/^\d+$/.test(term)) {
+              nested.orWhere('users.id', Number(term));
+            }
+
+            nested.orWhereILike('users.nik', `%${term}%`);
+          });
         }
       })
       .withGraphFetched('[roles,profile.[province, city, district]]')
@@ -50,6 +60,13 @@ export class MechanicsService {
         'mrm.mechanic_id',
         'users.id',
       )
+      .modify((builder) => {
+        const minRating = Number(query.min_rating);
+
+        if (minRating >= 1 && minRating <= 5) {
+          builder.whereRaw('COALESCE(mrm.rating, 0) >= ?', [minRating]);
+        }
+      })
       .orderByRaw('mrm.rating DESC NULLS LAST');
   }
 
