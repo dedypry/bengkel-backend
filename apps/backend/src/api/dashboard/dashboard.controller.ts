@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
@@ -12,5 +12,10 @@ export class DashboardController {
   @Get()
   detail(@Auth() auth: IAuth) {
     return this.dashboardService.detail(auth);
+  }
+
+  @Get('revenue-trend')
+  revenueTrend(@Auth() auth: IAuth, @Query('period') period?: string) {
+    return this.dashboardService.getRevenueTrendDetail(auth, period);
   }
 }
