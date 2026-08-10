@@ -72,7 +72,11 @@ export function Table(
     target.QueryBuilder = class extends QueryBuilder<any> {
       execute() {
         if (options?.softDelete) {
-          this.whereNull(`${tableName}.deleted_at`);
+          const ctx = (this as any).context?.();
+
+          if (!ctx?.includeDeleted) {
+            this.whereNull(`${tableName}.deleted_at`);
+          }
         }
         return super.execute();
       }

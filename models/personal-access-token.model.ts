@@ -1,7 +1,7 @@
 import { Table } from 'utils/decorators/objections.decorator';
 import { BaseModel } from './base.model';
 
-@Table('personal_access_token')
+@Table('personal_access_token', { softDelete: true })
 export class PersonalAccessTokenModel extends BaseModel {
   user_id: number;
   name?: string | null;

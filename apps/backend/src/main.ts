@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HandleExceptionFilter } from 'utils/exceptions/handle.exception';
 import { ResponseInterceptor } from 'utils/interceptors/response.interceptor';
+import { AuditLogInterceptor } from 'utils/interceptors/audit-log.interceptor';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -29,7 +30,10 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
   });
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new ResponseInterceptor(),
+    new AuditLogInterceptor(),
+  );
   app.useStaticAssets(join(process.cwd(), 'public'));
   await app.listen(process.env.PORT ?? 3000);
 }

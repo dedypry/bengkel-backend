@@ -40,6 +40,7 @@ import { PayrollModule } from './api/payroll/payroll.module';
 import { QueueModule } from './api/queue/queue.module';
 import { NotificationsModule } from './api/notifications/notifications.module';
 import { BackupsModule } from './api/backups/backups.module';
+import { LogsModule } from './api/logs/logs.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { BackupsModule } from './api/backups/backups.module';
     QueueModule,
     NotificationsModule,
     BackupsModule,
+    LogsModule,
   ],
   controllers: [AppController],
   providers: [],

@@ -129,7 +129,9 @@ export class UserService {
     );
     const revokedSessionIds = sessions.map((session) => session.id);
 
-    await PersonalAccessTokenModel.query().where('user_id', auth.id).delete();
+    await PersonalAccessTokenModel.query()
+      .where('user_id', auth.id)
+      .softDelete();
 
     await this.pusherService.notifyUser(auth.id, 'session.revoked', {
       all: true,
@@ -148,7 +150,7 @@ export class UserService {
 
     const isCurrent = session.token === token;
 
-    await session.$query().delete();
+    await (session.$query() as any).softDelete();
 
     await this.pusherService.notifyUser(auth.id, 'session.revoked', {
       revoked_session_ids: [sessionId],
@@ -176,7 +178,7 @@ export class UserService {
 
     const sessionId = session.id;
 
-    await session.$query().delete();
+    await (session.$query() as any).softDelete();
 
     await this.pusherService.notifyUser(auth.id, 'session.revoked', {
       revoked_session_ids: [sessionId],
