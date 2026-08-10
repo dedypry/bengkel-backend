@@ -14,4 +14,8 @@ export class IQuery {
   q?: string;
   id?: string;
   min_rating?: number;
+  date_from?: string;
+  date_to?: string;
+  customer_id?: number | string;
+  cashier_id?: number | string;
 }

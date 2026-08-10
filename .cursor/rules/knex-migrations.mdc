@@ -1,0 +1,38 @@
+---
+description: Pola migration Knex + hindari ESLint pre-commit pada down no-op
+alwaysApply: true
+---
+
+# Knex Migrations (backend)
+
+Sebelum buat/edit file di `db/migrations/` — baca `.cursor/knowledge/backend.md` (bagian Migration).
+
+## Wajib
+
+- Setiap file migration **harus** export `up` **dan** `down`. Knex gagal validate jika salah satu missing.
+
+## `down` no-op (data fix / tidak reversible)
+
+**Jangan:**
+
+- `export async function down(...)` tanpa `await` → `@typescript-eslint/require-await`
+- Parameter `_knex` / unused → `@typescript-eslint/no-unused-vars` (prefix `_` **tidak** di-ignore ESLint repo ini)
+
+**Pakai:**
+
+```typescript
+export function down(knex: Knex): Promise<void> {
+  void knex;
+  // Data fix — tidak dapat di-rollback.
+  return Promise.resolve();
+}
+```
+
+## `down` schema (alter/create/drop)
+
+- Harus revert `up` dengan `await knex.schema...` (drop column/table, rollback alter).
+- Boleh `async function down` selama ada `await`.
+
+## Pre-commit
+
+- Husky menjalankan `eslint --fix` pada file migration yang di-stage — pastikan lokal lolos sebelum commit.

@@ -7,6 +7,8 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CustomersModel } from 'models/customers.model';
 import { UsersModel } from 'models/users.model';
+import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -30,6 +32,27 @@ export class AuthGuard implements CanActivate {
           : await UsersModel.query().findById(payload.id);
 
       if (!user) throw new UnauthorizedException();
+
+      if (payload.type !== 'cs') {
+        const session = await PersonalAccessTokenModel.query()
+          .where('user_id', payload.id)
+          .where('token', token)
+          .first();
+
+        if (!session) {
+          throw new UnauthorizedException(
+            'Sesi tidak valid atau telah diakhiri',
+          );
+        }
+
+        if (dayjs(session.exp_at).isBefore(dayjs())) {
+          throw new UnauthorizedException('Token sudah kadaluwarsa');
+        }
+
+        await session.$query().patch({
+          last_used_at: dayjs().toISOString(),
+        } as any);
+      }
 
       req['user'] = {
         ...user,

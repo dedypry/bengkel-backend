@@ -23,6 +23,9 @@ import { randomInt } from 'crypto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import 'dotenv/config';
 import { MailerService } from '@nestjs-modules/mailer';
+import type { Request } from 'express';
+import { parseUserAgent } from 'utils/helpers/parse-user-agent';
+import { getClientIp } from 'utils/helpers/request-meta';
 @Injectable()
 export class AuthService {
   constructor(
@@ -30,7 +33,7 @@ export class AuthService {
     private readonly mailService: MailerService,
   ) {}
 
-  async login(body: AuthDto) {
+  async login(body: AuthDto, req?: Request) {
     const user = await UsersModel.query()
       .where('email', body.username)
       .orWhere('nik', body.username)
@@ -50,16 +53,26 @@ export class AuthService {
     };
 
     const token = await this.jwtService.signAsync(payload);
+    const userAgent = req?.headers['user-agent'] || '';
+    const parsed = parseUserAgent(userAgent);
+    const now = dayjs().toISOString();
 
-    await PersonalAccessTokenModel.query().insert({
+    const session = await PersonalAccessTokenModel.query().insertAndFetch({
       exp_at: dayjs().add(1, 'y').toISOString(),
       token,
       name: 'bearer',
       user_id: user.id,
+      device_label: parsed.device_label,
+      platform: parsed.platform,
+      browser: parsed.browser,
+      ip_address: req ? getClientIp(req) : null,
+      user_agent: userAgent || null,
+      last_used_at: now,
     });
 
     return {
       access_token: token,
+      session_id: session.id,
       user: payload,
     };
   }

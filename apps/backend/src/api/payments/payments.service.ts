@@ -35,6 +35,24 @@ export class PaymentsService {
             .orWhereILike('cashier.name', `%${query.q}%`);
         }
       })
+      .where((builder) => {
+        if (query.date_from) {
+          builder.whereRaw('DATE(py.payment_date) >= ?', [query.date_from]);
+        }
+        if (query.date_to) {
+          builder.whereRaw('DATE(py.payment_date) <= ?', [query.date_to]);
+        }
+      })
+      .where((builder) => {
+        if (query.customer_id) {
+          builder.where('work_order.customer_id', query.customer_id);
+        }
+      })
+      .where((builder) => {
+        if (query.cashier_id) {
+          builder.where('py.updated_by', query.cashier_id);
+        }
+      })
       .orderBy('id', 'DESC')
       .page(query.page, query.pageSize);
   }

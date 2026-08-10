@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import type { Response } from 'express';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { Workbook } from 'exceljs';
 import { ExcelJsService } from 'utils/services/exceljs.service';
 import GeneratePDF from 'utils/services/pdf-make.service';
 import {
@@ -45,14 +46,14 @@ export class ReportsService {
       ? dayjs(query.endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
       : dayjs().endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
-    const startOfLastMonth = dayjs(startDate)
-      .subtract(1, 'month')
-      .startOf('day')
-      .format('YYYY-MM-DD HH:mm:ss');
-    const endOfLastMonth = dayjs(endDate)
-      .subtract(1, 'month')
-      .endOf('day')
-      .format('YYYY-MM-DD HH:mm:ss');
+    const trendStart = dayjs(startDate).format('YYYY-MM-DD');
+    const trendEnd = dayjs(endDate).format('YYYY-MM-DD');
+    const periodDays = dayjs(trendEnd).diff(dayjs(trendStart), 'day') + 1;
+    const prevEnd = dayjs(trendStart).subtract(1, 'day').endOf('day');
+    const prevStart = prevEnd.subtract(periodDays - 1, 'day').startOf('day');
+
+    const startOfLastPeriod = prevStart.format('YYYY-MM-DD HH:mm:ss');
+    const endOfLastPeriod = prevEnd.format('YYYY-MM-DD HH:mm:ss');
 
     const [totalRevenue, lastRevenue, avg, wo, grafik, reportMonthly, trend] =
       await Promise.all([
@@ -63,7 +64,7 @@ export class ReportsService {
           .first(),
         PaymentsModel.query()
           .where('company_id', auth.company_id)
-          .whereBetween('payment_date', [startOfLastMonth, endOfLastMonth])
+          .whereBetween('payment_date', [startOfLastPeriod, endOfLastPeriod])
           .sum('amount')
           .first(),
         PaymentsModel.query()
@@ -78,7 +79,7 @@ export class ReportsService {
           .first(),
         this.getGrafik(startDate, endDate, auth),
         this.getMonthlyReport(auth),
-        this.getDailyTrend(auth),
+        this.getDailyTrend(auth, trendStart, trendEnd),
       ]);
 
     const currentTotal = Number((totalRevenue as any)?.sum || 0);
@@ -202,15 +203,12 @@ export class ReportsService {
     };
   }
 
-  async getDailyTrend(auth: IAuth) {
-    const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
-    const today = dayjs().format('YYYY-MM-DD');
-
+  async getDailyTrend(auth: IAuth, startDate: string, endDate: string) {
     const rows = await PaymentsModel.query()
       .select(PaymentsModel.raw('DATE(payment_date) as date'))
       .sum('amount as total')
       .where('company_id', auth.company_id)
-      .whereRaw('DATE(payment_date) BETWEEN ? AND ?', [startOfMonth, today])
+      .whereRaw('DATE(payment_date) BETWEEN ? AND ?', [startDate, endDate])
       .groupByRaw('DATE(payment_date)')
       .orderBy('date', 'asc')
       .castTo<DailyTrendRow[]>();
@@ -223,8 +221,8 @@ export class ReportsService {
     }
 
     const trend = [];
-    let cursor = dayjs(startOfMonth);
-    const end = dayjs(today);
+    let cursor = dayjs(startDate);
+    const end = dayjs(endDate);
 
     while (cursor.isBefore(end) || cursor.isSame(end, 'day')) {
       const key = cursor.format('YYYY-MM-DD');
@@ -394,6 +392,118 @@ export class ReportsService {
       items,
       chart,
     };
+  }
+
+  async exportRevenueExcel(query: QueryRevenueDto, auth: IAuth, res: Response) {
+    const startDate = query.startDate
+      ? dayjs(query.startDate).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+      : dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+
+    const endDate = query.endDate
+      ? dayjs(query.endDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      : dayjs().endOf('day').format('YYYY-MM-DD HH:mm:ss');
+
+    const trendStart = dayjs(startDate).format('YYYY-MM-DD');
+    const trendEnd = dayjs(endDate).format('YYYY-MM-DD');
+
+    const [report, payments] = await Promise.all([
+      this.revenue(query, auth),
+      PaymentsModel.query()
+        .alias('py')
+        .withGraphFetched('[work_order.customer, cashier.profile]')
+        .where('py.company_id', auth.company_id)
+        .whereBetween('payment_date', [startDate, endDate])
+        .orderBy('id', 'DESC'),
+    ]);
+
+    const periodLabel = `${dayjs(trendStart).locale('id').format('DD MMM YYYY')} - ${dayjs(trendEnd).locale('id').format('DD MMM YYYY')}`;
+    const monthly = report.reportMonthly;
+
+    const workbook = new Workbook();
+
+    const summarySheet = workbook.addWorksheet('Ringkasan');
+    summarySheet.columns = [
+      { header: 'Metrik', key: 'metric', width: 32 },
+      { header: 'Nilai', key: 'value', width: 28 },
+    ];
+    summarySheet.addRows([
+      { metric: 'Periode', value: periodLabel },
+      { metric: 'Total Pendapatan', value: report.revenue },
+      { metric: 'Pertumbuhan', value: report.growth },
+      { metric: 'Rata-rata Transaksi', value: report.avg },
+      { metric: 'Unit Servis', value: report.wo },
+      { metric: 'Target Bulan Ini', value: monthly.target_amount },
+      { metric: 'Pendapatan Bulan Ini', value: monthly.current_revenue },
+      {
+        metric: 'Progress Target (%)',
+        value: Number(monthly.progress_value.toFixed(1)),
+      },
+      { metric: 'Sisa Target', value: monthly.remaining_amount },
+    ]);
+
+    const trendSheet = workbook.addWorksheet('Trend Harian');
+    trendSheet.columns = [
+      { header: 'Tanggal', key: 'date', width: 16 },
+      { header: 'Total (Rp)', key: 'total', width: 18 },
+    ];
+    trendSheet.addRows(
+      report.trend.map((point) => ({
+        date: dayjs(point.date).locale('id').format('DD MMM YYYY'),
+        total: point.total,
+      })),
+    );
+
+    const sourceSheet = workbook.addWorksheet('Sumber Pendapatan');
+    sourceSheet.columns = [
+      { header: 'Sumber', key: 'label', width: 24 },
+      { header: 'Nilai (Rp)', key: 'value', width: 18 },
+      { header: 'Persentase (%)', key: 'percentage', width: 16 },
+    ];
+    sourceSheet.addRows(
+      report.grafik.map((item) => ({
+        label: item.label,
+        value: item.value,
+        percentage: item.percentage,
+      })),
+    );
+
+    const txSheet = workbook.addWorksheet('Transaksi');
+    txSheet.columns = [
+      { header: 'No. Pembayaran', key: 'payment_no', width: 20 },
+      { header: 'Referensi', key: 'reference_no', width: 20 },
+      { header: 'Tanggal', key: 'payment_date', width: 18 },
+      { header: 'Pelanggan', key: 'customer', width: 28 },
+      { header: 'Kasir', key: 'cashier', width: 24 },
+      { header: 'Metode', key: 'method', width: 14 },
+      { header: 'Jumlah (Rp)', key: 'amount', width: 16 },
+    ];
+    txSheet.addRows(
+      payments.map((payment: any) => ({
+        payment_no: payment.payment_no,
+        reference_no: payment.reference_no || '-',
+        payment_date: dayjs(payment.payment_date || payment.created_at)
+          .locale('id')
+          .format('DD MMM YYYY HH:mm'),
+        customer: payment.work_order?.customer?.name || '-',
+        cashier: payment.cashier?.name || '-',
+        method: payment.method || '-',
+        amount: Number(payment.amount || 0),
+      })),
+    );
+
+    const fileName = 'laporan-pendapatan';
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=' + `${fileName}.xlsx`,
+    );
+
+    return workbook.xlsx.write(res).then(() => {
+      res.end();
+    });
   }
 
   async exportFrequentCustomersExcel(

@@ -20,3 +20,9 @@ export async function up(knex: Knex): Promise<void> {
         (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date
   `);
 }
+
+export function down(knex: Knex): Promise<void> {
+  void knex;
+  // Data fix — tidak dapat di-rollback tanpa backup nilai created_at asli.
+  return Promise.resolve();
+}

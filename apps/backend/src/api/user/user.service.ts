@@ -15,9 +15,13 @@ import { CompaniesModel } from 'models/companies.model';
 import { comparePassword, hashPassword } from 'utils/helpers/bcrypt';
 import { ProfilesModel } from 'models/profiles.model';
 import { CustomersModel } from 'models/customers.model';
+import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
+import dayjs from 'dayjs';
+import { PusherService } from '../notifications/pusher.service';
 
 @Injectable()
 export class UserService {
+  constructor(private readonly pusherService: PusherService) {}
   async setCompany(body: UserCompanyDto, auth: IAuth) {
     await UsersModel.query().findById(auth.id).update({
       company_id: body.company_id,
@@ -97,5 +101,62 @@ export class UserService {
       .where('model', 'customers');
 
     return 'Update berhasil';
+  }
+
+  async listSessions(auth: IAuth, token: string) {
+    const sessions = await PersonalAccessTokenModel.query()
+      .where('user_id', auth.id)
+      .where('exp_at', '>', dayjs().toISOString())
+      .orderBy('last_used_at', 'desc')
+      .orderBy('updated_at', 'desc');
+
+    return sessions.map((session) => ({
+      id: session.id,
+      device_label: session.device_label || 'Perangkat tidak diketahui',
+      platform: session.platform || 'desktop',
+      browser: session.browser || '-',
+      ip_address: session.ip_address || '-',
+      last_used_at: session.last_used_at || session.updated_at,
+      created_at: session.created_at,
+      is_current: session.token === token,
+    }));
+  }
+
+  async revokeAllSessions(auth: IAuth) {
+    const sessions = await PersonalAccessTokenModel.query().where(
+      'user_id',
+      auth.id,
+    );
+    const revokedSessionIds = sessions.map((session) => session.id);
+
+    await PersonalAccessTokenModel.query().where('user_id', auth.id).delete();
+
+    await this.pusherService.notifyUser(auth.id, 'session.revoked', {
+      all: true,
+      revoked_session_ids: revokedSessionIds,
+    });
+
+    return { message: 'Semua perangkat berhasil logout' };
+  }
+
+  async revokeSession(auth: IAuth, sessionId: number, token: string) {
+    const session = await PersonalAccessTokenModel.query()
+      .where('user_id', auth.id)
+      .findById(sessionId);
+
+    if (!session) throw new NotFoundException('Sesi tidak ditemukan');
+
+    const isCurrent = session.token === token;
+
+    await session.$query().delete();
+
+    await this.pusherService.notifyUser(auth.id, 'session.revoked', {
+      revoked_session_ids: [sessionId],
+    });
+
+    return {
+      message: 'Perangkat berhasil logout',
+      is_current: isCurrent,
+    };
   }
 }

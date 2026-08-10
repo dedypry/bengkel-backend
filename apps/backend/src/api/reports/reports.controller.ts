@@ -36,6 +36,15 @@ export class ReportsController {
     return this.reportsService.updateMonthlyTarget(body, auth);
   }
 
+  @Get('revenue/export/excel')
+  exportRevenueExcel(
+    @Query() query: QueryRevenueDto,
+    @Auth() auth: IAuth,
+    @Res() res: Response,
+  ) {
+    return this.reportsService.exportRevenueExcel(query, auth, res);
+  }
+
   @Get('frequent-customers')
   frequentCustomers(
     @Query() query: QueryFrequentCustomersDto,

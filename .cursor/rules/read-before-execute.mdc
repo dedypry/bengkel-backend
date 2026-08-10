@@ -21,7 +21,7 @@ Sebelum **edit file**, **jalankan command**, **migrate DB**, atau **ubah config*
 | Edit fungsi/komponen | Signature + body target + 1 contoh serupa di repo |
 | Backend API | Controller route → service method → DTO/model terkait |
 | Frontend form/page | Schema + handler submit + komponen field terkait |
-| Migration | 1–2 migration terbaru (pola knex) + model/kolom target |
+| Migration | 1–2 migration terbaru (pola knex) + model/kolom target; **`down` no-op → rule `knex-migrations.mdc`**
 | Fix bug | File error + caller langsung (bukan seluruh modul) |
 
 ## Hemat token

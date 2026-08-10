@@ -1,4 +1,14 @@
-import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import {
   ChangePasswordDto,
@@ -37,5 +47,29 @@ export class UserController {
   @Patch('photo-profile')
   changePhotoProfile(@Body() body: UpdatePhotoProfileDto, @Auth() auth: IAuth) {
     return this.userService.updateCustomerPhotoProfile(body, auth);
+  }
+
+  @Get('sessions')
+  listSessions(
+    @Auth() auth: IAuth,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const token = authorization?.replace(/^Bearer\s+/i, '') || '';
+    return this.userService.listSessions(auth, token);
+  }
+
+  @Post('sessions/revoke-all')
+  revokeAllSessions(@Auth() auth: IAuth) {
+    return this.userService.revokeAllSessions(auth);
+  }
+
+  @Delete('sessions/:id')
+  revokeSession(
+    @Param('id') id: string,
+    @Auth() auth: IAuth,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const token = authorization?.replace(/^Bearer\s+/i, '') || '';
+    return this.userService.revokeSession(auth, Number(id), token);
   }
 }
