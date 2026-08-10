@@ -134,6 +134,7 @@ export class WoQuery extends IQuery {
   declare date_from?: string;
   isHistory?: number;
   noAuth?: number;
+  mechanic_ids?: number[] | string;
 }
 
 @JoiSchemaOptions({

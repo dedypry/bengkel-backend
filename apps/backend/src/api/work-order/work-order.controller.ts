@@ -44,6 +44,11 @@ export class WorkOrderController {
     return this.workOrderService.listPayment(query, auth);
   }
 
+  @Get('mechanic-options')
+  getMechanicOptions(@Auth() auth: IAuth) {
+    return this.workOrderService.getMechanicFilterOptions(auth);
+  }
+
   @Post('call-cashier/:id')
   callCashier(@Param('id') id: number, @Auth() auth: IAuth) {
     return this.workOrderService.callCashier(id, auth);

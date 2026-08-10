@@ -34,6 +34,7 @@ import { WorkOrderItemsModel } from 'models/work-order-items.model';
 import { BookingsModel } from 'models/bookings.model';
 import { SettingsModel } from 'models/settings.model';
 import { VehicleMasterModel } from 'models/vehicle-master.model';
+import { UsersModel } from 'models/users.model';
 import { CustomerEmailService } from 'utils/services/customer-email.service';
 import { PusherService } from '../notifications/pusher.service';
 
@@ -52,7 +53,46 @@ export class WorkOrderService {
     private readonly pusherService: PusherService,
   ) {}
 
+  private normalizeMechanicIds(value?: number[] | string | number) {
+    if (value == null || value === '') {
+      return [] as number[];
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((id) => Number(id)).filter((id) => id > 0);
+    }
+
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((id) => Number(id.trim()))
+        .filter((id) => id > 0);
+    }
+
+    const id = Number(value);
+
+    return id > 0 ? [id] : [];
+  }
+
+  async getMechanicFilterOptions(auth: IAuth) {
+    const rows = await UsersModel.query()
+      .distinct('users.id', 'users.name')
+      .select('users.id', 'users.name')
+      .join('mechanic_work as mw', 'mw.mechanic_id', 'users.id')
+      .join('work_orders as wo', 'wo.id', 'mw.work_order_id')
+      .where('wo.company_id', auth.company_id)
+      .whereNotNull('users.name')
+      .orderBy('users.name', 'asc');
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+    }));
+  }
+
   async list(query: WoQuery, auth: IAuth) {
+    const mechanicIds = this.normalizeMechanicIds(query.mechanic_ids);
+
     const data = await WorkOrdersModel.query()
       .alias('wo')
       .joinRelated('[vehicle, customer]')
@@ -95,6 +135,15 @@ export class WorkOrderService {
 
         if (query.customerId) {
           builder.where('customer_id', query.customerId);
+        }
+
+        if (mechanicIds.length > 0) {
+          builder.whereExists(
+            WorkOrdersModel.relatedQuery('mechanics').whereIn(
+              'mechanics.id',
+              mechanicIds,
+            ),
+          );
         }
       })
       .where((builder) => {
