@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
 import { AppController } from './app.controller';
 import { AuthModule } from './api/auth/auth.module';
 import { JoiPipeModule } from 'nestjs-joi';
@@ -38,9 +39,16 @@ import { AttendanceModule } from './api/attendance/attendance.module';
 import { PayrollModule } from './api/payroll/payroll.module';
 import { QueueModule } from './api/queue/queue.module';
 import { NotificationsModule } from './api/notifications/notifications.module';
+import { BackupsModule } from './api/backups/backups.module';
 
 @Module({
   imports: [
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: Number(process.env.REDIS_PORT || 6379),
+      },
+    }),
     JwtModule.register({
       global: true,
       secret: process.env.SECRET_KEY,
@@ -86,6 +94,7 @@ import { NotificationsModule } from './api/notifications/notifications.module';
     PayrollModule,
     QueueModule,
     NotificationsModule,
+    BackupsModule,
   ],
   controllers: [AppController],
   providers: [],

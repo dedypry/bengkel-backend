@@ -95,13 +95,14 @@ export class WorkOrderService {
       })
       .where((builder) => {
         if (query.date_from) {
-          const start = dayjs(query.date_from).startOf('day').toISOString();
-          builder.where('wo.created_at', '>=', start);
+          builder.whereRaw('DATE(wo.created_at) >= ?', [
+            dayjs(query.date_from).format('YYYY-MM-DD'),
+          ]);
         }
         if (query.date_to) {
-          const end = dayjs(query.date_to).endOf('day').toISOString();
-
-          builder.where('wo.created_at', '<=', end);
+          builder.whereRaw('DATE(wo.created_at) <= ?', [
+            dayjs(query.date_to).format('YYYY-MM-DD'),
+          ]);
         }
 
         if (query.date && !query.date_from && !query.date_to) {
@@ -126,12 +127,14 @@ export class WorkOrderService {
       .where('wo.company_id', auth.company_id)
       .where((builder) => {
         if (query.date_from) {
-          const start = dayjs(query.date_from).startOf('day').toISOString();
-          builder.where('wo.created_at', '>=', start);
+          builder.whereRaw('DATE(wo.created_at) >= ?', [
+            dayjs(query.date_from).format('YYYY-MM-DD'),
+          ]);
         }
         if (query.date_to) {
-          const end = dayjs(query.date_to).endOf('day').toISOString();
-          builder.where('wo.created_at', '<=', end);
+          builder.whereRaw('DATE(wo.created_at) <= ?', [
+            dayjs(query.date_to).format('YYYY-MM-DD'),
+          ]);
         }
         if (query.date && !query.date_from && !query.date_to) {
           builder.whereRaw('DATE(wo.created_at) = ?', [query.date]);
