@@ -3,6 +3,8 @@ import { ProductsModel } from 'models/products.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
 import { ref } from 'objection';
 import { IAuth } from 'utils/interfaces/IAuth';
+import dayjs from 'utils/helpers/dayjs';
+import 'dayjs/locale/id';
 
 @Injectable()
 export class DashboardService {
@@ -74,16 +76,15 @@ export class DashboardService {
   }
 
   async getRevenueTrend(auth: IAuth) {
-    const today = new Date();
-    // Tarik data dari 6 hari yang lalu sampai hari ini (Total 7 hari)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const end = dayjs().tz().endOf('day');
+    const start = end.subtract(6, 'day').startOf('day');
 
     const stats = await WorkOrdersModel.query()
       .where('company_id', auth.company_id)
-      .where('created_at', '>=', sevenDaysAgo.toISOString())
-      // Gunakan Raw query untuk memformat tanggal berdasarkan Database (Contoh untuk PostgreSQL/MySQL)
+      .whereBetween('created_at', [
+        start.toISOString(),
+        end.toISOString(),
+      ])
       .select([
         WorkOrdersModel.raw('DATE(created_at) as date'),
         WorkOrdersModel.raw('SUM(grand_total) as grand_total'),
@@ -91,25 +92,20 @@ export class DashboardService {
       .groupBy('date')
       .orderBy('date', 'asc');
 
-    // MAPPING DATA: Pastikan hari yang kosong tetap muncul dengan nilai 0
-    const trend = [] as any[];
-    for (let i = 0; i < 8; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(d.getDate() + i);
-      const dateString = d.toISOString().split('T')[0];
+    const trend = [] as Array<{ date: string; day: string; total: number }>;
 
-      // Cari apakah ada data di tanggal tersebut
+    for (let i = 0; i < 7; i++) {
+      const current = start.add(i, 'day');
+      const dateString = current.format('YYYY-MM-DD');
+
       const found = stats.find((s: any) => {
-        // Handle format date dari DB (biasanya string atau Date object)
-        const dbDate =
-          s.date instanceof Date ? s.date.toISOString().split('T')[0] : s.date;
+        const dbDate = dayjs(s.date).format('YYYY-MM-DD');
         return dbDate === dateString;
       });
 
       trend.push({
         date: dateString,
-        // Format label hari (Senin, Selasa, dst)
-        day: d.toLocaleDateString('id-ID', { weekday: 'long' }),
+        day: current.locale('id').format('dddd'),
         total: Number(found?.grand_total || 0),
       });
     }
