@@ -12,7 +12,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
-import { CreateCustomerDto, CustomerQueryDto } from './dto/customer.dto';
+import {
+  CreateCustomerDto,
+  CustomerQueryDto,
+  CustomerServiceHistoryQueryDto,
+} from './dto/customer.dto';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
@@ -143,6 +147,17 @@ export class CustomersController {
       body: [],
       res,
     });
+  }
+
+  @Get(':id/service-history/export/pdf')
+  @UseGuards(AuthGuard)
+  exportServiceHistoryPdf(
+    @Param('id') id: number,
+    @Query() query: CustomerServiceHistoryQueryDto,
+    @Auth() auth: IAuth,
+    @Res() res: Response,
+  ) {
+    return this.customersService.exportServiceHistoryPdf(id, query, auth, res);
   }
 
   @Get(':id')

@@ -123,3 +123,9 @@ export class CustomerQueryDto extends IQuery {
   brand?: string;
   model?: string;
 }
+
+export class CustomerServiceHistoryQueryDto {
+  q?: string;
+  date_from?: string;
+  date_to?: string;
+}
