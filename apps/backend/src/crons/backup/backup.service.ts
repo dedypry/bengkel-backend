@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as path from 'path';
+import { Cron } from '@nestjs/schedule';
 import { google } from 'googleapis';
 import * as fs from 'fs';
+import * as path from 'path';
 import 'dotenv/config';
+import { DatabaseBackupsModel } from 'models/database-backups.model';
+import { UsersModel } from 'models/users.model';
 import { PgDumpService } from 'utils/services/pg-dump.service';
 
 @Injectable()
@@ -12,29 +15,66 @@ export class BackupService {
 
   constructor(private readonly pgDumpService: PgDumpService) {}
 
-  // @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  private async resolveCronUserId(): Promise<number | null> {
+    if (process.env.BACKUP_USER_ID) {
+      return Number(process.env.BACKUP_USER_ID);
+    }
+
+    const owner = await UsersModel.query().where('type', 'owner').first();
+
+    return owner?.id ?? null;
+  }
+
+  @Cron('0 1 * * *', { timeZone: 'Asia/Jakarta' })
   async handleCron() {
-    console.log('--- Memulai Backup Otomatis (Objection/Knex context) ---');
-    const dbName = process.env.DB_NAME;
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFolder = path.resolve(process.cwd(), 'backups');
-    const fileName = `backup-${dbName}-${timestamp}.sql`;
-    const filePath = path.join(backupFolder, fileName);
+    this.logger.log('Memulai backup database otomatis...');
+
+    const userId = await this.resolveCronUserId();
+
+    if (!userId) {
+      this.logger.error(
+        'Backup otomatis dibatalkan: owner tidak ditemukan (set BACKUP_USER_ID di .env)',
+      );
+      return;
+    }
+
+    const { backup, shouldEnqueue } =
+      await this.pgDumpService.upsertBackupRecord(userId);
+
+    if (!shouldEnqueue) {
+      this.logger.warn('Backup sedang berjalan, lewati cron otomatis.');
+      return;
+    }
+
+    const filePath = this.pgDumpService.getBackupFilePath();
 
     try {
-      await this.pgDumpService.createDump(filePath);
-      this.logger.log(`✅ Backup berhasil: ${filePath}`);
-      this.pgDumpService.pruneOldBackups(backupFolder, 1);
+      const { fileSize } = await this.pgDumpService.createDump(filePath);
+
+      await DatabaseBackupsModel.query().findById(backup.id).patch({
+        status: 'ready',
+        file_path: filePath,
+        file_size: fileSize,
+        completed_at: new Date().toISOString(),
+      });
+
+      this.logger.log(`Backup berhasil: ${filePath} (${fileSize} bytes)`);
     } catch (error) {
-      this.logger.error('❌ Gagal Backup:', error.message);
+      this.logger.error('Gagal backup:', error.message);
+
+      await DatabaseBackupsModel.query().findById(backup.id).patch({
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString(),
+      });
     }
   }
 
   // @Cron(CronExpression.EVERY_5_SECONDS)
   async uploadToGdrive() {
-    const backupFolder = path.resolve(process.cwd(), 'backups');
-
+    const backupFolder = this.pgDumpService.ensureBackupDir();
     const files = fs.readdirSync(backupFolder);
+
     if (files.length === 0) {
       this.logger.warn('Tidak ada file backup yang ditemukan untuk diunggah.');
       return;

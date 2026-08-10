@@ -11,12 +11,14 @@ import { StreamableFile } from '@nestjs/common';
 import { DatabaseBackupsModel } from 'models/database-backups.model';
 import { UsersModel } from 'models/users.model';
 import type { IAuth } from 'utils/interfaces/IAuth';
+import { PgDumpService } from 'utils/services/pg-dump.service';
 import 'dotenv/config';
 
 @Injectable()
 export class BackupsService {
   constructor(
     @InjectQueue('BACKUP-QUEUE') private readonly backupQueue: Queue,
+    private readonly pgDumpService: PgDumpService,
   ) {}
 
   private async assertBackupAccess(auth: IAuth) {
@@ -42,26 +44,12 @@ export class BackupsService {
   async createBackup(auth: IAuth) {
     await this.assertBackupAccess(auth);
 
-    const existing = await DatabaseBackupsModel.query()
-      .where('user_id', auth.id)
-      .where('status', 'processing')
-      .first();
+    const { backup, shouldEnqueue } =
+      await this.pgDumpService.upsertBackupRecord(auth.id);
 
-    if (existing) {
-      return existing;
+    if (shouldEnqueue) {
+      await this.backupQueue.add('run-backup', { backupId: backup.id });
     }
-
-    const dbName = process.env.DB_NAME || 'bengkel';
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const fileName = `backup-${dbName}-${timestamp}.sql`;
-
-    const backup = await DatabaseBackupsModel.query().insert({
-      user_id: auth.id,
-      file_name: fileName,
-      status: 'processing',
-    });
-
-    await this.backupQueue.add('run-backup', { backupId: backup.id });
 
     return backup;
   }

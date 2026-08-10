@@ -1,6 +1,5 @@
 import { Process, Processor } from '@nestjs/bull';
 import type { Job } from 'bull';
-import * as path from 'path';
 import { Logger } from '@nestjs/common';
 import { DatabaseBackupsModel } from 'models/database-backups.model';
 import { PgDumpService } from 'utils/services/pg-dump.service';
@@ -23,9 +22,7 @@ export class BackupProcessor {
       return;
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFolder = path.resolve(process.cwd(), 'backups');
-    const filePath = path.join(backupFolder, `${backupId}-${timestamp}.sql`);
+    const filePath = this.pgDumpService.getBackupFilePath();
 
     try {
       const { fileSize } = await this.pgDumpService.createDump(filePath);
@@ -33,11 +30,10 @@ export class BackupProcessor {
       await DatabaseBackupsModel.query().findById(backupId).patch({
         status: 'ready',
         file_path: filePath,
+        file_name: this.pgDumpService.getBackupFileName(),
         file_size: fileSize,
         completed_at: new Date().toISOString(),
       });
-
-      this.pgDumpService.pruneOldBackups(backupFolder, 7);
     } catch (error) {
       this.logger.error(`Backup ${backupId} gagal:`, error.message);
 
