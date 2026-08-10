@@ -129,9 +129,9 @@ export class WorkOrderUpdateServiceDto {
 export class WoQuery extends IQuery {
   status?: string;
   customerId?: number;
-  date_to?: string;
+  declare date_to?: string;
   date?: string;
-  date_from?: string;
+  declare date_from?: string;
   isHistory?: number;
   noAuth?: number;
 }

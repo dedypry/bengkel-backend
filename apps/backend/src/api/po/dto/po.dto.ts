@@ -118,8 +118,8 @@ export class PoQuery extends IQuery {
   supplier_id?: number;
 
   @JoiSchema(Joi.string().optional().allow(null, ''))
-  date_from?: string;
+  declare date_from?: string;
 
   @JoiSchema(Joi.string().optional().allow(null, ''))
-  date_to?: string;
+  declare date_to?: string;
 }

@@ -4,6 +4,7 @@ import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
 import { AuditLogsModel } from 'models/audit-logs.model';
 import { UsersModel } from 'models/users.model';
 import { IAuth } from 'utils/interfaces/IAuth';
+import { softDeleteModel } from 'utils/helpers/soft-delete-model';
 import { LogsQueryDto } from './dto/logs.dto';
 
 type DateRange = {
@@ -84,7 +85,8 @@ export class LogsService {
     const page = query.page ?? 0;
     const pageSize = query.pageSize ?? 10;
 
-    const data = await PersonalAccessTokenModel.queryWithDeleted()
+    const data = await softDeleteModel(PersonalAccessTokenModel)
+      .queryWithDeleted()
       .alias('pat')
       .select(
         'pat.id',

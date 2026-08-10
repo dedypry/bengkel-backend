@@ -17,6 +17,7 @@ import { ProfilesModel } from 'models/profiles.model';
 import { CustomersModel } from 'models/customers.model';
 import { PersonalAccessTokenModel } from 'models/personal-access-token.model';
 import dayjs from 'dayjs';
+import { softDeleteModel } from 'utils/helpers/soft-delete-model';
 import { PusherService } from '../notifications/pusher.service';
 
 @Injectable()
@@ -129,7 +130,8 @@ export class UserService {
     );
     const revokedSessionIds = sessions.map((session) => session.id);
 
-    await PersonalAccessTokenModel.query()
+    await softDeleteModel(PersonalAccessTokenModel)
+      .query()
       .where('user_id', auth.id)
       .softDelete();
 
@@ -150,7 +152,7 @@ export class UserService {
 
     const isCurrent = session.token === token;
 
-    await (session.$query() as any).softDelete();
+    await session.$query().softDelete();
 
     await this.pusherService.notifyUser(auth.id, 'session.revoked', {
       revoked_session_ids: [sessionId],
@@ -178,7 +180,7 @@ export class UserService {
 
     const sessionId = session.id;
 
-    await (session.$query() as any).softDelete();
+    await session.$query().softDelete();
 
     await this.pusherService.notifyUser(auth.id, 'session.revoked', {
       revoked_session_ids: [sessionId],
