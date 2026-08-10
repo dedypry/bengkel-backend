@@ -12,13 +12,14 @@ import {
 import { PoService } from './po.service';
 import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
-import { CreatePoDto, PoQuery } from './dto/po.dto';
+import {
+  BulkDownloadPoInvoiceDto,
+  CreatePoDto,
+  PoQuery,
+} from './dto/po.dto';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import { PaginationPipe } from 'utils/pipe/pagination.pipe';
 import type { Response } from 'express';
-import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
-import GeneratePDF from 'utils/services/pdf-make.service';
-import terbilang from '@gratcy/angka-terbilang-indonesia';
 
 @UseGuards(AuthGuard)
 @Controller('po')
@@ -30,9 +31,20 @@ export class PoController {
     return this.poService.list(query, auth);
   }
 
-  @Get(':id')
-  detail(@Param('id') id: number, @Auth() auth: IAuth) {
-    return this.poService.detail(id, auth);
+  @Post('invoice/download/bulk')
+  async downloadBulkInvoice(
+    @Body() body: BulkDownloadPoInvoiceDto,
+    @Auth() auth: IAuth,
+    @Res() res: Response,
+  ) {
+    const zipBuffer = await this.poService.buildInvoicesZip(body.ids, auth);
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=po-invoices.zip',
+    );
+    res.send(zipBuffer);
   }
 
   @Get('invoice/download/:id')
@@ -41,29 +53,19 @@ export class PoController {
     @Auth() auth: IAuth,
     @Res() res: Response,
   ) {
-    const po = await this.poService.detail(id, auth);
-    const totalQty = po.items.reduce((sum, item) => sum + Number(item.qty), 0);
-    const html = await renderHtml({
-      location: 'po-invoice',
-      data: {
-        ...po,
-        totalQty,
-        terbilang: terbilang(Number(po.total), {
-          dec: '',
-          lang: 'id',
-        }),
-      },
-    });
+    const { buffer, fileName } = await this.poService.buildInvoicePdf(id, auth);
 
-    const content = await layoutPDF({
-      header: 'FAKTUR PEMBELIAN',
-      content: [html],
-      companyId: auth.company_id,
-      invNo: po.po_no,
-      date: po.created_at,
-    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${fileName}.pdf`,
+    );
+    res.send(buffer);
+  }
 
-    return GeneratePDF.make(res).download(content);
+  @Get(':id')
+  detail(@Param('id') id: number, @Auth() auth: IAuth) {
+    return this.poService.detail(id, auth);
   }
 
   @Post()

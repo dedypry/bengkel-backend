@@ -103,6 +103,13 @@ export class CreatePoItemDto {
   total: number;
 }
 
+export class BulkDownloadPoInvoiceDto {
+  @JoiSchema(
+    Joi.array().items(Joi.number().integer().positive()).min(1).required(),
+  )
+  ids!: number[];
+}
+
 export class PoQuery extends IQuery {
   @JoiSchema(Joi.string().optional().allow(null, ''))
   date?: string;

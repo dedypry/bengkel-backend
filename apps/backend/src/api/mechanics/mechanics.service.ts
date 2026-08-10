@@ -24,7 +24,7 @@ export class MechanicsService {
         'mrm.*',
         UsersModel.relatedQuery('works')
           .alias('wo')
-          .where('wo.status', 'closed')
+          .whereIn('wo.progress', ['ready', 'finish'])
           .count()
           .as('total_work'),
       )
@@ -42,7 +42,9 @@ export class MechanicsService {
           .select(
             'mechanic_id',
             raw('ROUND(AVG(mrm.rating)::numeric, 2)::float').as('rating'),
+            raw('COUNT(mrm.id)::int').as('review_count'),
           )
+          .where('company_id', auth.company_id)
           .groupBy('mechanic_id')
           .as('mrm'),
         'mrm.mechanic_id',

@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { MechanicRatingsModel } from 'models/mechanic-ratings.model';
 import { ProductsModel } from 'models/products.model';
+import { SettingsModel } from 'models/settings.model';
+import { UsersModel } from 'models/users.model';
 import { WorkOrdersModel } from 'models/work-orders.model';
-import { ref } from 'objection';
+import { raw, ref } from 'objection';
 import { IAuth } from 'utils/interfaces/IAuth';
 import dayjs from 'utils/helpers/dayjs';
 import 'dayjs/locale/id';
@@ -33,6 +36,7 @@ export class DashboardService {
       trends,
       revenueComparison,
       product,
+      bestEmployees,
     ] = await Promise.all([
       WorkOrdersModel.query()
         .withGraphFetched('[vehicle,customer.profile,mechanics]')
@@ -70,6 +74,7 @@ export class DashboardService {
         .where('stock', '<', ref('min_stock'))
         .orderBy('stock', 'asc')
         .limit(5),
+      this.getBestEmployees(auth),
     ]);
 
     return {
@@ -81,7 +86,49 @@ export class DashboardService {
       revenueComparison,
       product,
       wo,
+      bestEmployees,
     };
+  }
+
+  async getBestEmployees(auth: IAuth, limit = 5) {
+    const config = await SettingsModel.query()
+      .where('key', 'mechanic_roles')
+      .where('company_id', auth.company_id)
+      .first();
+
+    const roles = config?.value ? config.value.split(',') : ['mechanic'];
+
+    return UsersModel.query()
+      .alias('users')
+      .joinRelated('roles')
+      .select(
+        'users.id',
+        'users.name',
+        'users.work_status',
+        'mrm.rating',
+        raw('COALESCE(mrm.review_count, 0)::int').as('review_count'),
+      )
+      .whereIn('roles.slug', roles)
+      .where('users.company_id', auth.company_id)
+      .where('users.is_active', true)
+      .withGraphFetched('profile')
+      .leftJoin(
+        MechanicRatingsModel.query()
+          .alias('mrm')
+          .select(
+            'mechanic_id',
+            raw('ROUND(AVG(mrm.rating)::numeric, 2)::float').as('rating'),
+            raw('COUNT(mrm.id)::int').as('review_count'),
+          )
+          .where('company_id', auth.company_id)
+          .groupBy('mechanic_id')
+          .as('mrm'),
+        'mrm.mechanic_id',
+        'users.id',
+      )
+      .whereNotNull('mrm.rating')
+      .orderByRaw('mrm.rating DESC, mrm.review_count DESC')
+      .limit(limit);
   }
 
   async getRevenueTrendDetail(auth: IAuth, periodInput?: string) {

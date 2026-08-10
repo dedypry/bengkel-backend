@@ -118,7 +118,25 @@ class GeneratePDF {
     return new Promise((resolve, reject) => {
       try {
         const printer = new Printer(FONTS);
-        const document = printer.createPdfKitDocument(content);
+        const tableLayouts = {
+          Invoice: {
+            hLineWidth: (i: number) => {
+              return i <= 1 ? 0.1 : 0;
+            },
+            vLineWidth: () => 0,
+            hLineColor: () => '#a09d9d',
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+          },
+          NoBorder: {
+            hLineWidth: () => 0,
+            vLineWidth: () => 0,
+            hLineColor: () => '#a09d9d',
+          },
+        };
+        const document = printer.createPdfKitDocument(content, {
+          tableLayouts,
+        });
 
         const chunks: Uint8Array[] = [];
         document.on('data', (chunk: Uint8Array) => chunks.push(chunk));

@@ -99,11 +99,11 @@
     </tr>
     <tr>
         <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;" >
-            {{created_by.name}}
+            {{#if created_by}}{{created_by.name}}{{else}}-{{/if}}
         </td>
         <td data-pdfmake='{"border":[false, false, false, false]}' ></td>
         <td data-pdfmake='{"border":[false, false, false, true]}' style="text-align: center;" >
-            {{signature.name}}
+            {{#if signature}}{{signature.name}}{{else}}-{{/if}}
         </td>
         <td data-pdfmake='{"border":[false, false, false, false]}'></td>
         <td data-pdfmake='{"border":[false, false, false, false]}'>Kredit</td>

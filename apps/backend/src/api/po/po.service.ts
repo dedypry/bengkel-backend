@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreatePoDto, PoQuery } from './dto/po.dto';
 import { IAuth } from 'utils/interfaces/IAuth';
 import { PoModel } from 'models/po.model';
 import { fn, raw } from 'objection';
 import { generateNo } from 'utils/helpers/global';
 import { SuppliersModel } from 'models/suppliers.model';
+import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
+import GeneratePDF from 'utils/services/pdf-make.service';
+import terbilang from '@gratcy/angka-terbilang-indonesia';
+import { ZipArchive } from 'archiver';
+import { PassThrough } from 'node:stream';
 
 @Injectable()
 export class PoService {
@@ -155,5 +160,89 @@ export class PoService {
     });
 
     return 'Data Berhasil dihapus';
+  }
+
+  private sanitizeFileName(name: string) {
+    return name.replace(/[^\w.-]+/g, '_');
+  }
+
+  async buildInvoicePdf(id: number, auth: IAuth) {
+    const po = await this.detail(id, auth);
+
+    if (!po) {
+      throw new NotFoundException('PO tidak ditemukan');
+    }
+
+    const items = (po.items || []).map((item) => ({
+      ...item,
+      product: item.product || { code: '-', name: '-', unit: '-' },
+    }));
+
+    const totalQty = items.reduce(
+      (sum, item) => sum + Number(item.qty || 0),
+      0,
+    );
+
+    const html = await renderHtml({
+      location: 'po-invoice',
+      data: {
+        ...po,
+        items,
+        supplier: po.supplier || { name: '-', address: '-', phone: '-' },
+        created_by: po.created_by || { name: '-' },
+        signature: po.signature || { name: '-' },
+        payment_method: po.payment_method || po.payment_type || 'cash',
+        totalQty,
+        terbilang: terbilang(Number(po.total || 0), {
+          dec: '',
+          lang: 'id',
+        }),
+      },
+    });
+
+    const content = await layoutPDF({
+      header: 'FAKTUR PEMBELIAN',
+      content: [html],
+      companyId: auth.company_id,
+      invNo: po.po_no,
+      date: po.created_at,
+    });
+
+    const buffer = await GeneratePDF.toBuffer(content);
+
+    return {
+      buffer,
+      fileName: this.sanitizeFileName(po.po_no || `PO-${po.id}`),
+    };
+  }
+
+  async buildInvoicesZip(ids: number[], auth: IAuth) {
+    const uniqueIds = [...new Set(ids.map(Number))].filter(Boolean);
+
+    if (!uniqueIds.length) {
+      throw new BadRequestException('Pilih minimal 1 PO');
+    }
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    const stream = new PassThrough();
+    const chunks: Buffer[] = [];
+
+    stream.on('data', (chunk) => chunks.push(chunk));
+
+    const zipPromise = new Promise<Buffer>((resolve, reject) => {
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+      archive.on('error', reject);
+    });
+
+    archive.pipe(stream);
+
+    for (const id of uniqueIds) {
+      const { buffer, fileName } = await this.buildInvoicePdf(id, auth);
+      archive.append(buffer, { name: `${fileName}.pdf` });
+    }
+
+    await archive.finalize();
+    return zipPromise;
   }
 }
