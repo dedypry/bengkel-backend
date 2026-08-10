@@ -14,6 +14,7 @@ yarn-error.log*
 lerna-debug.log*
 google-credentials.json
 .wwebjs_auth
+/backups/
 
 # OS
 .DS_Store
