@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CreateProductDto,
   ProductQueryDto,
@@ -23,6 +27,20 @@ export class ProductsService {
     private readonly uploadService: UploadService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  private sanitizeStockValue(value: unknown): number {
+    const stock = Number(value);
+
+    return Number.isFinite(stock) ? stock : 0;
+  }
+
+  private sanitizeProductRow<T extends ProductsModel>(product: T): T {
+    return {
+      ...product,
+      stock: this.sanitizeStockValue(product.stock),
+      min_stock: this.sanitizeStockValue(product.min_stock),
+    };
+  }
 
   private categoryRowWithoutGraph(
     category: ProductCategoriesModel,
@@ -152,6 +170,9 @@ export class ProductsService {
 
     return {
       ...result,
+      results: (result.results || []).map((product: ProductsModel) =>
+        this.sanitizeProductRow(product),
+      ),
       stats: {
         ...stats,
         categories: this.groupCategoriesByParent(categories),
@@ -160,12 +181,14 @@ export class ProductsService {
   }
 
   async detail(id: number, auth: IAuth) {
-    return await ProductsModel.query()
+    const product = await ProductsModel.query()
       .withGraphFetched('[category.parent,uom,images]')
       .findOne({
         id,
         company_id: auth.company_id,
       });
+
+    return product ? this.sanitizeProductRow(product) : product;
   }
 
   async create(body: CreateProductDto, auth: IAuth) {
@@ -217,8 +240,14 @@ export class ProductsService {
 
     if (!product) throw new NotFoundException();
 
+    const stock = Number(body.stock);
+
+    if (!Number.isFinite(stock) || stock < 0) {
+      throw new BadRequestException('Stock tidak valid');
+    }
+
     await product.$query().patch({
-      stock: body.stock,
+      stock,
       updated_by: auth.id,
     });
 

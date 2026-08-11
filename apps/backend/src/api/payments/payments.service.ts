@@ -175,7 +175,7 @@ export class PaymentsService {
             );
 
             await product.$query(trx).patch({
-              stock: product.stock + delItem.qty,
+              stock: Number(product.stock) + Number(delItem.qty),
             });
           }
 
@@ -198,7 +198,8 @@ export class PaymentsService {
         if (woItem) {
           if (woItem.type === 'sparepart') {
             await product.$query(trx).patch({
-              stock: product.stock + woItem.qty - item.qty,
+              stock:
+                Number(product.stock) + Number(woItem.qty) - Number(item.qty),
             });
           }
 
@@ -214,7 +215,7 @@ export class PaymentsService {
           });
         } else {
           await product.$query(trx).patch({
-            stock: product.stock - item.qty,
+            stock: Number(product.stock) - Number(item.qty),
           });
 
           await WorkOrderItemsModel.query(trx).insert({
@@ -337,7 +338,7 @@ export class PaymentsService {
         const find = body.products?.find((fn) => fn.id === e.id);
 
         await e.$query(trx).patch({
-          stock: e.stock - find.qty,
+          stock: Number(e.stock) - Number(find.qty),
         });
 
         items.push({

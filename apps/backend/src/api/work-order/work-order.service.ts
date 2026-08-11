@@ -46,6 +46,20 @@ interface ICreateOrUpdateWoItem {
   auth: IAuth;
   trx: any;
 }
+
+function normalizeSparepartQty(
+  value: unknown,
+  label = 'Qty sparepart',
+): number {
+  const qty = Number(value);
+
+  if (!Number.isFinite(qty) || qty < 1) {
+    throw new BadRequestException(`${label} tidak valid`);
+  }
+
+  return qty;
+}
+
 @Injectable()
 export class WorkOrderService {
   constructor(
@@ -723,7 +737,7 @@ export class WorkOrderService {
         const product = await ProductsModel.query(trx).findById(item.data.id);
 
         if (product) {
-          await product.$query(trx).increment('stock', item.qty);
+          await product.$query(trx).increment('stock', Number(item.qty));
         }
       }
 
@@ -772,33 +786,80 @@ export class WorkOrderService {
       data: result,
     };
   }
+  private async restoreSparepartStock(
+    item: WorkOrderItemsModel,
+    trx: any,
+  ): Promise<void> {
+    const productId = item.data?.id;
+    const qty = Number(item.qty);
+
+    if (!productId || !Number.isFinite(qty) || qty <= 0) {
+      return;
+    }
+
+    const product = await ProductsModel.query(trx).findById(productId);
+
+    if (!product) {
+      return;
+    }
+
+    await product.$query(trx).increment('stock', qty);
+  }
+
+  private async removeWoItemsNotInPayload(
+    woId: number,
+    type: 'service' | 'sparepart',
+    keepProductIds: number[],
+    trx: any,
+  ): Promise<void> {
+    let query = WorkOrderItemsModel.query(trx)
+      .where('type', type)
+      .where('work_order_id', woId);
+
+    if (keepProductIds.length > 0) {
+      query = query.whereRaw(
+        `(data->>'id')::int NOT IN (${keepProductIds.map(() => '?').join(',')})`,
+        keepProductIds,
+      );
+    }
+
+    const toRemove = await query;
+
+    if (type === 'sparepart') {
+      for (const item of toRemove) {
+        await this.restoreSparepartStock(item, trx);
+      }
+    }
+
+    if (toRemove.length > 0) {
+      await WorkOrderItemsModel.query(trx)
+        .whereIn(
+          'id',
+          toRemove.map((item) => item.id),
+        )
+        .delete();
+    }
+  }
+
   async getServiceList(
     wo: WorkOrdersModel,
     body: WorkOrderUpdateServiceDto,
     auth: IAuth,
     trx?: any,
   ) {
-    if (body.services.length > 0) {
-      await WorkOrderItemsModel.query(trx)
-        .where('type', 'service')
-        .where('work_order_id', wo.id)
-        .whereRaw(
-          `(data->>'id')::int NOT IN (${body.services.map(() => '?').join(',')})`,
-          body.services.map((e) => e.id),
-        )
-        .delete();
-    }
+    await this.removeWoItemsNotInPayload(
+      wo.id,
+      'service',
+      body.services.map((e) => e.id),
+      trx,
+    );
 
-    if (body.sparepart.length > 0) {
-      await WorkOrderItemsModel.query(trx)
-        .where('type', 'sparepart')
-        .where('work_order_id', wo.id)
-        .whereRaw(
-          `(data->>'id')::int NOT IN (${body.sparepart.map(() => '?').join(',')})`,
-          body.sparepart.map((e) => e.id),
-        )
-        .delete();
-    }
+    await this.removeWoItemsNotInPayload(
+      wo.id,
+      'sparepart',
+      body.sparepart.map((e) => e.id),
+      trx,
+    );
 
     const items = await WorkOrderItemsModel.query(trx).where(
       'work_order_id',
@@ -844,12 +905,24 @@ export class WorkOrderService {
       if (data) {
         if (prop.type === 'sparepart') {
           const product = await ProductsModel.query(prop.trx).findById(item.id);
-          const diff = Number(item.qty) - Number(data.qty);
+
+          if (!product) {
+            throw new NotFoundException(
+              `Produk sparepart ${item.id} tidak ditemukan`,
+            );
+          }
+
+          const newQty = normalizeSparepartQty(item.qty);
+          const oldQty = normalizeSparepartQty(
+            data.qty,
+            'Qty sparepart sebelumnya',
+          );
+          const diff = newQty - oldQty;
 
           if (diff > 0) {
-            await product.$query(prop.trx).increment('stock', diff);
+            await product.$query(prop.trx).decrement('stock', diff);
           } else if (diff < 0) {
-            await product.$query(prop.trx).decrement('stock', Math.abs(diff));
+            await product.$query(prop.trx).increment('stock', Math.abs(diff));
           }
         }
         await data.$query(prop.trx).patch(payload);
@@ -867,7 +940,15 @@ export class WorkOrderService {
         if (prop.type === 'sparepart') {
           const product = await ProductsModel.query(prop.trx).findById(item.id);
 
-          await product.$query(prop.trx).decrement('stock', item.qty);
+          if (!product) {
+            throw new NotFoundException(
+              `Produk sparepart ${item.id} tidak ditemukan`,
+            );
+          }
+
+          const qty = normalizeSparepartQty(item.qty);
+
+          await product.$query(prop.trx).decrement('stock', qty);
           newPayload['data'] = product;
         } else {
           newPayload['data'] = await ServicesModel.query(prop.trx).findById(
@@ -1022,6 +1103,10 @@ export class WorkOrderService {
     await WorkOrderItemsModel.transaction(async (trx) => {
       const item = await WorkOrderItemsModel.query(trx).findById(id);
       if (item) {
+        if (item.type === 'sparepart') {
+          await this.restoreSparepartStock(item, trx);
+        }
+
         await item.$query(trx).delete();
         const wo = await WorkOrdersModel.query().findById(item.work_order_id);
 
