@@ -23,6 +23,7 @@ const SKIP_PATH_PREFIXES = [
   '/auth/verify-code',
   '/iclock',
   '/logs',
+  '/notifications/pusher/auth',
 ];
 
 export function sanitizeAuditValue(value: unknown): unknown {
