@@ -89,6 +89,8 @@ export async function layoutPDF({
   }
 
   if (showHeader) {
+    const logoImage = await imageUrlToBase64(company?.logo_url || logo_default);
+
     options.header = {
       margin: [30, 30, 30, 0],
       stack: [
@@ -99,14 +101,18 @@ export async function layoutPDF({
               stack: [
                 {
                   columns: [
-                    {
-                      image: await imageUrlToBase64(
-                        company?.logo_url || logo_default,
-                      ),
-                      height: 40,
-                      width: 40,
-                      margin: [5, 0, 0, 5],
-                    },
+                    logoImage
+                      ? {
+                          image: logoImage,
+                          height: 40,
+                          width: 40,
+                          margin: [5, 0, 0, 5],
+                        }
+                      : {
+                          text: ' ',
+                          width: 40,
+                          margin: [5, 0, 0, 5],
+                        },
                     {
                       stack: [
                         {
@@ -195,17 +201,38 @@ export function appendInvoiceAttachmentPage(
   }
 
   const body = Array.isArray(doc.content) ? doc.content : [doc.content];
+  const originalHeader = doc.header;
+
+  const header =
+    typeof originalHeader === 'function'
+      ? (currentPage: number, pageCount: number, pageSize: any) => {
+          if (currentPage === pageCount) {
+            return { text: ' ', margin: [0, 0, 0, 0] };
+          }
+
+          return originalHeader(currentPage, pageCount, pageSize);
+        }
+      : originalHeader
+        ? (currentPage: number, pageCount: number) => {
+            if (currentPage === pageCount) {
+              return { text: ' ', margin: [0, 0, 0, 0] };
+            }
+
+            return originalHeader;
+          }
+        : undefined;
 
   return {
     ...doc,
+    header,
     content: [
       ...body,
       { text: '', pageBreak: 'before' },
       {
         image: attachment,
-        fit: [515, 680],
-        alignment: 'center',
-        margin: [0, 10, 0, 0],
+        width: 595,
+        height: 842,
+        absolutePosition: { x: 0, y: 0 },
       },
     ],
   };
