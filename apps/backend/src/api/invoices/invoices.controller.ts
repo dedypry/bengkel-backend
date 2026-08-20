@@ -14,7 +14,11 @@ import { Auth } from 'utils/decorators/auth.decorator';
 import type { IAuth } from 'utils/interfaces/IAuth';
 import { AuthGuard } from 'utils/guards/auth.guard';
 import type { Response } from 'express';
-import { layoutPDF, renderHtml } from 'utils/helpers/render-html';
+import {
+  layoutPDF,
+  renderHtml,
+  appendInvoiceAttachmentPage,
+} from 'utils/helpers/render-html';
 import GeneratePDF from 'utils/services/pdf-make.service';
 import { QueryParamInvoice } from './dto/invoice.dto';
 import { calculateTotalEstimation } from 'utils/helpers/global';
@@ -64,13 +68,17 @@ export class InvoicesController {
       data: { ...result, estimated, data_mechanics },
     });
 
-    const content = await layoutPDF({
+    let content = await layoutPDF({
       header: data.header,
       content: [html],
       companyId: result.company_id,
       invNo: result.trx_no,
       date: result.created_at,
     });
+
+    if (data.location === 'invoice') {
+      content = appendInvoiceAttachmentPage(content);
+    }
 
     return GeneratePDF.make(res).download(content);
   }

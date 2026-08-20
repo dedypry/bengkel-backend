@@ -6,7 +6,12 @@ import utils from 'util';
 import hb from 'handlebars';
 import htmlToPdfMake from 'html-to-pdfmake';
 import { JSDOM } from 'jsdom';
-import { formatNumber, imageUrlToBase64, logo_default } from './global';
+import {
+  formatNumber,
+  imageUrlToBase64,
+  localImageToBase64,
+  logo_default,
+} from './global';
 import dayjs from 'dayjs';
 import { formatDate } from './format';
 const { window } = new JSDOM();
@@ -176,6 +181,34 @@ export async function layoutPDF({
   }
 
   return options;
+}
+
+const INVOICE_ATTACHMENT_PATH = 'assets/images/l_inv.jpeg';
+
+export function appendInvoiceAttachmentPage(
+  doc: TDocumentDefinitions,
+): TDocumentDefinitions {
+  const attachment = localImageToBase64(INVOICE_ATTACHMENT_PATH);
+
+  if (!attachment) {
+    return doc;
+  }
+
+  const body = Array.isArray(doc.content) ? doc.content : [doc.content];
+
+  return {
+    ...doc,
+    content: [
+      ...body,
+      { text: '', pageBreak: 'before' },
+      {
+        image: attachment,
+        fit: [515, 680],
+        alignment: 'center',
+        margin: [0, 10, 0, 0],
+      },
+    ],
+  };
 }
 
 function getHtml(location: string) {

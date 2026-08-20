@@ -2,6 +2,8 @@ import { Row } from 'exceljs';
 import axios from 'axios';
 import sharp from 'sharp';
 import dayjs from 'dayjs';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export const logo_default =
   'https://brazam.s3.ap-southeast-2.amazonaws.com/6a832b17-b6f4-4ce5-9e0f-7414fa8d7959.webp';
@@ -119,6 +121,30 @@ export async function imageUrlToBase64(url: string): Promise<string> {
     return `data:image/png;base64,${base64}`;
   } catch (error: any) {
     console.log('ERROR', error);
+    return null;
+  }
+}
+
+export function localImageToBase64(relativePath: string): string | null {
+  try {
+    const filePath = path.resolve(process.cwd(), relativePath);
+
+    if (!fs.existsSync(filePath)) {
+      return null;
+    }
+
+    const buffer = fs.readFileSync(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+    const mime =
+      ext === '.png'
+        ? 'image/png'
+        : ext === '.webp'
+          ? 'image/webp'
+          : 'image/jpeg';
+
+    return `data:${mime};base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    console.log('LOCAL IMAGE ERROR', error);
     return null;
   }
 }
