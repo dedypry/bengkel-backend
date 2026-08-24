@@ -1,6 +1,6 @@
 import { CompaniesModel } from 'models/companies.model';
 import path from 'node:path';
-import { TDocumentDefinitions, Watermark } from 'pdfmake/interfaces';
+import { Content, TDocumentDefinitions, Watermark } from 'pdfmake/interfaces';
 import fs from 'fs';
 import utils from 'util';
 import hb from 'handlebars';
@@ -191,6 +191,8 @@ export async function layoutPDF({
 
 const INVOICE_ATTACHMENT_PATH = 'assets/images/l_inv.jpeg';
 
+const EMPTY_PDF_HEADER: Content = { text: ' ', margin: [0, 0, 0, 0] };
+
 export function appendInvoiceAttachmentPage(
   doc: TDocumentDefinitions,
 ): TDocumentDefinitions {
@@ -203,19 +205,19 @@ export function appendInvoiceAttachmentPage(
   const body = Array.isArray(doc.content) ? doc.content : [doc.content];
   const originalHeader = doc.header;
 
-  const header =
+  const header: TDocumentDefinitions['header'] =
     typeof originalHeader === 'function'
-      ? (currentPage: number, pageCount: number, pageSize: any) => {
+      ? (currentPage, pageCount, pageSize) => {
           if (currentPage === pageCount) {
-            return { text: ' ', margin: [0, 0, 0, 0] };
+            return EMPTY_PDF_HEADER;
           }
 
           return originalHeader(currentPage, pageCount, pageSize);
         }
       : originalHeader
-        ? (currentPage: number, pageCount: number) => {
+        ? (currentPage, pageCount) => {
             if (currentPage === pageCount) {
-              return { text: ' ', margin: [0, 0, 0, 0] };
+              return EMPTY_PDF_HEADER;
             }
 
             return originalHeader;

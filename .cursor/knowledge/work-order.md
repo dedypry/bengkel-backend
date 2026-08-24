@@ -26,3 +26,8 @@
 
 Backend stats: `waiting`, `processing`, `ready`, `completed`, `cancelled`
 UI cards di `queue/index.tsx` — 6 status (tanpa waiting_queue tab)
+
+## Vehicle upsert saat create WO — 2026-08-24
+- **Masalah:** `POST /work-order` 409 jika `plate_number` sudah ada — `VehiclesModel.upsertAndRelate` selalu `insert`.
+- **Solusi:** Cari by `plate_number` dulu → patch jika ada, insert jika belum; `customer_vehicle` relate hanya jika belum ada (sama pola `customers.service.createFromImport`).
+- **File:** `models/vehicles.model.ts` → `upsertAndRelate`

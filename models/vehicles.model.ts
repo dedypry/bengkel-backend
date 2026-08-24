@@ -32,10 +32,28 @@ export class VehiclesModel extends BaseModel {
     customerId: number,
     trx?: any,
   ): Promise<VehiclesModel> {
-    let vehicle = null as VehiclesModel | null | undefined;
+    const plateNumber = data.plate_number?.trim();
+    let vehicle: VehiclesModel | null = null;
 
     if (data.id) {
       vehicle = await this.query(trx).updateAndFetchById(data.id, data);
+    } else if (plateNumber) {
+      vehicle = await this.query(trx).findOne({ plate_number: plateNumber });
+
+      const payload = {
+        ...data,
+        plate_number: plateNumber,
+      };
+
+      if (vehicle) {
+        const updatePayload = { ...payload };
+
+        delete updatePayload.id;
+
+        vehicle = await vehicle.$query(trx).patchAndFetch(updatePayload);
+      } else {
+        vehicle = await this.query(trx).insertAndFetch(payload);
+      }
     } else {
       vehicle = await this.query(trx).insertAndFetch(data);
     }
