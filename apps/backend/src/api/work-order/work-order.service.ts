@@ -60,6 +60,23 @@ function normalizeSparepartQty(
   return qty;
 }
 
+function resolveSparepartPrice(
+  price: unknown,
+  product?: Pick<ProductsModel, 'sell_price'> | null,
+): number {
+  if (price !== undefined && price !== null && price !== '') {
+    const parsed = Number(price);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  const fallback = Number(product?.sell_price ?? 0);
+
+  return Number.isFinite(fallback) ? fallback : 0;
+}
+
 @Injectable()
 export class WorkOrderService {
   constructor(
@@ -893,26 +910,38 @@ export class WorkOrderService {
         .filter((e) => e.type === prop.type)
         .find((e) => e.data.id === item.id);
 
+      let product: ProductsModel | null = null;
+
+      if (prop.type === 'sparepart') {
+        product = await ProductsModel.query(prop.trx).findById(item.id);
+
+        if (!product) {
+          throw new NotFoundException(
+            `Produk sparepart ${item.id} tidak ditemukan`,
+          );
+        }
+      }
+
+      const qty =
+        prop.type === 'sparepart'
+          ? normalizeSparepartQty(item.qty)
+          : Number(item.qty || 0);
+      const price =
+        prop.type === 'sparepart'
+          ? resolveSparepartPrice(item.price, product)
+          : Number(item.price ?? 0);
+
       const payload: any = {
-        price: item.price,
-        qty: item.qty,
+        price,
+        qty,
         supplier_id: item.supplier_id || null,
-        total_price:
-          Number(item.price) * (item.qty || 0) - Number(data?.disc_value ?? 0),
+        total_price: price * qty - Number(data?.disc_value ?? 0),
         updated_by: prop.auth.id,
       };
 
       if (data) {
-        if (prop.type === 'sparepart') {
-          const product = await ProductsModel.query(prop.trx).findById(item.id);
-
-          if (!product) {
-            throw new NotFoundException(
-              `Produk sparepart ${item.id} tidak ditemukan`,
-            );
-          }
-
-          const newQty = normalizeSparepartQty(item.qty);
+        if (prop.type === 'sparepart' && product) {
+          const newQty = qty;
           const oldQty = normalizeSparepartQty(
             data.qty,
             'Qty sparepart sebelumnya',
@@ -937,17 +966,7 @@ export class WorkOrderService {
           updated_by: prop.auth.id,
           work_order_id: prop.woId,
         };
-        if (prop.type === 'sparepart') {
-          const product = await ProductsModel.query(prop.trx).findById(item.id);
-
-          if (!product) {
-            throw new NotFoundException(
-              `Produk sparepart ${item.id} tidak ditemukan`,
-            );
-          }
-
-          const qty = normalizeSparepartQty(item.qty);
-
+        if (prop.type === 'sparepart' && product) {
           await product.$query(prop.trx).decrement('stock', qty);
           newPayload['data'] = product;
         } else {

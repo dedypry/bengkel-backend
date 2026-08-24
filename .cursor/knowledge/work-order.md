@@ -37,3 +37,9 @@ UI cards di `queue/index.tsx` — 6 status (tanpa waiting_queue tab)
 - **Solusi:** Sparepart Joi `.positive()` (> 0); service tetap `min(1)`. `normalizeSparepartQty` validasi `qty <= 0`.
 - **DB:** `work_order_items.qty` & `products.stock` sudah `decimal(18,2)` — migration `20260424091739`.
 - **File:** `work-order.dto.ts`, `work-order.service.ts` → `normalizeSparepartQty`
+
+## Sparepart tanpa price di payload — 2026-08-24
+- **Masalah:** Item `{ id, qty }` tanpa `price` → `Number(undefined)` = NaN → total `RpNaN`.
+- **Solusi backend:** `resolveSparepartPrice()` fallback ke `product.sell_price` jika price tidak dikirim/invalid.
+- **Solusi frontend:** `resolveSparepartUnitPrice()` di `global.ts`; dipakai submit, tabel WO add, `generateDataWo`, `formatIDR` guard NaN.
+- **File:** `work-order.service.ts`, `global.ts`, `add/index.tsx`, `tab-sparepart.tsx`, `detail-tab.tsx`, `format.ts`
