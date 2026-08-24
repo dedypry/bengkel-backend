@@ -53,7 +53,7 @@ function normalizeSparepartQty(
 ): number {
   const qty = Number(value);
 
-  if (!Number.isFinite(qty) || qty < 1) {
+  if (!Number.isFinite(qty) || qty <= 0) {
     throw new BadRequestException(`${label} tidak valid`);
   }
 

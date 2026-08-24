@@ -1,9 +1,16 @@
 import * as Joi from 'joi';
 import { JoiSchema, JoiSchemaOptions } from 'nestjs-joi';
 import { IQuery } from 'utils/interfaces/query';
-const WorkOrderItemSchema = Joi.object({
+const WorkOrderServiceItemSchema = Joi.object({
   id: Joi.number().required(),
   qty: Joi.number().min(1).required(),
+  price: Joi.number().optional(),
+  supplier_id: Joi.number().optional().allow('', null),
+});
+
+const WorkOrderSparepartItemSchema = Joi.object({
+  id: Joi.number().required(),
+  qty: Joi.number().positive().required(),
   price: Joi.number().optional(),
   supplier_id: Joi.number().optional().allow('', null),
 });
@@ -99,10 +106,10 @@ export class WorkOrderRequestDto {
   )
   priority!: 'low' | 'normal' | 'hight' | 'urgent';
 
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  @JoiSchema(Joi.array().items(WorkOrderServiceItemSchema))
   services!: IWorkOrderItem[];
 
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  @JoiSchema(Joi.array().items(WorkOrderSparepartItemSchema))
   sparepart!: IWorkOrderItem[];
 
   @JoiSchema(Joi.array())
@@ -119,10 +126,10 @@ export class WorkOrderRequestDto {
   allowUnknown: false,
 })
 export class WorkOrderUpdateServiceDto {
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  @JoiSchema(Joi.array().items(WorkOrderServiceItemSchema))
   services!: IWorkOrderItem[];
 
-  @JoiSchema(Joi.array().items(WorkOrderItemSchema))
+  @JoiSchema(Joi.array().items(WorkOrderSparepartItemSchema))
   sparepart!: IWorkOrderItem[];
 }
 

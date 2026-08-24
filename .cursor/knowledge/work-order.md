@@ -31,3 +31,9 @@ UI cards di `queue/index.tsx` — 6 status (tanpa waiting_queue tab)
 - **Masalah:** `POST /work-order` 409 jika `plate_number` sudah ada — `VehiclesModel.upsertAndRelate` selalu `insert`.
 - **Solusi:** Cari by `plate_number` dulu → patch jika ada, insert jika belum; `customer_vehicle` relate hanya jika belum ada (sama pola `customers.service.createFromImport`).
 - **File:** `models/vehicles.model.ts` → `upsertAndRelate`
+
+## Sparepart qty desimal — 2026-08-24
+- **Masalah:** Joi `qty.min(1)` + `normalizeSparepartQty` tolak 0.5 (oli/liter).
+- **Solusi:** Sparepart Joi `.positive()` (> 0); service tetap `min(1)`. `normalizeSparepartQty` validasi `qty <= 0`.
+- **DB:** `work_order_items.qty` & `products.stock` sudah `decimal(18,2)` — migration `20260424091739`.
+- **File:** `work-order.dto.ts`, `work-order.service.ts` → `normalizeSparepartQty`
