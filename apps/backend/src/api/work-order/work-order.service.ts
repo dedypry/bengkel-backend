@@ -64,17 +64,20 @@ function resolveSparepartPrice(
   price: unknown,
   product?: Pick<ProductsModel, 'sell_price'> | null,
 ): number {
+  const sellPrice = Number(product?.sell_price ?? 0);
+  const hasValidSellPrice = Number.isFinite(sellPrice) && sellPrice > 0;
+
   if (price !== undefined && price !== null && price !== '') {
     const parsed = Number(price);
 
     if (Number.isFinite(parsed)) {
-      return parsed;
+      if (parsed > 0 || !hasValidSellPrice) {
+        return parsed;
+      }
     }
   }
 
-  const fallback = Number(product?.sell_price ?? 0);
-
-  return Number.isFinite(fallback) ? fallback : 0;
+  return hasValidSellPrice ? sellPrice : 0;
 }
 
 @Injectable()
