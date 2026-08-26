@@ -11,8 +11,14 @@ import {
   CreateCategoryDto,
 } from './dto/categories.dto';
 import slugify from 'slugify';
-import { fn, raw } from 'objection';
+import { fn, raw, type Transaction } from 'objection';
 import { ProductsModel } from 'models/products.model';
+
+interface SlugOptions {
+  excludeId?: number;
+  trx?: Transaction;
+  reservedSlugs?: Set<string>;
+}
 
 @Injectable()
 export class CategoriesService {
@@ -113,36 +119,93 @@ export class CategoriesService {
     return cat;
   }
 
-  async slug(name: string, counter: number = 0): Promise<string> {
-    const suffix = counter > 0 ? `-${counter}` : '';
-    const sl = slugify(name + suffix, { lower: true, strict: true });
-    const findSlug = await ProductCategoriesModel.query()
-      .where('slug', sl)
-      .first();
+  private buildSlug(name: string) {
+    return slugify(name.trim(), { lower: true, strict: true });
+  }
 
-    if (!findSlug) return sl;
+  private async slugExists(
+    slug: string,
+    options?: SlugOptions,
+  ): Promise<boolean> {
+    if (options?.reservedSlugs?.has(slug)) {
+      return true;
+    }
 
-    return await this.slug(name, counter + 1);
+    let query = ProductCategoriesModel.query(options?.trx).where('slug', slug);
+
+    if (options?.excludeId) {
+      query = query.whereNot('id', options.excludeId);
+    }
+
+    const existing = await query.first();
+
+    return Boolean(existing);
+  }
+
+  async slug(name: string, options?: SlugOptions): Promise<string> {
+    const baseSlug = this.buildSlug(name);
+    let candidate = baseSlug;
+    let counter = 1;
+
+    while (await this.slugExists(candidate, options)) {
+      candidate = `${baseSlug}-${counter}`;
+      counter += 1;
+    }
+
+    return candidate;
+  }
+
+  private async buildSubCategories(
+    subCategories: CreateCategoryDto['subCategories'],
+    trx: Transaction,
+    reservedSlugs: Set<string>,
+  ) {
+    const result: Array<{
+      id?: number;
+      name: string;
+      slug: string;
+    }> = [];
+
+    for (const item of subCategories || []) {
+      const nextSlug = await this.slug(item.name, {
+        excludeId: item.id,
+        trx,
+        reservedSlugs,
+      });
+
+      reservedSlugs.add(nextSlug);
+
+      result.push({
+        ...item,
+        slug: nextSlug,
+      });
+    }
+
+    return result;
   }
 
   async create(body: CreateCategoryDto, auth: IAuth) {
-    const subCategories = await Promise.all(
-      (body.subCategories || []).map(async (e) => ({
-        ...e,
-        slug: await this.slug(e.name),
-      })),
-    );
-
-    const payload = {
-      ...body,
-      slug: await this.slug(body.name),
-      company_id: auth.company_id,
-      updated_by: auth.id,
-    };
-
-    delete payload.subCategories;
-
     return await ProductCategoriesModel.transaction(async (trx) => {
+      const reservedSlugs = new Set<string>();
+      const subCategories = await this.buildSubCategories(
+        body.subCategories,
+        trx,
+        reservedSlugs,
+      );
+
+      const payload = {
+        ...body,
+        slug: await this.slug(body.name, {
+          excludeId: body.id,
+          trx,
+          reservedSlugs,
+        }),
+        company_id: auth.company_id,
+        updated_by: auth.id,
+      };
+
+      delete payload.subCategories;
+
       if (body.id) {
         const category = await ProductCategoriesModel.query(trx).findById(
           body.id,
@@ -150,15 +213,24 @@ export class CategoriesService {
 
         if (!category) throw new NotFoundException();
 
-        await category.$query(trx).patch(payload);
+        await category.$query(trx).patch({
+          name: payload.name,
+          description: payload.description,
+          is_active: payload.is_active,
+          slug: payload.slug,
+          company_id: payload.company_id,
+          updated_by: payload.updated_by,
+        });
 
         const ids: number[] = [];
 
         for (const cat of subCategories || []) {
           if (cat?.id) {
             ids.push(cat.id);
-            await ProductCategoriesModel.query(trx).updateAndFetchById(cat.id, {
-              ...cat,
+            const { id, ...updatePayload } = cat;
+
+            await ProductCategoriesModel.query(trx).updateAndFetchById(id, {
+              ...updatePayload,
               parent_id: category.id,
             });
           } else {
