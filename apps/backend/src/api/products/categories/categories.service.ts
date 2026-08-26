@@ -9,6 +9,7 @@ import {
   BulkCategoryUpdateDto,
   CategoryQueryDto,
   CreateCategoryDto,
+  MoveSubCategoryProductsDto,
 } from './dto/categories.dto';
 import slugify from 'slugify';
 import { fn, raw, type Transaction } from 'objection';
@@ -109,14 +110,31 @@ export class CategoriesService {
   }
 
   async detail(id: number, auth: IAuth) {
-    const cat = await ProductCategoriesModel.query().findOne({
-      id,
-      company_id: auth.company_id,
-    });
+    const category = await ProductCategoriesModel.query()
+      .where('id', id)
+      .whereNull('deleted_at')
+      .where((builder) => {
+        builder.where('company_id', auth.company_id).orWhereNull('company_id');
+      })
+      .first();
 
-    if (!cat) throw new NotFoundException();
+    if (!category) throw new NotFoundException();
 
-    return cat;
+    const children = await ProductCategoriesModel.query()
+      .where('parent_id', id)
+      .whereNull('deleted_at')
+      .select([
+        'product_categories.*',
+        ProductCategoriesModel.relatedQuery('products')
+          .whereNull('products.deleted_at')
+          .count()
+          .as('total_product'),
+      ]);
+
+    return {
+      ...category,
+      children,
+    };
   }
 
   private buildSlug(name: string) {
@@ -244,21 +262,44 @@ export class CategoriesService {
         }
 
         if (ids.length > 0) {
-          const { count: productCount }: any = await ProductsModel.query(trx)
-            .leftJoinRelated('category')
-            .whereNotIn('category_id', ids)
-            .whereNull('products.deleted_at')
-            .whereNull('category.deleted_at')
-            .where('category.parent_id', category.id)
-            .count()
-            .first();
+          const removedSubCategories = await ProductCategoriesModel.query(trx)
+            .whereNotIn('id', ids)
+            .where('parent_id', category.id)
+            .whereNull('deleted_at');
 
-          console.log(productCount, ids, 'productCount');
+          const blockedSubCategories: Array<{
+            id: number;
+            name: string;
+            productCount: number;
+          }> = [];
 
-          if (productCount > 0) {
-            throw new BadRequestException(
-              'Kategori ini tidak dapat dihapus karena masih memiliki produk yang terkait',
-            );
+          for (const subCategory of removedSubCategories) {
+            const { count: productCount }: any = await ProductsModel.query(trx)
+              .where('category_id', subCategory.id)
+              .whereNull('deleted_at')
+              .count()
+              .first();
+
+            if (Number(productCount) > 0) {
+              blockedSubCategories.push({
+                id: subCategory.id,
+                name: subCategory.name,
+                productCount: Number(productCount),
+              });
+            }
+          }
+
+          if (blockedSubCategories.length > 0) {
+            const details = blockedSubCategories
+              .map((item) => `"${item.name}" (${item.productCount} produk)`)
+              .join(', ');
+
+            throw new BadRequestException({
+              message: `Sub-kategori berikut masih memiliki produk dan tidak dapat dihapus: ${details}. Pertahankan sub-kategori tersebut saat menghapus duplikat.`,
+              data: {
+                blockedSubCategories,
+              },
+            });
           }
 
           await ProductCategoriesModel.query(trx)
@@ -295,16 +336,39 @@ export class CategoriesService {
     const childIds = category.children.map((e) => e.id);
 
     if (childIds.length > 0) {
-      const { count: productCount }: any = await ProductsModel.query()
-        .whereIn('category_id', childIds)
-        .whereNull('deleted_at')
-        .count()
-        .first();
+      const blockedSubCategories: Array<{
+        id: number;
+        name: string;
+        productCount: number;
+      }> = [];
 
-      if (productCount > 0) {
-        throw new BadRequestException(
-          'Kategori ini tidak dapat dihapus karena masih memiliki produk yang terkait',
-        );
+      for (const child of category.children) {
+        const { count: productCount }: any = await ProductsModel.query()
+          .where('category_id', child.id)
+          .whereNull('deleted_at')
+          .count()
+          .first();
+
+        if (Number(productCount) > 0) {
+          blockedSubCategories.push({
+            id: child.id,
+            name: child.name,
+            productCount: Number(productCount),
+          });
+        }
+      }
+
+      if (blockedSubCategories.length > 0) {
+        const details = blockedSubCategories
+          .map((item) => `"${item.name}" (${item.productCount} produk)`)
+          .join(', ');
+
+        throw new BadRequestException({
+          message: `Kategori "${category.name}" tidak dapat dihapus karena sub-kategori berikut masih memiliki produk: ${details}`,
+          data: {
+            blockedSubCategories,
+          },
+        });
       }
     }
 
@@ -337,5 +401,50 @@ export class CategoriesService {
         category_id: body.categoryId,
         updated_by: auth.id,
       });
+  }
+
+  async moveSubCategoryProducts(body: MoveSubCategoryProductsDto, auth: IAuth) {
+    if (body.fromCategoryId === body.toCategoryId) {
+      throw new BadRequestException(
+        'Sub-kategori asal dan tujuan tidak boleh sama',
+      );
+    }
+
+    const [fromCategory, toCategory] = await Promise.all([
+      ProductCategoriesModel.query()
+        .findById(body.fromCategoryId)
+        .whereNull('deleted_at'),
+      ProductCategoriesModel.query()
+        .findById(body.toCategoryId)
+        .whereNull('deleted_at'),
+    ]);
+
+    if (!fromCategory || !toCategory) {
+      throw new NotFoundException('Sub-kategori tidak ditemukan');
+    }
+
+    if (
+      !fromCategory.parent_id ||
+      fromCategory.parent_id !== toCategory.parent_id
+    ) {
+      throw new BadRequestException(
+        'Sub-kategori asal dan tujuan harus berada di kategori induk yang sama',
+      );
+    }
+
+    const movedCount = await ProductsModel.query()
+      .where('company_id', auth.company_id)
+      .where('category_id', body.fromCategoryId)
+      .whereNull('deleted_at')
+      .patch({
+        category_id: body.toCategoryId,
+        updated_by: auth.id,
+      });
+
+    return {
+      movedCount: Number(movedCount),
+      fromCategoryId: body.fromCategoryId,
+      toCategoryId: body.toCategoryId,
+    };
   }
 }

@@ -49,3 +49,11 @@ export class BulkCategoryUpdateDto {
   )
   productIds: 'all' | number[];
 }
+
+export class MoveSubCategoryProductsDto {
+  @JoiSchema(Joi.number().required())
+  fromCategoryId!: number;
+
+  @JoiSchema(Joi.number().required())
+  toCategoryId!: number;
+}

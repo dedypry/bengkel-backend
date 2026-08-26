@@ -62,12 +62,35 @@ export class HandleExceptionFilter implements ExceptionFilter {
       return res.status(409).json(body);
     }
 
-    const body = {
-      message: status == 500 ? 'internal server error' : exception.message,
-      ...(exception instanceof HttpException
-        ? { statusCode: status }
-        : { statusCode: status }),
-    };
+    const body = (() => {
+      if (exception instanceof HttpException) {
+        const response = exception.getResponse();
+
+        if (
+          typeof response === 'object' &&
+          response !== null &&
+          !Array.isArray(response)
+        ) {
+          const responseObj = response as Record<string, unknown>;
+
+          return {
+            statusCode: status,
+            message:
+              typeof responseObj.message === 'string'
+                ? responseObj.message
+                : exception.message,
+            ...(responseObj.data !== undefined
+              ? { data: responseObj.data }
+              : {}),
+          };
+        }
+      }
+
+      return {
+        message: status == 500 ? 'internal server error' : exception.message,
+        statusCode: status,
+      };
+    })();
 
     void recordAuditLog(req, {
       status: 'error',

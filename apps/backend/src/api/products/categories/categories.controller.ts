@@ -16,6 +16,7 @@ import {
   BulkCategoryUpdateDto,
   CategoryQueryDto,
   CreateCategoryDto,
+  MoveSubCategoryProductsDto,
 } from './dto/categories.dto';
 
 @UseGuards(AuthGuard)
@@ -28,9 +29,9 @@ export class CategoriesController {
     return this.categoriesService.list(query, auth);
   }
 
-  @Get('id')
-  detail(@Param('id') id: number, @Auth() auth: IAuth) {
-    return this.categoriesService.detail(id, auth);
+  @Get(':id')
+  detail(@Param('id') id: string, @Auth() auth: IAuth) {
+    return this.categoriesService.detail(Number(id), auth);
   }
 
   @Post()
@@ -55,5 +56,21 @@ export class CategoriesController {
   ) {
     await this.categoriesService.bulkProductCategoryUpdate(body, auth);
     return 'Kategori berhasil diupdate';
+  }
+
+  @Post('move-products')
+  async moveSubCategoryProducts(
+    @Body() body: MoveSubCategoryProductsDto,
+    @Auth() auth: IAuth,
+  ) {
+    const result = await this.categoriesService.moveSubCategoryProducts(
+      body,
+      auth,
+    );
+
+    return {
+      message: `${result.movedCount} produk berhasil dipindahkan`,
+      data: result,
+    };
   }
 }

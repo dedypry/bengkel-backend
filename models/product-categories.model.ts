@@ -122,7 +122,15 @@ export class ProductCategoriesModel extends BaseModel {
       .whereNull('parent_id')
       .modifiers({
         deleted: (query: AnyQueryBuilder) => {
-          query.whereNull('deleted_at');
+          query
+            .whereNull('deleted_at')
+            .select([
+              'product_categories.*',
+              ProductCategoriesModel.relatedQuery('products')
+                .whereNull('products.deleted_at')
+                .count()
+                .as('total_product'),
+            ]);
         },
       });
   }
