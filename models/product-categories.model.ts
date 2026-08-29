@@ -130,7 +130,8 @@ export class ProductCategoriesModel extends BaseModel {
                 .whereNull('products.deleted_at')
                 .count()
                 .as('total_product'),
-            ]);
+            ])
+            .orderBy('name', 'asc');
         },
       });
   }
